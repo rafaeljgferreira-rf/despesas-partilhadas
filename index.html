@@ -28,13 +28,13 @@ small{font-size:12px;color:var(--mut)}a{color:var(--ac)}
   <strong>Configuração da sincronização</strong>
   <p class="mut">Para partilhar despesas entre dois utilizadores e todos os seus dispositivos, esta aplicação usa uma base de dados sbClient.</p>
   <label class="mut" for="sburl">URL do projeto sbClient</label>
-  <input id="sburl" placeholder="https://xxxxxxxx.sbClient.co" autocomplete="url">
+  <input id="sburl" placeholder="https://xxxxxxxx.supabase.co" autocomplete="url">
   <label class="mut" for="sbkey" style="display:block;margin-top:8px">Chave pública (anon / publishable)</label>
   <input id="sbkey" placeholder="Chave pública do projeto" autocomplete="off">
   <button id="saveconfig" type="button" onclick="window.saveConfigNow()" style="width:100%;margin-top:10px">Guardar configuração</button>
   <p id="configmsg" class="mut" role="status" aria-live="polite"></p>
   <p class="mut">A configuração fica guardada neste dispositivo. Terás de a introduzir também nos outros dispositivos, ou abrir a aplicação já configurada a partir de um alojamento comum.</p>
-  <details><summary>Como obter estes dados?</summary><ol class="mut"><li>Cria um projeto gratuito em <a href="https://sbClient.com" target="_blank" rel="noopener">sbClient.com</a>.</li><li>Em Project Settings → API, copia Project URL e a chave anon/public.</li><li>Executa o SQL fornecido no ficheiro <strong>configuracao_sbClient.sql</strong> no SQL Editor do sbClient.</li></ol></details>
+  <details><summary>Como obter estes dados?</summary><ol class="mut"><li>Cria um projeto gratuito em <a href="https://@supabase/supabase-js@2m" target="_blank" rel="noopener">supabase.com</a>.</li><li>Em Project Settings → API, copia Project URL e a chave anon/public.</li><li>Executa o SQL fornecido no ficheiro <strong>configuracao_sbClient.sql</strong> no SQL Editor do sbClient.</li></ol></details>
 </section>
 
 <section id="auth" class="card hidden">
@@ -93,7 +93,7 @@ small{font-size:12px;color:var(--mut)}a{color:var(--ac)}
     <div class="row"><strong id="code" style="letter-spacing:2px;font-size:20px"></strong><button class="g" id="copycode">Copiar</button></div>
   </div>
 </main>
-<script src="https://cdn.jsdelivr.net/npm/@sbClient/sbClient-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const $=s=>document.querySelector(s), fmt=n=>Number(n||0).toLocaleString('pt-PT',{style:'currency',currency:'EUR'});
 const MES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
@@ -107,8 +107,8 @@ function savedConfig(){return {url:localStorage.getItem('despesas_sb_url')||'',k
 function setConfigFields(){const c=savedConfig();$('#sburl').value=c.url;$('#sbkey').value=c.key}
 async function connect(){
  const c=savedConfig();
- if(!c.url||!c.key||!window.sbClient){show('#config');show('#auth',false);return}
- sbClient=window.sbClient.createClient(c.url,c.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+ if(!c.url||!c.key||!window.supabase){show('#config');show('#auth',false);return}
+ sbClient=window.supabase.createClient(c.url,c.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
  show('#config',false);
  const {data:{session:s}}=await sbClient.auth.getSession();
  if(s){session=s;await afterLogin()}else{show('#auth');show('#household',false);show('#app',false)}
