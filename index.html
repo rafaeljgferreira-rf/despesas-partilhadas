@@ -1,3 +1,4 @@
+```
 <!DOCTYPE html>
 <html lang="pt-PT">
 <head>
@@ -19,6 +20,8 @@ label.c{display:flex;gap:8px;align-items:center;font-size:14px}label.c input{wid
 .hidden{display:none!important}.notice{padding:10px;border-radius:10px;background:#edf5f0;color:#205b43;font-size:13px;overflow-wrap:anywhere}
 .error{background:#fff0ed;color:#8e2d20}.tabs{display:flex;gap:8px;flex-wrap:wrap}.tabs>*{flex:1}
 small{font-size:12px;color:var(--mut)}a{color:var(--ac)}
+.tabnav{display:flex;gap:8px;margin-bottom:12px}.tabnav button{flex:1}.tabnav button[aria-selected="false"]{background:#fff;color:var(--tx);border:1px solid var(--bd)}
+.pie{width:min(260px,78vw);aspect-ratio:1;border-radius:50%;margin:18px auto;display:grid;place-items:center;background:#e4e2da}.pie-hole{width:57%;height:57%;border-radius:50%;background:white;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:10px}.legendrow{display:flex;align-items:center;gap:9px;padding:9px 0;border-top:1px solid var(--bd)}.swatch{width:13px;height:13px;flex:none;border-radius:4px}.legendrow .name{flex:1}.legendrow .value{text-align:right}
 </style>
 </head>
 <body>
@@ -26,15 +29,15 @@ small{font-size:12px;color:var(--mut)}a{color:var(--ac)}
 
 <section id="config" class="card">
   <strong>Configuração da sincronização</strong>
-  <p class="mut">Para partilhar despesas entre dois utilizadores e todos os seus dispositivos, esta aplicação usa uma base de dados sbClient.</p>
-  <label class="mut" for="sburl">URL do projeto sbClient</label>
+  <p class="mut">Para partilhar despesas entre dois utilizadores e todos os seus dispositivos, esta aplicação usa uma base de dados Supabase.</p>
+  <label class="mut" for="sburl">URL do projeto Supabase</label>
   <input id="sburl" placeholder="https://xxxxxxxx.supabase.co" autocomplete="url">
   <label class="mut" for="sbkey" style="display:block;margin-top:8px">Chave pública (anon / publishable)</label>
   <input id="sbkey" placeholder="Chave pública do projeto" autocomplete="off">
   <button id="saveconfig" type="button" onclick="window.saveConfigNow()" style="width:100%;margin-top:10px">Guardar configuração</button>
   <p id="configmsg" class="mut" role="status" aria-live="polite"></p>
   <p class="mut">A configuração fica guardada neste dispositivo. Terás de a introduzir também nos outros dispositivos, ou abrir a aplicação já configurada a partir de um alojamento comum.</p>
-  <details><summary>Como obter estes dados?</summary><ol class="mut"><li>Cria um projeto gratuito em <a href="https://@supabase/supabase-js@2m" target="_blank" rel="noopener">supabase.com</a>.</li><li>Em Project Settings → API, copia Project URL e a chave anon/public.</li><li>Executa o SQL fornecido no ficheiro <strong>configuracao_sbClient.sql</strong> no SQL Editor do sbClient.</li></ol></details>
+  <details><summary>Como obter estes dados?</summary><ol class="mut"><li>Cria um projeto gratuito em <a href="https://supabase.com" target="_blank" rel="noopener">supabase.com</a>.</li><li>Em Project Settings → API, copia Project URL e a chave anon/public.</li><li>Executa o SQL fornecido no ficheiro <strong>configuracao_supabase.sql</strong> no SQL Editor do Supabase.</li></ol></details>
 </section>
 
 <section id="auth" class="card hidden">
@@ -68,6 +71,8 @@ small{font-size:12px;color:var(--mut)}a{color:var(--ac)}
       <button class="g" id="prev" aria-label="Mês anterior">‹</button><strong id="mt"></strong><button class="g" id="next" aria-label="Mês seguinte">›</button>
     </div>
   </div>
+  <nav class="tabnav" aria-label="Secções"><button id="tabexpenses" type="button" aria-selected="true">Despesas</button><button id="tabcharts" type="button" aria-selected="false">Gráficos</button></nav>
+  <section id="expenseview">
   <div class="card">
     <div class="row sp">
       <div><div class="mut">Total do mês</div><div class="big" id="tot">0 €</div></div>
@@ -86,6 +91,13 @@ small{font-size:12px;color:var(--mut)}a{color:var(--ac)}
   </div>
   <div class="card" id="cats"></div>
   <div class="card" id="list"></div>
+  </section>
+  <section id="chartview" class="hidden">
+    <div class="card"><strong>Despesas por categoria</strong><p class="mut">Todas as despesas registadas no mês selecionado, incluindo as não partilhadas.</p>
+      <div id="pie" class="pie" role="img" aria-label="Distribuição das despesas por categoria"><div class="pie-hole"><span class="mut">Total do mês</span><strong id="pietotal">0 €</strong></div></div>
+      <div id="pielegend"></div>
+    </div>
+  </section>
   <div class="notice" id="status">A ligar à sincronização…</div>
   <div class="card">
     <strong>Convite para a outra pessoa</strong>
@@ -97,7 +109,7 @@ small{font-size:12px;color:var(--mut)}a{color:var(--ac)}
 <script>
 const $=s=>document.querySelector(s), fmt=n=>Number(n||0).toLocaleString('pt-PT',{style:'currency',currency:'EUR'});
 const MES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
-let sbClient=null, session=null, me=null, householdId=null, inviteCode='', items=[], members=[], channel=null;;
+let sbClient=null, session=null, me=null, householdId=null, inviteCode='', items=[], members=[], channel=null;
 let month=new Date().toISOString().slice(0,7);
 
 function show(id,on=true){$(id).classList.toggle('hidden',!on)}
@@ -158,13 +170,31 @@ function render(){
  else if(Math.abs(net)<0.005)b.textContent='Estão quites.';
  else if(net>0)b.textContent='A outra pessoa deve-te '+fmt(net)+'.';
  else{b.textContent='Deves '+fmt(-net)+' à outra pessoa.';b.className='bal neg'}
- const by={};cur.forEach(i=>by[i.cat]=(by[i.cat]||0)+Number(i.amount));
+ const by={};cur.forEach(i=>by[i.category||'Outros']=(by[i.category||'Outros']||0)+Number(i.amount));
+ renderPie(by,total);
  const cats=$('#cats');cats.textContent='';const ent=Object.entries(by).sort((a,b)=>b[1]-a[1]);
  if(!ent.length){cats.textContent='Sem despesas neste mês.';cats.className='card mut'}else{cats.className='card';ent.forEach(([k,v])=>{const d=document.createElement('div');d.style.marginBottom='8px';const r=document.createElement('div');r.className='row sp';const a=document.createElement('span');a.textContent=k;const z=document.createElement('span');z.textContent=fmt(v);r.append(a,z);const bar=document.createElement('div');bar.className='bar';bar.style.width=Math.max(4,v/total*100)+'%';d.append(r,bar);cats.append(d)})}
  const L=$('#list');L.textContent='';
  cur.forEach(i=>{const r=document.createElement('div');r.className='it row sp';const l=document.createElement('div');const t=document.createElement('div');t.textContent=i.description;const s=document.createElement('div');s.className='mut';s.textContent=(i.date||'').slice(8,10)+'/'+(i.date||'').slice(5,7)+' · '+i.category+' · '+(i.payer===me.id?'pago por ti':'pago pela outra pessoa')+(i.shared?' · partilhada':'');l.append(t,s);const rt=document.createElement('div');rt.className='row';const v=document.createElement('strong');v.textContent=fmt(i.amount);rt.append(v);if(i.payer===me.id){const x=document.createElement('button');x.className='x';x.textContent='×';x.title='Apagar';x.onclick=()=>deleteExpense(i.id);rt.append(x)}r.append(l,rt);L.append(r)});
  L.style.display=cur.length?'':'none';
 }
+const pieColors=['#1f7a5c','#e3a347','#5875b9','#b56b9b','#d66e57','#7b8c51','#8c7bba','#50a5a5'];
+function renderPie(by,total){
+ const pie=$('#pie'), legend=$('#pielegend');legend.replaceChildren();$('#pietotal').textContent=fmt(total);
+ const entries=Object.entries(by).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+ if(!entries.length){pie.style.background='#e4e2da';pie.setAttribute('aria-label','Sem despesas neste mês');const t=document.createElement('p');t.className='mut';t.textContent='Ainda não existem despesas neste mês.';legend.append(t);return}
+ let offset=0;const stops=[];
+ entries.forEach(([name,value],i)=>{
+  const color=pieColors[i%pieColors.length], start=offset;offset+=value/total*100;stops.push(`${color} ${start.toFixed(4)}% ${offset.toFixed(4)}%`);
+  const row=document.createElement('div');row.className='legendrow';const sw=document.createElement('span');sw.className='swatch';sw.style.background=color;
+  const label=document.createElement('span');label.className='name';label.textContent=name;
+  const amount=document.createElement('span');amount.className='value';amount.textContent=fmt(value)+' · '+(value/total*100).toLocaleString('pt-PT',{maximumFractionDigits:1})+'%';
+  row.append(sw,label,amount);legend.append(row);
+ });
+ pie.style.background='conic-gradient('+stops.join(',')+')';pie.setAttribute('aria-label',entries.map(([name,value])=>name+': '+fmt(value)).join('; '));
+}
+function selectTab(which){const charts=which==='charts';show('#expenseview',!charts);show('#chartview',charts);$('#tabexpenses').setAttribute('aria-selected',String(!charts));$('#tabcharts').setAttribute('aria-selected',String(charts))}
+$('#tabexpenses').onclick=()=>selectTab('expenses');$('#tabcharts').onclick=()=>selectTab('charts');
 async function deleteExpense(id){if(!confirm('Queres apagar esta despesa?'))return;const {error}=await sbClient.from('expenses').delete().eq('id',id);if(error)status('Não foi possível apagar: '+error.message,true)}
 function shift(n){const [y,m]=month.split('-').map(Number),d=new Date(y,m-1+n,1);month=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');render()}
 window.saveConfigNow=function(){const out=document.querySelector('#configmsg');try{out.textContent='Botão acionado. A validar os dados…';out.classList.remove('error');const url=document.querySelector('#sburl').value.trim().replace(/\/$/,''),key=document.querySelector('#sbkey').value.trim();if(!url||!key){out.textContent='Preenche o URL do projeto e a chave pública.';out.classList.add('error');return}if(!/^https:\/\//i.test(url)){out.textContent='O URL deve começar por https://';out.classList.add('error');return}localStorage.setItem('despesas_sb_url',url);localStorage.setItem('despesas_sb_key',key);out.textContent='Configuração guardada. A abrir a aplicação…';connect().catch(e=>{out.textContent='Erro ao ligar: '+(e.message||e);out.classList.add('error')});}catch(e){out.textContent='Erro ao guardar no navegador: '+(e.message||e);out.classList.add('error');console.error(e)}};
@@ -180,3 +210,4 @@ setConfigFields();connect().catch(e=>{show('#config');message('#authmsg',e.messa
 </script>
 </body>
 </html>
+```
