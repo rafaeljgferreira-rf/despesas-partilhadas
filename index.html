@@ -26,15 +26,15 @@ small{font-size:12px;color:var(--mut)}a{color:var(--ac)}
 
 <section id="config" class="card">
   <strong>Configuração da sincronização</strong>
-  <p class="mut">Para partilhar despesas entre dois utilizadores e todos os seus dispositivos, esta aplicação usa uma base de dados Supabase.</p>
-  <label class="mut" for="sburl">URL do projeto Supabase</label>
-  <input id="sburl" placeholder="https://xxxxxxxx.supabase.co" autocomplete="url">
+  <p class="mut">Para partilhar despesas entre dois utilizadores e todos os seus dispositivos, esta aplicação usa uma base de dados sbClient.</p>
+  <label class="mut" for="sburl">URL do projeto sbClient</label>
+  <input id="sburl" placeholder="https://xxxxxxxx.sbClient.co" autocomplete="url">
   <label class="mut" for="sbkey" style="display:block;margin-top:8px">Chave pública (anon / publishable)</label>
   <input id="sbkey" placeholder="Chave pública do projeto" autocomplete="off">
   <button id="saveconfig" type="button" onclick="window.saveConfigNow()" style="width:100%;margin-top:10px">Guardar configuração</button>
   <p id="configmsg" class="mut" role="status" aria-live="polite"></p>
   <p class="mut">A configuração fica guardada neste dispositivo. Terás de a introduzir também nos outros dispositivos, ou abrir a aplicação já configurada a partir de um alojamento comum.</p>
-  <details><summary>Como obter estes dados?</summary><ol class="mut"><li>Cria um projeto gratuito em <a href="https://supabase.com" target="_blank" rel="noopener">supabase.com</a>.</li><li>Em Project Settings → API, copia Project URL e a chave anon/public.</li><li>Executa o SQL fornecido no ficheiro <strong>configuracao_supabase.sql</strong> no SQL Editor do Supabase.</li></ol></details>
+  <details><summary>Como obter estes dados?</summary><ol class="mut"><li>Cria um projeto gratuito em <a href="https://sbClient.com" target="_blank" rel="noopener">sbClient.com</a>.</li><li>Em Project Settings → API, copia Project URL e a chave anon/public.</li><li>Executa o SQL fornecido no ficheiro <strong>configuracao_sbClient.sql</strong> no SQL Editor do sbClient.</li></ol></details>
 </section>
 
 <section id="auth" class="card hidden">
@@ -93,11 +93,11 @@ small{font-size:12px;color:var(--mut)}a{color:var(--ac)}
     <div class="row"><strong id="code" style="letter-spacing:2px;font-size:20px"></strong><button class="g" id="copycode">Copiar</button></div>
   </div>
 </main>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@sbClient/sbClient-js@2"></script>
 <script>
 const $=s=>document.querySelector(s), fmt=n=>Number(n||0).toLocaleString('pt-PT',{style:'currency',currency:'EUR'});
 const MES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
-let supabase=null, session=null, me=null, householdId=null, inviteCode='', items=[], members=[], channel=null;
+let sbClient=null, session=null, me=null, householdId=null, inviteCode='', items=[], members=[], channel=null;;
 let month=new Date().toISOString().slice(0,7);
 
 function show(id,on=true){$(id).classList.toggle('hidden',!on)}
@@ -107,38 +107,38 @@ function savedConfig(){return {url:localStorage.getItem('despesas_sb_url')||'',k
 function setConfigFields(){const c=savedConfig();$('#sburl').value=c.url;$('#sbkey').value=c.key}
 async function connect(){
  const c=savedConfig();
- if(!c.url||!c.key||!window.supabase){show('#config');show('#auth',false);return}
- supabase=window.supabase.createClient(c.url,c.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+ if(!c.url||!c.key||!window.sbClient){show('#config');show('#auth',false);return}
+ sbClient=window.sbClient.createClient(c.url,c.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
  show('#config',false);
- const {data:{session:s}}=await supabase.auth.getSession();
+ const {data:{session:s}}=await sbClient.auth.getSession();
  if(s){session=s;await afterLogin()}else{show('#auth');show('#household',false);show('#app',false)}
- supabase.auth.onAuthStateChange((_event,s)=>{setTimeout(async()=>{session=s;if(s){await afterLogin()}else{resetApp();show('#auth');show('#household',false);show('#app',false)}},0)});
+ sbClient.auth.onAuthStateChange((_event,s)=>{setTimeout(async()=>{session=s;if(s){await afterLogin()}else{resetApp();show('#auth');show('#household',false);show('#app',false)}},0)});
 }
-function resetApp(){if(channel)supabase.removeChannel(channel);channel=null;me=null;householdId=null;items=[];members=[]}
+function resetApp(){if(channel)sbClient.removeChannel(channel);channel=null;me=null;householdId=null;items=[];members=[]}
 async function afterLogin(){
  me=session.user;$('#who').textContent=me.email||'Utilizador';show('#auth',false);
- const {data:membership,error}=await supabase.from('household_members').select('household_id').eq('user_id',me.id).limit(1).maybeSingle();
+ const {data:membership,error}=await sbClient.from('household_members').select('household_id').eq('user_id',me.id).limit(1).maybeSingle();
  if(error){show('#household');message('#homemsg','Erro ao verificar o espaço: '+error.message,true);return}
  if(!membership){show('#household');show('#app',false);return}
  householdId=membership.household_id;await loadHousehold();
 }
 async function loadHousehold(){
- const {data:h,error}=await supabase.from('households').select('invite_code').eq('id',householdId).single();
+ const {data:h,error}=await sbClient.from('households').select('invite_code').eq('id',householdId).single();
  if(error){status('Não foi possível carregar o espaço: '+error.message,true);return}
  inviteCode=h.invite_code;$('#code').textContent=inviteCode;$('#spaceinfo').textContent='Espaço partilhado · sincronização ativa';
- const {data:m,error:meErr}=await supabase.from('household_members').select('user_id').eq('household_id',householdId);
+ const {data:m,error:meErr}=await sbClient.from('household_members').select('user_id').eq('household_id',householdId);
  if(meErr){status('Erro ao carregar membros: '+meErr.message,true);return}
  members=(m||[]).map(x=>x.user_id);
  show('#household',false);show('#app');await loadExpenses();subscribe();
 }
 async function loadExpenses(){
- const {data,error}=await supabase.from('expenses').select('*').eq('household_id',householdId).order('date',{ascending:false});
+ const {data,error}=await sbClient.from('expenses').select('*').eq('household_id',householdId).order('date',{ascending:false});
  if(error){status('Erro ao carregar despesas: '+error.message,true);return}
  items=data||[];render();status('Ligado · as alterações são sincronizadas automaticamente.');
 }
 function subscribe(){
- if(channel)supabase.removeChannel(channel);
- channel=supabase.channel('expenses-'+householdId).on('postgres_changes',{event:'*',schema:'public',table:'expenses',filter:'household_id=eq.'+householdId},payload=>{
+ if(channel)sbClient.removeChannel(channel);
+ channel=sbClient.channel('expenses-'+householdId).on('postgres_changes',{event:'*',schema:'public',table:'expenses',filter:'household_id=eq.'+householdId},payload=>{
    if(payload.eventType==='INSERT'&&!items.some(x=>x.id===payload.new.id))items.push(payload.new);
    if(payload.eventType==='UPDATE')items=items.map(x=>x.id===payload.new.id?payload.new:x);
    if(payload.eventType==='DELETE')items=items.filter(x=>x.id!==payload.old.id);
@@ -165,16 +165,16 @@ function render(){
  cur.forEach(i=>{const r=document.createElement('div');r.className='it row sp';const l=document.createElement('div');const t=document.createElement('div');t.textContent=i.description;const s=document.createElement('div');s.className='mut';s.textContent=(i.date||'').slice(8,10)+'/'+(i.date||'').slice(5,7)+' · '+i.category+' · '+(i.payer===me.id?'pago por ti':'pago pela outra pessoa')+(i.shared?' · partilhada':'');l.append(t,s);const rt=document.createElement('div');rt.className='row';const v=document.createElement('strong');v.textContent=fmt(i.amount);rt.append(v);if(i.payer===me.id){const x=document.createElement('button');x.className='x';x.textContent='×';x.title='Apagar';x.onclick=()=>deleteExpense(i.id);rt.append(x)}r.append(l,rt);L.append(r)});
  L.style.display=cur.length?'':'none';
 }
-async function deleteExpense(id){if(!confirm('Queres apagar esta despesa?'))return;const {error}=await supabase.from('expenses').delete().eq('id',id);if(error)status('Não foi possível apagar: '+error.message,true)}
+async function deleteExpense(id){if(!confirm('Queres apagar esta despesa?'))return;const {error}=await sbClient.from('expenses').delete().eq('id',id);if(error)status('Não foi possível apagar: '+error.message,true)}
 function shift(n){const [y,m]=month.split('-').map(Number),d=new Date(y,m-1+n,1);month=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');render()}
 window.saveConfigNow=function(){const out=document.querySelector('#configmsg');try{out.textContent='Botão acionado. A validar os dados…';out.classList.remove('error');const url=document.querySelector('#sburl').value.trim().replace(/\/$/,''),key=document.querySelector('#sbkey').value.trim();if(!url||!key){out.textContent='Preenche o URL do projeto e a chave pública.';out.classList.add('error');return}if(!/^https:\/\//i.test(url)){out.textContent='O URL deve começar por https://';out.classList.add('error');return}localStorage.setItem('despesas_sb_url',url);localStorage.setItem('despesas_sb_key',key);out.textContent='Configuração guardada. A abrir a aplicação…';connect().catch(e=>{out.textContent='Erro ao ligar: '+(e.message||e);out.classList.add('error')});}catch(e){out.textContent='Erro ao guardar no navegador: '+(e.message||e);out.classList.add('error');console.error(e)}};
-$('#signin').onclick=async()=>{const {error}=await supabase.auth.signInWithPassword({email:$('#email').value.trim(),password:$('#password').value});message('#authmsg',error?error.message:'A iniciar sessão…',!!error)};
-$('#signup').onclick=async()=>{const {data,error}=await supabase.auth.signUp({email:$('#email').value.trim(),password:$('#password').value});message('#authmsg',error?error.message:(data.session?'Conta criada.':'Conta criada. Confirma o email antes de iniciar sessão.'),!!error)};
-$('#createhome').onclick=async()=>{const {data,error}=await supabase.rpc('create_household');if(error){message('#homemsg','Erro: '+error.message,true);return}householdId=data;await loadHousehold()};
-$('#joinhome').onclick=async()=>{const code=$('#invite').value.trim().toUpperCase();if(!code)return;const {data,error}=await supabase.rpc('join_household',{p_code:code});if(error){message('#homemsg','Não foi possível entrar: '+error.message,true);return}householdId=data;await loadHousehold()};
-$('#add').onclick=async()=>{const description=$('#d').value.trim(),amount=Number($('#a').value);if(!description||!(amount>0)){status('Indica uma descrição e um valor válido.',true);return}const today=new Date(),date=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');const row={household_id:householdId,description,amount:Math.round(amount*100)/100,category:$('#c').value,shared:$('#s').checked,payer:me.id,date};const {error}=await supabase.from('expenses').insert(row);if(error){status('Não foi possível adicionar: '+error.message,true);return}$('#d').value='';$('#a').value='';status('Despesa adicionada. A sincronizar…')};
+$('#signin').onclick=async()=>{const {error}=await sbClient.auth.signInWithPassword({email:$('#email').value.trim(),password:$('#password').value});message('#authmsg',error?error.message:'A iniciar sessão…',!!error)};
+$('#signup').onclick=async()=>{const {data,error}=await sbClient.auth.signUp({email:$('#email').value.trim(),password:$('#password').value});message('#authmsg',error?error.message:(data.session?'Conta criada.':'Conta criada. Confirma o email antes de iniciar sessão.'),!!error)};
+$('#createhome').onclick=async()=>{const {data,error}=await sbClient.rpc('create_household');if(error){message('#homemsg','Erro: '+error.message,true);return}householdId=data;await loadHousehold()};
+$('#joinhome').onclick=async()=>{const code=$('#invite').value.trim().toUpperCase();if(!code)return;const {data,error}=await sbClient.rpc('join_household',{p_code:code});if(error){message('#homemsg','Não foi possível entrar: '+error.message,true);return}householdId=data;await loadHousehold()};
+$('#add').onclick=async()=>{const description=$('#d').value.trim(),amount=Number($('#a').value);if(!description||!(amount>0)){status('Indica uma descrição e um valor válido.',true);return}const today=new Date(),date=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');const row={household_id:householdId,description,amount:Math.round(amount*100)/100,category:$('#c').value,shared:$('#s').checked,payer:me.id,date};const {error}=await sbClient.from('expenses').insert(row);if(error){status('Não foi possível adicionar: '+error.message,true);return}$('#d').value='';$('#a').value='';status('Despesa adicionada. A sincronizar…')};
 $('#prev').onclick=()=>shift(-1);$('#next').onclick=()=>shift(1);
-$('#logout').onclick=()=>supabase.auth.signOut();
+$('#logout').onclick=()=>sbClient.auth.signOut();
 $('#copycode').onclick=async()=>{try{await navigator.clipboard.writeText(inviteCode);status('Código copiado.')}catch(e){status('Código de convite: '+inviteCode)}};
 setConfigFields();connect().catch(e=>{show('#config');message('#authmsg',e.message,true)});
 </script>
