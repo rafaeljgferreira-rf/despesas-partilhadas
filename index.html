@@ -72,6 +72,7 @@ h2{font-size:17px;letter-spacing:-.2px;margin:0 0 15px}.add-fields{display:grid;
 .yearbarbtn[aria-pressed="true"] .bar-label{color:var(--ac);font-weight:800}
 .bar-detail{background:#f3f8f4;border-radius:10px;padding:10px 12px;text-align:center;font-size:13px;min-height:40px}
 @media(max-width:380px){.yearbars{gap:1px}.yearbarbtn{font-size:9px}.chart-summary{gap:8px}.chart-summary>div{padding:10px}}
+ .settlement-card h2{margin-bottom:6px}.settle-controls{display:flex;gap:8px;margin:8px 0}.settle-controls input{min-width:0;flex:1}.settle-controls button{flex:1;font-size:13px;line-height:1.2;padding:9px}.settle-label{font-size:13px;font-weight:700;display:block;margin-top:14px}.settle-history-title{display:block;font-size:13px;margin-top:15px}.settle-history-item{display:flex;align-items:center;justify-content:space-between;gap:8px;border-top:1px solid var(--bd);padding:9px 0;font-size:13px}.settle-history-item button{min-height:32px;padding:4px 8px}.settle-history-item .mut{display:block}.settle-controls button:disabled{opacity:.55}
 </style>
 </head>
 <body>
@@ -131,6 +132,16 @@ h2{font-size:17px;letter-spacing:-.2px;margin:0 0 15px}.add-fields{display:grid;
     </div>
     <div id="bal" class="bal balance-line"></div>
   </div>
+  <section class="card settlement-card" aria-labelledby="settletitle">
+    <h2 id="settletitle">Acertar contas</h2>
+    <p class="mut" id="settlehint">Os pagamentos entre vocês aparecem aqui, sem contar como novas despesas.</p>
+    <div id="settleaction" class="hidden">
+      <label for="settleamount" class="settle-label">Quanto vais pagar (€)</label>
+      <div class="settle-controls"><input id="settleamount" type="number" inputmode="decimal" min="0.01" step="0.01" placeholder="0,00"><button id="settlepay" type="button">Registar pagamento</button></div>
+      <small>Regista o pagamento depois de o fazeres à outra pessoa.</small>
+    </div>
+    <div id="settlehistory" class="hidden"><strong class="settle-history-title">Pagamentos deste mês</strong><div id="settlelist"></div></div>
+  </section>
   <div class="card add-card">
      <h2>Nova despesa</h2>
      <div class="add-fields">
@@ -190,7 +201,7 @@ h2{font-size:17px;letter-spacing:-.2px;margin:0 0 15px}.add-fields{display:grid;
 <script>
 const $=s=>document.querySelector(s), fmt=n=>Number(n||0).toLocaleString('pt-PT',{style:'currency',currency:'EUR'});
 const MES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
-let sbClient=null, session=null, me=null, householdId=null, inviteCode='', items=[], members=[], channel=null;
+let sbClient=null, session=null, me=null, householdId=null, inviteCode='', items=[], members=[], settlements=[], settlementsReady=false, channel=null;
 const now=new Date();let month=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
 let activeTab='expenses', chartPeriod='month', selectedBarMonth=null;
 
@@ -208,7 +219,7 @@ async function connect(){
  if(s){session=s;await afterLogin()}else{show('#auth');show('#household',false);show('#app',false)}
  sbClient.auth.onAuthStateChange((_event,s)=>{setTimeout(async()=>{session=s;if(s){await afterLogin()}else{resetApp();show('#auth');show('#household',false);show('#app',false)}},0)});
 }
-function resetApp(){if(channel)sbClient.removeChannel(channel);channel=null;me=null;householdId=null;items=[];members=[]}
+function resetApp(){if(channel)sbClient.removeChannel(channel);channel=null;me=null;householdId=null;items=[];members=[];settlements=[];settlementsReady=false}
 async function afterLogin(){
  me=session.user;$('#who').textContent=me.email||'Utilizador';show('#auth',false);
  const {data:membership,error}=await sbClient.from('household_members').select('household_id').eq('user_id',me.id).limit(1).maybeSingle();
@@ -228,7 +239,13 @@ async function loadHousehold(){
 async function loadExpenses(){
  const {data,error}=await sbClient.from('expenses').select('*').eq('household_id',householdId).order('date',{ascending:false});
  if(error){status('Erro ao carregar despesas: '+error.message,true);return}
- items=data||[];render();status('Ligado · as alterações são sincronizadas automaticamente.');
+ items=data||[];
+ const {data:paidRows,error:payError}=await sbClient.from('settlements').select('*').eq('household_id',householdId).order('created_at',{ascending:false});
+ settlementsReady=!payError;
+ settlements=paidRows||[];
+ render();
+ if(payError)status('Despesas carregadas. Para ativar os pagamentos, executa o ficheiro SQL de configuração no Supabase.',true);
+ else status('Ligado · as alterações são sincronizadas automaticamente.');
 }
 function subscribe(){
  if(channel)sbClient.removeChannel(channel);
@@ -237,7 +254,7 @@ function subscribe(){
    if(payload.eventType==='UPDATE')items=items.map(x=>x.id===payload.new.id?payload.new:x);
    if(payload.eventType==='DELETE')items=items.filter(x=>x.id!==payload.old.id);
    items.sort((a,b)=>(b.date||'').localeCompare(a.date||''));render();status('Atualizado agora · sincronização ativa.');
- }).subscribe(s=>{if(s==='CHANNEL_ERROR'||s==='TIMED_OUT')status('A ligação em tempo real foi interrompida. A tentar restabelecer…',true)});
+ }).on('postgres_changes',{event:'*',schema:'public',table:'settlements',filter:'household_id=eq.'+householdId},()=>{loadExpenses()}).subscribe(s=>{if(s==='CHANNEL_ERROR'||s==='TIMED_OUT')status('A ligação em tempo real foi interrompida. A tentar restabelecer…',true)});
 }
 function render(){
  const [y,m]=month.split('-').map(Number);const annualNav=activeTab==='charts'&&chartPeriod==='year';
@@ -249,12 +266,15 @@ function render(){
  $('#tot').textContent=fmt(total);$('#sh').textContent=fmt(shTotal);
  const paid={};shared.forEach(i=>paid[i.payer]=(paid[i.payer]||0)+Number(i.amount));
  const people=members.length?members:[me.id], fair=people.length?shTotal/people.length:0;
- const net=(paid[me.id]||0)-fair, otherCount=Math.max(0,people.length-1);
+ const curPayments=settlements.filter(p=>p.period===month+'-01');
+ const transferCents=curPayments.reduce((sum,p)=>sum+(p.sender===me.id?Math.round(Number(p.amount)*100):0)-(p.recipient===me.id?Math.round(Number(p.amount)*100):0),0);
+ const net=Math.round(((paid[me.id]||0)-fair)*100+transferCents)/100, otherCount=Math.max(0,people.length-1);
  const b=$('#bal');b.className='bal';
- if(!otherCount||!shTotal){b.textContent=!otherCount?'À espera da outra pessoa entrar no espaço.':'Sem despesas partilhadas este mês.';b.className='mut'}
+ if(!otherCount||(!shTotal&&!curPayments.length)){b.textContent=!otherCount?'À espera da outra pessoa entrar no espaço.':'Sem despesas partilhadas este mês.';b.className='mut'}
  else if(Math.abs(net)<0.005)b.textContent='Estão quites.';
  else if(net>0)b.textContent='A outra pessoa deve-te '+fmt(net)+'.';
  else{b.textContent='Deves '+fmt(-net)+' à outra pessoa.';b.className='bal neg'}
+ renderSettlements(net,curPayments,otherCount);
  const by=Object.create(null);cur.forEach(i=>{const category=categoryForExpense(i);by[category]=(by[category]||0)+Number(i.amount)});
  const cats=$('#cats');cats.textContent='';const ent=Object.entries(by).sort((a,b)=>b[1]-a[1]);
  if(!ent.length){cats.textContent='Sem despesas neste mês.';cats.className='card mut'}else{cats.className='card';ent.forEach(([k,v])=>{const d=document.createElement('div');d.style.marginBottom='8px';const r=document.createElement('div');r.className='row sp';const a=document.createElement('span');a.textContent=k;const z=document.createElement('span');z.textContent=fmt(v);r.append(a,z);const bar=document.createElement('div');bar.className='bar';bar.style.width=Math.max(4,v/total*100)+'%';d.append(r,bar);cats.append(d)})}
@@ -263,6 +283,53 @@ function render(){
  L.style.display=cur.length?'':'none';
  renderCharts();
 }
+function renderSettlements(net,curPayments,otherCount){
+ const hint=$('#settlehint'), input=$('#settleamount'), history=$('#settlehistory'), list=$('#settlelist');
+ show('#settleaction',settlementsReady&&otherCount>0&&net<-.005);
+ show('#settlehistory',settlementsReady&&curPayments.length>0);
+ if(!settlementsReady){hint.textContent='Os pagamentos ainda não estão configurados no Supabase.';return}
+ if(!otherCount)hint.textContent='Quando a outra pessoa entrar, poderão registar aqui os pagamentos.';
+ else if(net<-.005)hint.textContent='Podes registar um pagamento até '+fmt(-net)+' à outra pessoa.';
+ else if(net>.005)hint.textContent='Tens '+fmt(net)+' a receber. A outra pessoa pode registar aqui o pagamento.';
+ else hint.textContent='Contas acertadas para este mês.';
+ if(net<-.005&&document.activeElement!==input)input.value=(Math.round(-net*100)/100).toFixed(2);
+ list.replaceChildren();
+ for(const p of curPayments){
+  const item=document.createElement('div');item.className='settle-history-item';
+  const left=document.createElement('div');const title=document.createElement('strong');title.textContent=(p.sender===me.id?'Pagaste ':'Recebeste ')+fmt(p.amount);
+  const date=document.createElement('span');date.className='mut';date.textContent=new Date(p.created_at).toLocaleDateString('pt-PT');left.append(title,date);item.append(left);
+  if(p.sender===me.id){const undo=document.createElement('button');undo.type='button';undo.className='g';undo.textContent='Anular';undo.onclick=()=>undoSettlement(p.id);item.append(undo)}
+  list.append(item);
+ }
+}
+async function registerSettlement(){
+ if(!settlementsReady||!me||members.length!==2)return;
+ const btn=$('#settlepay');btn.disabled=true;
+ try{
+  const {data:expenses,error:eError}=await sbClient.from('expenses').select('amount,payer,shared,date').eq('household_id',householdId);
+  const {data:payments,error:pError}=await sbClient.from('settlements').select('*').eq('household_id',householdId);
+  if(eError||pError)throw eError||pError;
+  const shared=(expenses||[]).filter(e=>e.shared&&(e.date||'').slice(0,7)===month);
+  const sharedTotal=shared.reduce((v,e)=>v+Math.round(Number(e.amount)*100),0);
+  const mine=shared.reduce((v,e)=>v+(e.payer===me.id?Math.round(Number(e.amount)*100):0),0);
+  const transfers=(payments||[]).filter(p=>p.period===month+'-01').reduce((v,p)=>v+(p.sender===me.id?Math.round(Number(p.amount)*100):0)-(p.recipient===me.id?Math.round(Number(p.amount)*100):0),0);
+  const debt=Math.round(sharedTotal/2)-mine-transfers;
+  const amount=Math.round(Number($('#settleamount').value.replace(',','.'))*100);
+  if(!(amount>0)||amount>debt){status('Indica um valor válido, até '+fmt(Math.max(0,debt)/100)+'.',true);return}
+  const recipient=members.find(id=>id!==me.id);
+  if(!recipient||!confirm('Confirmas que pagaste '+fmt(amount/100)+' à outra pessoa? Este botão regista o pagamento, não transfere dinheiro.'))return;
+  const {error}=await sbClient.from('settlements').insert({household_id:householdId,period:month+'-01',sender:me.id,recipient,amount:amount/100});
+  if(error)throw error;
+  await loadExpenses();status('Pagamento registado. O saldo foi atualizado.');
+ }catch(error){status('Não foi possível registar o pagamento: '+error.message,true)}finally{btn.disabled=false}
+}
+async function undoSettlement(id){
+ if(!confirm('Anular este registo de pagamento? O saldo voltará a ser calculado.'))return;
+ const {error}=await sbClient.from('settlements').delete().eq('id',id).eq('sender',me.id);
+ if(error){status('Não foi possível anular: '+error.message,true);return}
+ await loadExpenses();status('Pagamento anulado.');
+}
+$('#settlepay').onclick=registerSettlement;
 function renderCharts(){
  const isAnnual=chartPeriod==='year',year=month.slice(0,4);
  const chosen=items.filter(i=>isAnnual?(i.date||'').slice(0,4)===year:(i.date||'').slice(0,7)===month);
