@@ -55,6 +55,23 @@ h2{font-size:17px;letter-spacing:-.2px;margin:0 0 15px}.add-fields{display:grid;
 .share-check{display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:550;padding:7px 0}
 .share-check input{width:20px;height:20px;accent-color:var(--ac);margin:0;flex:none}
 .account-email{font-size:16px;font-weight:650;overflow-wrap:anywhere}
+/* Seletor mensal/anual e evolução dos 12 meses */
+.period-toggle{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:5px;background:#e8efea;border-radius:13px;margin-bottom:14px}
+.period-toggle button{min-height:43px;padding:8px 12px;background:transparent;color:#56675c;border:1px solid transparent;border-radius:10px}
+.period-toggle button[aria-pressed="true"]{background:var(--ac);color:#fff}
+.chart-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.chart-summary>div{background:#f3f8f4;padding:13px;border-radius:12px;min-width:0}
+.chart-summary strong{display:block;font-size:clamp(19px,5vw,25px);letter-spacing:-.4px;overflow-wrap:anywhere}
+.chart-summary .mut{display:block;font-size:12px;margin-bottom:4px}
+.chart-intro{margin:7px 0 0}
+.yearbars{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:3px;margin:14px 0 12px}
+.yearbarbtn{padding:0!important;border:0!important;background:transparent!important;color:var(--mut)!important;min-height:0;width:100%;border-radius:5px;display:flex;flex-direction:column;align-items:center;gap:7px;font-size:10px;line-height:1.2}
+.yearbarbtn .bar-track{height:142px;width:100%;display:flex;align-items:flex-end;justify-content:center}
+.yearbarbtn .bar-fill{width:72%;min-width:9px;min-height:4px;background:#55ac82;border-radius:5px 5px 2px 2px;transition:height .18s ease}
+.yearbarbtn[aria-pressed="true"] .bar-fill{background:var(--ac)}
+.yearbarbtn[aria-pressed="true"] .bar-label{color:var(--ac);font-weight:800}
+.bar-detail{background:#f3f8f4;border-radius:10px;padding:10px 12px;text-align:center;font-size:13px;min-height:40px}
+@media(max-width:380px){.yearbars{gap:1px}.yearbarbtn{font-size:9px}.chart-summary{gap:8px}.chart-summary>div{padding:10px}}
 </style>
 </head>
 <body>
@@ -95,7 +112,7 @@ h2{font-size:17px;letter-spacing:-.2px;margin:0 0 15px}.add-fields{display:grid;
 </section>
 
 <main id="app" class="hidden">
-  <div class="card month-card">
+  <div class="card month-card" id="monthcard">
     <div class="row sp">
       <button class="g month-arrow" id="prev" aria-label="Mês anterior">‹</button><strong id="mt"></strong><button class="g month-arrow" id="next" aria-label="Mês seguinte">›</button>
     </div>
@@ -132,9 +149,27 @@ h2{font-size:17px;letter-spacing:-.2px;margin:0 0 15px}.add-fields{display:grid;
    <div class="card" id="list"></div>
   </section>
   <section id="chartview" class="hidden">
-    <div class="card"><strong>Despesas por categoria</strong><p class="mut">Todas as despesas registadas no mês selecionado, incluindo as não partilhadas.</p>
-      <div id="pie" class="pie" role="img" aria-label="Distribuição das despesas por categoria"><div class="pie-hole"><span class="mut">Total do mês</span><strong id="pietotal">0 €</strong></div></div>
+    <div class="period-toggle" role="group" aria-label="Período dos gráficos">
+      <button id="chartmonthly" type="button" aria-pressed="true">Mensal</button>
+      <button id="chartannual" type="button" aria-pressed="false">Anual</button>
+    </div>
+    <div class="card totals-card">
+      <div class="chart-summary">
+        <div><span id="charttotlabel" class="mut">Total do mês</span><strong id="charttotal">0 €</strong></div>
+        <div><span id="chartsharedlabel" class="mut">Partilhado no mês</span><strong id="chartshared">0 €</strong></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Despesas por categoria</h2>
+      <p class="mut chart-intro" id="pieintro">Distribuição dos gastos deste mês, incluindo despesas não partilhadas.</p>
+      <div id="pie" class="pie" role="img" aria-label="Distribuição das despesas por categoria"><div class="pie-hole"><span class="mut" id="pielabel">Total do mês</span><strong id="pietotal">0 €</strong></div></div>
       <div id="pielegend"></div>
+    </div>
+    <div class="card hidden" id="yeartrend">
+      <h2>Evolução mensal</h2>
+      <p class="mut chart-intro">Compara os gastos dos 12 meses. Seleciona uma barra para consultar o valor.</p>
+      <div class="yearbars" id="yearbars" role="group" aria-label="Despesas por mês"></div>
+      <div class="bar-detail" id="bardetail" aria-live="polite"></div>
     </div>
   </section>
   <div class="notice" id="status">A ligar à sincronização…</div>
@@ -157,6 +192,7 @@ const $=s=>document.querySelector(s), fmt=n=>Number(n||0).toLocaleString('pt-PT'
 const MES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 let sbClient=null, session=null, me=null, householdId=null, inviteCode='', items=[], members=[], channel=null;
 const now=new Date();let month=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+let activeTab='expenses', chartPeriod='month', selectedBarMonth=null;
 
 function show(id,on=true){$(id).classList.toggle('hidden',!on)}
 function message(id,msg,isError=false){$(id).textContent=msg;$(id).classList.toggle('error',isError)}
@@ -204,7 +240,10 @@ function subscribe(){
  }).subscribe(s=>{if(s==='CHANNEL_ERROR'||s==='TIMED_OUT')status('A ligação em tempo real foi interrompida. A tentar restabelecer…',true)});
 }
 function render(){
- const [y,m]=month.split('-').map(Number);$('#mt').textContent=MES[m-1]+' '+y;
+ const [y,m]=month.split('-').map(Number);const annualNav=activeTab==='charts'&&chartPeriod==='year';
+ $('#mt').textContent=annualNav?String(y):MES[m-1]+' '+y;
+ $('#prev').setAttribute('aria-label',annualNav?'Ano anterior':'Mês anterior');
+ $('#next').setAttribute('aria-label',annualNav?'Ano seguinte':'Mês seguinte');
  const cur=items.filter(i=>(i.date||'').slice(0,7)===month);
  const total=cur.reduce((s,i)=>s+Number(i.amount),0), shared=cur.filter(i=>i.shared), shTotal=shared.reduce((s,i)=>s+Number(i.amount),0);
  $('#tot').textContent=fmt(total);$('#sh').textContent=fmt(shTotal);
@@ -217,12 +256,49 @@ function render(){
  else if(net>0)b.textContent='A outra pessoa deve-te '+fmt(net)+'.';
  else{b.textContent='Deves '+fmt(-net)+' à outra pessoa.';b.className='bal neg'}
  const by={};cur.forEach(i=>by[i.category||'Outros']=(by[i.category||'Outros']||0)+Number(i.amount));
- renderPie(by,total);
  const cats=$('#cats');cats.textContent='';const ent=Object.entries(by).sort((a,b)=>b[1]-a[1]);
  if(!ent.length){cats.textContent='Sem despesas neste mês.';cats.className='card mut'}else{cats.className='card';ent.forEach(([k,v])=>{const d=document.createElement('div');d.style.marginBottom='8px';const r=document.createElement('div');r.className='row sp';const a=document.createElement('span');a.textContent=k;const z=document.createElement('span');z.textContent=fmt(v);r.append(a,z);const bar=document.createElement('div');bar.className='bar';bar.style.width=Math.max(4,v/total*100)+'%';d.append(r,bar);cats.append(d)})}
  const L=$('#list');L.textContent='';
  cur.forEach(i=>{const r=document.createElement('div');r.className='it row sp';const l=document.createElement('div');l.className='expense-info';const t=document.createElement('div');t.textContent=i.description;t.className='expense-title';const s=document.createElement('div');s.className='mut';s.textContent=(i.date||'').slice(8,10)+'/'+(i.date||'').slice(5,7)+' · '+i.category+' · '+(i.payer===me.id?'pago por ti':'pago pela outra pessoa')+(i.shared?' · partilhada':'');l.append(t,s);const rt=document.createElement('div');rt.className='row expense-actions';const v=document.createElement('strong');v.textContent=fmt(i.amount);rt.append(v);if(i.payer===me.id){const x=document.createElement('button');x.className='x';x.textContent='×';x.title='Apagar despesa';x.setAttribute('aria-label','Apagar '+i.description);x.onclick=()=>deleteExpense(i.id);rt.append(x)}r.append(l,rt);L.append(r)});
  L.style.display=cur.length?'':'none';
+ renderCharts();
+}
+function renderCharts(){
+ const isAnnual=chartPeriod==='year',year=month.slice(0,4);
+ const chosen=items.filter(i=>isAnnual?(i.date||'').slice(0,4)===year:(i.date||'').slice(0,7)===month);
+ const total=chosen.reduce((sum,i)=>sum+Number(i.amount||0),0);
+ const shared=chosen.reduce((sum,i)=>sum+(i.shared?Number(i.amount||0):0),0);
+ $('#chartmonthly').setAttribute('aria-pressed',String(!isAnnual));
+ $('#chartannual').setAttribute('aria-pressed',String(isAnnual));
+ $('#charttotlabel').textContent=isAnnual?'Total do ano':'Total do mês';
+ $('#chartsharedlabel').textContent=isAnnual?'Partilhado no ano':'Partilhado no mês';
+ $('#pielabel').textContent=isAnnual?'Total do ano':'Total do mês';
+ $('#pieintro').textContent=isAnnual?'Distribuição dos gastos de '+year+', incluindo despesas não partilhadas.':'Distribuição dos gastos deste mês, incluindo despesas não partilhadas.';
+ $('#charttotal').textContent=fmt(total);$('#chartshared').textContent=fmt(shared);
+ const by={};chosen.forEach(i=>{const category=i.category||'Outros';by[category]=(by[category]||0)+Number(i.amount||0)});
+ renderPie(by,total);
+ show('#yeartrend',isAnnual);
+ if(isAnnual)renderYearBars(chosen,Number(year));
+}
+function renderYearBars(yearItems,year){
+ const amounts=Array(12).fill(0);
+ yearItems.forEach(i=>{const n=Number((i.date||'').slice(5,7));if(n>=1&&n<=12)amounts[n-1]+=Number(i.amount||0)});
+ const max=Math.max(0,...amounts),target=$('#yearbars');target.replaceChildren();
+ if(selectedBarMonth===null)selectedBarMonth=amounts.indexOf(max);
+ const short=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+ amounts.forEach((value,index)=>{
+  const btn=document.createElement('button');btn.type='button';btn.className='yearbarbtn';
+  btn.setAttribute('aria-label',MES[index]+' '+year+': '+fmt(value));
+  btn.setAttribute('aria-pressed',String(index===selectedBarMonth));
+  const track=document.createElement('span');track.className='bar-track';
+  const fill=document.createElement('span');fill.className='bar-fill';
+  fill.style.height=(max>0&&value>0?Math.max(4,value/max*100):2)+'%';
+  track.append(fill);
+  const label=document.createElement('span');label.className='bar-label';label.textContent=short[index];
+  btn.append(track,label);btn.onclick=()=>{selectedBarMonth=index;renderYearBars(yearItems,year)};
+  target.append(btn);
+ });
+ $('#bardetail').textContent=max>0?MES[selectedBarMonth]+' '+year+' · '+fmt(amounts[selectedBarMonth]):'Ainda não existem despesas registadas em '+year+'.';
 }
 const pieColors=['#1f7a5c','#e3a347','#5875b9','#b56b9b','#d66e57','#7b8c51','#8c7bba','#50a5a5'];
 function renderPie(by,total){
@@ -249,15 +325,20 @@ function categoryFromDescription(description){
  return 'Outros';
 }
 function selectTab(which){
+ activeTab=which;
+ show('#monthcard',which==='expenses'||which==='charts');
  const tabs={expenses:'expenseview',charts:'chartview',share:'shareview',account:'accountview'};
  for(const [name,view] of Object.entries(tabs)){
   show('#'+view,name===which);
   $('#tab'+name).setAttribute('aria-selected',String(name===which));
  }
+ render();
 }
 for(const name of ['expenses','charts','share','account'])$('#tab'+name).onclick=()=>selectTab(name);
+$('#chartmonthly').onclick=()=>{chartPeriod='month';render()};
+$('#chartannual').onclick=()=>{chartPeriod='year';selectedBarMonth=null;render()};
 async function deleteExpense(id){if(!confirm('Queres apagar esta despesa?'))return;const {error}=await sbClient.from('expenses').delete().eq('id',id);if(error)status('Não foi possível apagar: '+error.message,true)}
-function shift(n){const [y,m]=month.split('-').map(Number),d=new Date(y,m-1+n,1);month=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');render()}
+function shift(n){const [y,m]=month.split('-').map(Number),annual=activeTab==='charts'&&chartPeriod==='year';const d=new Date(y+(annual?n:0),m-1+(annual?0:n),1);month=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');selectedBarMonth=null;render()}
 window.saveConfigNow=function(){const out=document.querySelector('#configmsg');try{out.textContent='Botão acionado. A validar os dados…';out.classList.remove('error');const url=document.querySelector('#sburl').value.trim().replace(/\/$/,''),key=document.querySelector('#sbkey').value.trim();if(!url||!key){out.textContent='Preenche o URL do projeto e a chave pública.';out.classList.add('error');return}if(!/^https:\/\//i.test(url)){out.textContent='O URL deve começar por https://';out.classList.add('error');return}localStorage.setItem('despesas_sb_url',url);localStorage.setItem('despesas_sb_key',key);out.textContent='Configuração guardada. A abrir a aplicação…';connect().catch(e=>{out.textContent='Erro ao ligar: '+(e.message||e);out.classList.add('error')});}catch(e){out.textContent='Erro ao guardar no navegador: '+(e.message||e);out.classList.add('error');console.error(e)}};
 $('#signin').onclick=async()=>{const {error}=await sbClient.auth.signInWithPassword({email:$('#email').value.trim(),password:$('#password').value});message('#authmsg',error?error.message:'A iniciar sessão…',!!error)};
 $('#signup').onclick=async()=>{const {data,error}=await sbClient.auth.signUp({email:$('#email').value.trim(),password:$('#password').value});message('#authmsg',error?error.message:(data.session?'Conta criada.':'Conta criada. Confirma o email antes de iniciar sessão.'),!!error)};
