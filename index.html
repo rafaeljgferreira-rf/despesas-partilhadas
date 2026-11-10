@@ -1,4 +1,3 @@
-```
 <!DOCTYPE html>
 <html lang="pt-PT">
 <head>
@@ -73,10 +72,19 @@ h2{font-size:17px;letter-spacing:-.2px;margin:0 0 15px}.add-fields{display:grid;
 .bar-detail{background:#f3f8f4;border-radius:10px;padding:10px 12px;text-align:center;font-size:13px;min-height:40px}
 @media(max-width:380px){.yearbars{gap:1px}.yearbarbtn{font-size:9px}.chart-summary{gap:8px}.chart-summary>div{padding:10px}}
  .settlement-card h2{margin-bottom:6px}.settle-controls{display:flex;gap:8px;margin:8px 0}.settle-controls input{min-width:0;flex:1}.settle-controls button{flex:1;font-size:13px;line-height:1.2;padding:9px}.settle-label{font-size:13px;font-weight:700;display:block;margin-top:14px}.settle-history-title{display:block;font-size:13px;margin-top:15px}.settle-history-item{display:flex;align-items:center;justify-content:space-between;gap:8px;border-top:1px solid var(--bd);padding:9px 0;font-size:13px}.settle-history-item button{min-height:32px;padding:4px 8px}.settle-history-item .mut{display:block}.settle-controls button:disabled{opacity:.55}
+/* Cabeçalho compacto com símbolo da casa */
+.pagehead{margin:2px 0 14px;justify-content:flex-start}
+.brand-home{display:flex;align-items:center;gap:10px;font-size:19px;font-weight:800;color:var(--ac);letter-spacing:-.3px}
+.brand-home svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex:none}
 </style>
 </head>
 <body>
-<header class="pagehead"><div><div class="eyebrow">A nossa casa</div><h1>Despesas partilhadas</h1><p class="mut" style="margin:0">Tudo organizado, num só lugar.</p></div><div class="headicon" aria-hidden="true">€</div></header>
+<header class="pagehead" aria-label="A nossa casa">
+  <div class="brand-home">
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M9 21v-8h6v8"/></svg>
+    <span>A nossa casa</span>
+  </div>
+</header>
 
 <section id="config" class="card">
   <strong>Configuração da sincronização</strong>
@@ -425,4 +433,3 @@ setConfigFields();connect().catch(e=>{show('#config');message('#authmsg',e.messa
 </script>
 </body>
 </html>
-```
