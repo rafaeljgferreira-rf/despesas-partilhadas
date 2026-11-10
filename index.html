@@ -48,6 +48,13 @@ h2{font-size:17px;letter-spacing:-.2px;margin:0 0 15px}.add-fields{display:grid;
 .expense-actions{flex-shrink:0;gap:5px}.expense-actions strong{white-space:nowrap;font-size:14px}.x{min-height:36px;min-width:34px;border-radius:9px}
 .notice{border-radius:12px}.pie{width:min(250px,70vw)}
 @media(max-width:380px){body{padding:14px 11px 40px}.card{padding:14px}.pagehead h1{font-size:22px}.totals-grid{gap:7px}.totals-grid>div+div{padding-left:9px}.expense-actions strong{font-size:13px}}
+/* Navegação compacta para telemóvel */
+.tabnav{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:3px;padding:4px}
+.tabnav button{min-width:0;padding:8px 3px;font-size:12px;display:flex;align-items:center;justify-content:center;gap:4px;flex-direction:column;min-height:54px}
+.tabnav svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.share-check{display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:550;padding:7px 0}
+.share-check input{width:20px;height:20px;accent-color:var(--ac);margin:0;flex:none}
+.account-email{font-size:16px;font-weight:650;overflow-wrap:anywhere}
 </style>
 </head>
 <body>
@@ -88,16 +95,17 @@ h2{font-size:17px;letter-spacing:-.2px;margin:0 0 15px}.add-fields{display:grid;
 </section>
 
 <main id="app" class="hidden">
-  <div class="card row sp account-card">
-    <div><strong id="who">Conta</strong><div class="mut" id="spaceinfo">Espaço partilhado</div></div>
-    <button class="g" id="logout">Sair</button>
-  </div>
   <div class="card month-card">
     <div class="row sp">
       <button class="g month-arrow" id="prev" aria-label="Mês anterior">‹</button><strong id="mt"></strong><button class="g month-arrow" id="next" aria-label="Mês seguinte">›</button>
     </div>
   </div>
-  <nav class="tabnav" aria-label="Secções"><button id="tabexpenses" type="button" aria-selected="true">Despesas</button><button id="tabcharts" type="button" aria-selected="false">Gráficos</button></nav>
+  <nav class="tabnav" aria-label="Secções">
+    <button id="tabexpenses" type="button" aria-selected="true">Despesas</button>
+    <button id="tabcharts" type="button" aria-selected="false">Gráficos</button>
+    <button id="tabshare" type="button" aria-selected="false" aria-label="Partilhar" title="Partilhar"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.7 10.6l6.6-4.2M8.7 13.4l6.6 4.2"/></svg><span>Partilhar</span></button>
+    <button id="tabaccount" type="button" aria-selected="false" aria-label="Conta" title="Conta"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M9 21v-8h6v8"/></svg><span>Conta</span></button>
+  </nav>
   <section id="expenseview">
   <div class="card totals-card">
     <div class="totals-grid">
@@ -113,9 +121,10 @@ h2{font-size:17px;letter-spacing:-.2px;margin:0 0 15px}.add-fields{display:grid;
        <input id="d" placeholder="Ex.: Compras no supermercado" maxlength="60" autocomplete="off">
        <label for="a">Valor (€)</label>
        <input id="a" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0,00">
+       <label class="share-check" for="s"><input type="checkbox" id="s" checked><span>Despesa partilhada</span></label>
        <button id="add" type="button"><span aria-hidden="true">＋</span> Adicionar despesa</button>
      </div>
-     <p class="mut helper">✓ A despesa é dividida igualmente entre os dois.</p>
+     <p class="mut helper">Com o visto ativo, a despesa é dividida igualmente.</p>
    </div>
    <div class="section-heading"><h2>Por categoria</h2></div>
    <div class="card" id="cats"></div>
@@ -129,11 +138,18 @@ h2{font-size:17px;letter-spacing:-.2px;margin:0 0 15px}.add-fields{display:grid;
     </div>
   </section>
   <div class="notice" id="status">A ligar à sincronização…</div>
-  <div class="card">
+  <section id="shareview" class="hidden"><div class="card">
     <strong>Convite para a outra pessoa</strong>
     <p class="mut">Partilha este código apenas com a pessoa que queres adicionar.</p>
     <div class="row"><strong id="code" style="letter-spacing:2px;font-size:20px"></strong><button class="g" id="copycode">Copiar</button></div>
-  </div>
+  </div></section>
+  <section id="accountview" class="hidden"><div class="card">
+    <strong>A minha conta</strong>
+    <p class="mut">Email com que iniciaste sessão:</p>
+    <p id="who" class="account-email">Conta</p>
+    <p id="spaceinfo" class="mut">Espaço partilhado</p>
+    <button class="g" id="logout" type="button">Terminar sessão</button>
+  </div></section>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -232,8 +248,14 @@ function categoryFromDescription(description){
  if(/farmacia|medico|hospital|dentista|saude|consulta|medicamento/.test(d))return 'Saúde';
  return 'Outros';
 }
-function selectTab(which){const charts=which==='charts';show('#expenseview',!charts);show('#chartview',charts);$('#tabexpenses').setAttribute('aria-selected',String(!charts));$('#tabcharts').setAttribute('aria-selected',String(charts))}
-$('#tabexpenses').onclick=()=>selectTab('expenses');$('#tabcharts').onclick=()=>selectTab('charts');
+function selectTab(which){
+ const tabs={expenses:'expenseview',charts:'chartview',share:'shareview',account:'accountview'};
+ for(const [name,view] of Object.entries(tabs)){
+  show('#'+view,name===which);
+  $('#tab'+name).setAttribute('aria-selected',String(name===which));
+ }
+}
+for(const name of ['expenses','charts','share','account'])$('#tab'+name).onclick=()=>selectTab(name);
 async function deleteExpense(id){if(!confirm('Queres apagar esta despesa?'))return;const {error}=await sbClient.from('expenses').delete().eq('id',id);if(error)status('Não foi possível apagar: '+error.message,true)}
 function shift(n){const [y,m]=month.split('-').map(Number),d=new Date(y,m-1+n,1);month=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');render()}
 window.saveConfigNow=function(){const out=document.querySelector('#configmsg');try{out.textContent='Botão acionado. A validar os dados…';out.classList.remove('error');const url=document.querySelector('#sburl').value.trim().replace(/\/$/,''),key=document.querySelector('#sbkey').value.trim();if(!url||!key){out.textContent='Preenche o URL do projeto e a chave pública.';out.classList.add('error');return}if(!/^https:\/\//i.test(url)){out.textContent='O URL deve começar por https://';out.classList.add('error');return}localStorage.setItem('despesas_sb_url',url);localStorage.setItem('despesas_sb_key',key);out.textContent='Configuração guardada. A abrir a aplicação…';connect().catch(e=>{out.textContent='Erro ao ligar: '+(e.message||e);out.classList.add('error')});}catch(e){out.textContent='Erro ao guardar no navegador: '+(e.message||e);out.classList.add('error');console.error(e)}};
@@ -241,7 +263,7 @@ $('#signin').onclick=async()=>{const {error}=await sbClient.auth.signInWithPassw
 $('#signup').onclick=async()=>{const {data,error}=await sbClient.auth.signUp({email:$('#email').value.trim(),password:$('#password').value});message('#authmsg',error?error.message:(data.session?'Conta criada.':'Conta criada. Confirma o email antes de iniciar sessão.'),!!error)};
 $('#createhome').onclick=async()=>{const {data,error}=await sbClient.rpc('create_household');if(error){message('#homemsg','Erro: '+error.message,true);return}householdId=data;await loadHousehold()};
 $('#joinhome').onclick=async()=>{const code=$('#invite').value.trim().toUpperCase();if(!code)return;const {data,error}=await sbClient.rpc('join_household',{p_code:code});if(error){message('#homemsg','Não foi possível entrar: '+error.message,true);return}householdId=data;await loadHousehold()};
-$('#add').onclick=async()=>{const description=$('#d').value.trim(),amount=Number($('#a').value);if(!description||!(amount>0)){status('Indica uma descrição e um valor válido.',true);return}const today=new Date(),date=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');const row={household_id:householdId,description,amount:Math.round(amount*100)/100,category:categoryFromDescription(description),shared:true,payer:me.id,date};const {error}=await sbClient.from('expenses').insert(row);if(error){status('Não foi possível adicionar: '+error.message,true);return}$('#d').value='';$('#a').value='';$('#d').focus();await loadExpenses();status('Despesa adicionada com sucesso ✓')};
+$('#add').onclick=async()=>{const description=$('#d').value.trim(),amount=Number($('#a').value);if(!description||!(amount>0)){status('Indica uma descrição e um valor válido.',true);return}const today=new Date(),date=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');const row={household_id:householdId,description,amount:Math.round(amount*100)/100,category:categoryFromDescription(description),shared:$('#s').checked,payer:me.id,date};const {error}=await sbClient.from('expenses').insert(row);if(error){status('Não foi possível adicionar: '+error.message,true);return}$('#d').value='';$('#a').value='';$('#s').checked=true;$('#d').focus();await loadExpenses();status('Despesa adicionada com sucesso ✓')};
 $('#prev').onclick=()=>shift(-1);$('#next').onclick=()=>shift(1);
 $('#logout').onclick=()=>sbClient.auth.signOut();
 $('#copycode').onclick=async()=>{try{await navigator.clipboard.writeText(inviteCode);status('Código copiado.')}catch(e){status('Código de convite: '+inviteCode)}};
