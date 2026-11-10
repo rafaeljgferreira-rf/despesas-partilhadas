@@ -255,11 +255,11 @@ function render(){
  else if(Math.abs(net)<0.005)b.textContent='Estão quites.';
  else if(net>0)b.textContent='A outra pessoa deve-te '+fmt(net)+'.';
  else{b.textContent='Deves '+fmt(-net)+' à outra pessoa.';b.className='bal neg'}
- const by={};cur.forEach(i=>by[i.category||'Outros']=(by[i.category||'Outros']||0)+Number(i.amount));
+ const by=Object.create(null);cur.forEach(i=>{const category=categoryForExpense(i);by[category]=(by[category]||0)+Number(i.amount)});
  const cats=$('#cats');cats.textContent='';const ent=Object.entries(by).sort((a,b)=>b[1]-a[1]);
  if(!ent.length){cats.textContent='Sem despesas neste mês.';cats.className='card mut'}else{cats.className='card';ent.forEach(([k,v])=>{const d=document.createElement('div');d.style.marginBottom='8px';const r=document.createElement('div');r.className='row sp';const a=document.createElement('span');a.textContent=k;const z=document.createElement('span');z.textContent=fmt(v);r.append(a,z);const bar=document.createElement('div');bar.className='bar';bar.style.width=Math.max(4,v/total*100)+'%';d.append(r,bar);cats.append(d)})}
  const L=$('#list');L.textContent='';
- cur.forEach(i=>{const r=document.createElement('div');r.className='it row sp';const l=document.createElement('div');l.className='expense-info';const t=document.createElement('div');t.textContent=i.description;t.className='expense-title';const s=document.createElement('div');s.className='mut';s.textContent=(i.date||'').slice(8,10)+'/'+(i.date||'').slice(5,7)+' · '+i.category+' · '+(i.payer===me.id?'pago por ti':'pago pela outra pessoa')+(i.shared?' · partilhada':'');l.append(t,s);const rt=document.createElement('div');rt.className='row expense-actions';const v=document.createElement('strong');v.textContent=fmt(i.amount);rt.append(v);if(i.payer===me.id){const x=document.createElement('button');x.className='x';x.textContent='×';x.title='Apagar despesa';x.setAttribute('aria-label','Apagar '+i.description);x.onclick=()=>deleteExpense(i.id);rt.append(x)}r.append(l,rt);L.append(r)});
+ cur.forEach(i=>{const r=document.createElement('div');r.className='it row sp';const l=document.createElement('div');l.className='expense-info';const t=document.createElement('div');t.textContent=i.description;t.className='expense-title';const s=document.createElement('div');s.className='mut';s.textContent=(i.date||'').slice(8,10)+'/'+(i.date||'').slice(5,7)+' · '+categoryForExpense(i)+' · '+(i.payer===me.id?'pago por ti':'pago pela outra pessoa')+(i.shared?' · partilhada':'');l.append(t,s);const rt=document.createElement('div');rt.className='row expense-actions';const v=document.createElement('strong');v.textContent=fmt(i.amount);rt.append(v);if(i.payer===me.id){const x=document.createElement('button');x.className='x';x.textContent='×';x.title='Apagar despesa';x.setAttribute('aria-label','Apagar '+i.description);x.onclick=()=>deleteExpense(i.id);rt.append(x)}r.append(l,rt);L.append(r)});
  L.style.display=cur.length?'':'none';
  renderCharts();
 }
@@ -275,7 +275,7 @@ function renderCharts(){
  $('#pielabel').textContent=isAnnual?'Total do ano':'Total do mês';
  $('#pieintro').textContent=isAnnual?'Distribuição dos gastos de '+year+', incluindo despesas não partilhadas.':'Distribuição dos gastos deste mês, incluindo despesas não partilhadas.';
  $('#charttotal').textContent=fmt(total);$('#chartshared').textContent=fmt(shared);
- const by={};chosen.forEach(i=>{const category=i.category||'Outros';by[category]=(by[category]||0)+Number(i.amount||0)});
+ const by=Object.create(null);chosen.forEach(i=>{const category=categoryForExpense(i);by[category]=(by[category]||0)+Number(i.amount||0)});
  renderPie(by,total);
  show('#yeartrend',isAnnual);
  if(isAnnual)renderYearBars(chosen,Number(year));
@@ -315,6 +315,12 @@ function renderPie(by,total){
  });
  pie.style.background='conic-gradient('+stops.join(',')+')';pie.setAttribute('aria-label',entries.map(([name,value])=>name+': '+fmt(value)).join('; '));
 }
+// Mantém o nome introduzido nas despesas sem categoria predefinida.
+// As despesas antigas classificadas como 'Outros' são apresentadas pelo nome sem alterar a base de dados.
+function categoryForExpense(expense){
+ const stored=String(expense.category||'').trim();
+ return !stored||stored.toLocaleLowerCase('pt-PT')==='outros' ? String(expense.description||'').trim()||'Sem descrição' : stored;
+}
 function categoryFromDescription(description){
  const d=description.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
  if(/supermercado|mercado|mercearia|comida|aliment|restaurante|cafe|almoco|jantar|padaria|continente|pingo doce|lidl|aldi|auchan|intermarche/.test(d))return 'Comida';
@@ -322,7 +328,7 @@ function categoryFromDescription(description){
  if(/combustivel|gasolina|gasoleo|uber|bolt|metro|comboio|autocarro|portagem|estacionamento|transporte|passe/.test(d))return 'Transportes';
  if(/cinema|viagem|ferias|hotel|concerto|lazer|bilhete|jogo/.test(d))return 'Lazer';
  if(/farmacia|medico|hospital|dentista|saude|consulta|medicamento/.test(d))return 'Saúde';
- return 'Outros';
+ return description.trim();
 }
 function selectTab(which){
  activeTab=which;
