@@ -61,11 +61,25 @@ h2{font-size:17px;letter-spacing:-.2px;margin:0 0 15px}.add-fields{display:grid;
 .period-toggle{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:5px;background:#e8efea;border-radius:13px;margin-bottom:14px}
 .period-toggle button{min-height:43px;padding:8px 12px;background:transparent;color:#56675c;border:1px solid transparent;border-radius:10px}
 .period-toggle button[aria-pressed="true"]{background:var(--ac);color:#fff}
-.chart-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.chart-summary{display:grid;grid-template-columns:1fr;gap:12px}
 .chart-summary>div{background:#f3f8f4;padding:13px;border-radius:12px;min-width:0}
 .chart-summary strong{display:block;font-size:clamp(19px,5vw,25px);letter-spacing:-.4px;overflow-wrap:anywhere}
 .chart-summary .mut{display:block;font-size:12px;margin-bottom:4px}
 .chart-intro{margin:7px 0 0}
+.month-compare{margin-top:14px}
+.compare-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}
+.compare-grid>div{background:var(--bg,#f3f8f4);border-radius:11px;padding:12px;min-width:0}
+.compare-grid strong{display:block;font-size:clamp(17px,4.5vw,23px);overflow-wrap:anywhere}
+.compare-result{display:flex;gap:9px;align-items:center;justify-content:center;flex-wrap:wrap;margin:12px 0 4px;font-weight:750;font-size:21px}
+.compare-result.up{color:#c14a45}.compare-result.down{color:#23845b}.compare-result.same{color:var(--mut)}
+.compare-desc{text-align:center;margin:0 0 15px}
+.compare-bar-row{display:flex;justify-content:space-between;gap:8px;font-size:12px;margin:9px 0 5px}
+.compare-track{height:12px;border-radius:10px;background:var(--line,#e8efea);overflow:hidden}
+.compare-fill{height:100%;border-radius:10px;background:#92a7a0}
+.compare-fill.current{background:#239b74}
+:root[data-theme="dark"] .compare-grid>div{background:#24372c}
+:root[data-theme="dark"] .compare-result.up{color:#ff9992}
+:root[data-theme="dark"] .compare-result.down{color:#79d9a6}
 .yearbars{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:3px;margin:14px 0 12px}
 .yearbarbtn{padding:0!important;border:0!important;background:transparent!important;color:var(--mut)!important;min-height:0;width:100%;border-radius:5px;display:flex;flex-direction:column;align-items:center;gap:7px;font-size:10px;line-height:1.2}
 .yearbarbtn .bar-track{height:142px;width:100%;display:flex;align-items:flex-end;justify-content:center}
@@ -236,8 +250,20 @@ h2{font-size:17px;letter-spacing:-.2px;margin:0 0 15px}.add-fields{display:grid;
     <div class="card totals-card">
       <div class="chart-summary">
         <div><span id="charttotlabel" class="mut">Total do mês</span><strong id="charttotal">0 €</strong></div>
-        <div><span id="chartsharedlabel" class="mut">Partilhado no mês</span><strong id="chartshared">0 €</strong></div>
       </div>
+    </div>
+    <div class="card month-compare" id="monthcompare">
+      <h2>Comparação com o mês anterior</h2>
+      <div class="compare-grid">
+        <div><span class="mut" id="compareprevlabel">Mês anterior</span><strong id="compareprev">0 €</strong></div>
+        <div><span class="mut" id="comparecurlabel">Mês atual</span><strong id="comparecur">0 €</strong></div>
+      </div>
+      <div id="compareresult" class="compare-result" aria-live="polite"></div>
+      <p id="comparedesc" class="mut compare-desc"></p>
+      <div class="compare-bar-row"><span id="comparebarprevlabel"></span><strong id="comparebarprevvalue"></strong></div>
+      <div class="compare-track"><div id="comparebarprev" class="compare-fill" style="width:0%"></div></div>
+      <div class="compare-bar-row"><span id="comparebarcurlabel"></span><strong id="comparebarcurvalue"></strong></div>
+      <div class="compare-track"><div id="comparebarcur" class="compare-fill current" style="width:0%"></div></div>
     </div>
     <div class="card">
       <h2>Despesas por categoria</h2>
@@ -530,18 +556,51 @@ function renderCharts(){
  const isAnnual=chartPeriod==='year',year=month.slice(0,4);
  const chosen=items.filter(i=>isAnnual?(i.date||'').slice(0,4)===year:(i.date||'').slice(0,7)===month);
  const total=chosen.reduce((sum,i)=>sum+Number(i.amount||0),0);
- const shared=chosen.reduce((sum,i)=>sum+(i.shared?Number(i.amount||0):0),0);
  $('#chartmonthly').setAttribute('aria-pressed',String(!isAnnual));
  $('#chartannual').setAttribute('aria-pressed',String(isAnnual));
  $('#charttotlabel').textContent=isAnnual?'Total do ano':'Total do mês';
- $('#chartsharedlabel').textContent=isAnnual?'Partilhado no ano':'Partilhado no mês';
  $('#pielabel').textContent=isAnnual?'Total do ano':'Total do mês';
  $('#pieintro').textContent=isAnnual?'Distribuição dos gastos de '+year+', incluindo despesas não partilhadas.':'Distribuição dos gastos deste mês, incluindo despesas não partilhadas.';
- $('#charttotal').textContent=fmt(total);$('#chartshared').textContent=fmt(shared);
+ $('#charttotal').textContent=fmt(total);
+ show('#monthcompare',!isAnnual);
+ if(!isAnnual)renderMonthComparison();
  const by=Object.create(null);chosen.forEach(i=>{const category=categoryForExpense(i);by[category]=(by[category]||0)+Number(i.amount||0)});
  renderPie(by,total);
  show('#yeartrend',isAnnual);
  if(isAnnual)renderYearBars(chosen,Number(year));
+}
+function renderMonthComparison(){
+ const [y,m]=month.split('-').map(Number);
+ const previousDate=new Date(y,m-2,1);
+ const previous=previousDate.getFullYear()+'-'+String(previousDate.getMonth()+1).padStart(2,'0');
+ const sumFor=period=>items.filter(i=>(i.date||'').slice(0,7)===period).reduce((sum,i)=>sum+Number(i.amount||0),0);
+ const before=sumFor(previous),current=sumFor(month),difference=Math.round((current-before)*100)/100;
+ const prevLabel=monthName(previous),curLabel=monthName(month);
+ $('#compareprevlabel').textContent=prevLabel;
+ $('#comparecurlabel').textContent=curLabel;
+ $('#compareprev').textContent=fmt(before);
+ $('#comparecur').textContent=fmt(current);
+ $('#comparebarprevlabel').textContent=prevLabel;
+ $('#comparebarcurlabel').textContent=curLabel;
+ $('#comparebarprevvalue').textContent=fmt(before);
+ $('#comparebarcurvalue').textContent=fmt(current);
+ const max=Math.max(before,current,0);
+ $('#comparebarprev').style.width=(max?before/max*100:0)+'%';
+ $('#comparebarcur').style.width=(max?current/max*100:0)+'%';
+ const result=$('#compareresult');result.replaceChildren();
+ const direction=difference>0?'up':difference<0?'down':'same';result.className='compare-result '+direction;
+ const symbol=document.createElement('span');symbol.textContent=difference>0?'↗':difference<0?'↘':'→';symbol.setAttribute('aria-hidden','true');
+ const amount=document.createElement('span');amount.textContent=(difference>0?'+':'')+fmt(difference);
+ result.append(symbol,amount);
+ const description=$('#comparedesc');
+ if(before===0){
+  description.textContent=current===0?'Sem despesas registadas em nenhum dos dois meses.':'Não é possível calcular a percentagem: o mês anterior tem 0 € em despesas.';
+ }else{
+  const pct=difference/before*100;
+  const pctText=(pct>0?'+':'')+pct.toLocaleString('pt-PT',{maximumFractionDigits:1})+'%';
+  const percentage=document.createElement('span');percentage.textContent='('+pctText+')';result.append(percentage);
+  description.textContent=difference>0?'Gastaram mais do que no mês anterior.':difference<0?'Gastaram menos do que no mês anterior.':'Gastaram o mesmo que no mês anterior.';
+ }
 }
 function renderYearBars(yearItems,year){
  const amounts=Array(12).fill(0);
