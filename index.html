@@ -328,7 +328,7 @@ async function loadRecurring(){
  recurringReady=true;recurring=data||[];renderRecurring();
 }
 async function ensureRecurringForMonth(period){
- if(!recurringReady||!householdId||!recurring.length||period!==periodNow())return;
+ if(!recurringReady||!householdId||!recurring.length||period<periodNow())return;
  const periodKey=firstDayOfMonth(period);
  const {data:existing,error:getError}=await sbClient.from('expenses').select('recurring_expense_id').eq('household_id',householdId).eq('recurring_period',periodKey).not('recurring_expense_id','is',null);
  if(getError)return;
@@ -396,9 +396,9 @@ function render(){
  renderCharts();renderRecurring();
 }
 function renderRecurring(){
- const list=$('#recurringlist'), empty=$('#recurringempty');list.replaceChildren();$('#recurringcount').textContent=recurringReady?'('+recurring.filter(r=>r.active!==false).length+')':'';
+ const list=$('#recurringlist'), empty=$('#recurringempty');list.replaceChildren();$('#recurringcount').textContent=recurringReady?'('+recurring.filter(r=>r.active!==false&&(!monthFromDate(r.end_month)||monthFromDate(r.end_month)>=periodNow())).length+')':'';
  if(!recurringReady){empty.classList.remove('hidden');empty.textContent='As despesas fixas ainda não estão configuradas. Executa o novo ficheiro SQL no Supabase para ativá-las.';return}
- const all=recurring.filter(r=>r.active!==false);
+ const all=recurring.filter(r=>r.active!==false&&(!monthFromDate(r.end_month)||monthFromDate(r.end_month)>=periodNow()));
  empty.classList.toggle('hidden',all.length>0);if(!all.length){empty.textContent='Ainda não existem despesas fixas.';return}
  all.forEach(r=>{
   const item=document.createElement('div');item.className='recurring-item';const left=document.createElement('div');left.className='recurring-main';
