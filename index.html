@@ -136,6 +136,11 @@ h2{font-size:17px;letter-spacing:-.2px;margin:0 0 15px}.add-fields{display:grid;
 :root[data-theme="dark"] .modal-backdrop{background:rgba(0,0,0,.7)}
 :root[data-theme="dark"] .card{box-shadow:none}
 :root[data-theme="dark"] button.g{color:var(--tx)}
+/* Fundo da área inferior e da zona de navegação do Android.
+   A cor da barra nativa continua dependente do sistema operativo. */
+html{background-color:#f3f6f4;color-scheme:light}
+html[data-theme="dark"]{background-color:#101715;color-scheme:dark}
+body{min-height:100dvh;padding-bottom:max(48px,env(safe-area-inset-bottom,0px))}
 </style>
 </head>
 <body>
