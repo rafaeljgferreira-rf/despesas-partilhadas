@@ -196,7 +196,6 @@ h2{font-size:17px;letter-spacing:-.2px;margin:0 0 15px}.add-fields{display:grid;
     <div class="card totals-card">
       <div class="totals-grid">
         <div><div class="mut">Total do mês</div><div class="big" id="tot">0 €</div></div>
-        <div><div class="mut">Partilhado</div><div class="big" id="sh">0 €</div></div>
       </div>
       <div id="bal" class="bal balance-line"></div>
     </div>
@@ -451,7 +450,7 @@ function render(){
  $('#next').setAttribute('aria-label',annualNav?'Ano seguinte':'Mês seguinte');
  const cur=items.filter(i=>(i.date||'').slice(0,7)===month);
  const total=cur.reduce((s,i)=>s+Number(i.amount),0), shared=cur.filter(i=>i.shared), shTotal=shared.reduce((s,i)=>s+Number(i.amount),0);
- $('#tot').textContent=fmt(total);$('#sh').textContent=fmt(shTotal);
+ $('#tot').textContent=fmt(total);
  const paid={};shared.forEach(i=>paid[i.payer]=(paid[i.payer]||0)+Number(i.amount));
  const people=members.length?members:[me.id], fair=people.length?shTotal/people.length:0;
  const curPayments=settlements.filter(p=>p.period===month+'-01');
