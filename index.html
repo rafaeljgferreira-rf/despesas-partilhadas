@@ -76,6 +76,9 @@ h2{font-size:17px;letter-spacing:-.2px;margin:0 0 15px}.add-fields{display:grid;
 .pagehead{margin:2px 0 14px;justify-content:flex-start}
 .brand-home{display:flex;align-items:center;gap:10px;font-size:19px;font-weight:800;color:var(--ac);letter-spacing:-.3px}
 .brand-home svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+.recurring-card .mut{margin-top:0}.recurring-list{margin-top:14px}.recurring-item{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;border-top:1px solid var(--bd);padding:10px 0}.recurring-item:first-child{margin-top:10px}.recurring-main{min-width:0;flex:1}.recurring-title{font-weight:650;overflow-wrap:anywhere}.recurring-meta{margin-top:2px}.smallbtn{min-height:34px;padding:6px 10px;font-size:12px;border-radius:9px}.dual-actions{display:flex;gap:8px;flex-wrap:wrap}.dual-actions>*{flex:1}.modal-backdrop{position:fixed;inset:0;background:rgba(23,44,37,.45);padding:18px;display:flex;align-items:flex-end;justify-content:center;z-index:50}.modal-card{width:min(560px,100%);max-height:85vh;overflow:auto;margin:0}.inline-actions{display:flex;gap:6px;align-items:center;justify-content:flex-end;flex-wrap:wrap}.inline-actions button{min-height:34px}.tag-fixed{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:var(--ac);background:#e7f5eb;border-radius:999px;padding:4px 8px;margin-top:6px}.recurring-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}@media(max-width:420px){.recurring-grid{grid-template-columns:1fr}.modal-backdrop{padding:10px}.dual-actions{flex-direction:column}}
+
 </style>
 </head>
 <body>
@@ -134,38 +137,60 @@ h2{font-size:17px;letter-spacing:-.2px;margin:0 0 15px}.add-fields{display:grid;
     <button id="tabaccount" type="button" aria-selected="false" aria-label="Conta" title="Conta"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M9 21v-8h6v8"/></svg><span>Conta</span></button>
   </nav>
   <section id="expenseview">
-  <div class="card totals-card">
-    <div class="totals-grid">
-      <div><div class="mut">Total do mês</div><div class="big" id="tot">0 €</div></div>
-      <div><div class="mut">Partilhado</div><div class="big" id="sh">0 €</div></div>
+    <div class="card totals-card">
+      <div class="totals-grid">
+        <div><div class="mut">Total do mês</div><div class="big" id="tot">0 €</div></div>
+        <div><div class="mut">Partilhado</div><div class="big" id="sh">0 €</div></div>
+      </div>
+      <div id="bal" class="bal balance-line"></div>
     </div>
-    <div id="bal" class="bal balance-line"></div>
-  </div>
-  <section class="card settlement-card" aria-labelledby="settletitle">
-    <h2 id="settletitle">Acertar contas</h2>
-    <p class="mut" id="settlehint">Os pagamentos entre vocês aparecem aqui, sem contar como novas despesas.</p>
-    <div id="settleaction" class="hidden">
-      <label for="settleamount" class="settle-label">Quanto vais pagar (€)</label>
-      <div class="settle-controls"><input id="settleamount" type="number" inputmode="decimal" min="0.01" step="0.01" placeholder="0,00"><button id="settlepay" type="button">Registar pagamento</button></div>
-      <small>Regista o pagamento depois de o fazeres à outra pessoa.</small>
+    <section class="card settlement-card" aria-labelledby="settletitle">
+      <h2 id="settletitle">Acertar contas</h2>
+      <p class="mut" id="settlehint">Os pagamentos entre vocês aparecem aqui, sem contar como novas despesas.</p>
+      <div id="settleaction" class="hidden">
+        <label for="settleamount" class="settle-label">Quanto vais pagar (€)</label>
+        <div class="settle-controls"><input id="settleamount" type="number" inputmode="decimal" min="0.01" step="0.01" placeholder="0,00"><button id="settlepay" type="button">Registar pagamento</button></div>
+        <small>Regista o pagamento depois de o fazeres à outra pessoa.</small>
+      </div>
+    </section>
+    <div class="card add-card">
+      <h2>Nova despesa</h2>
+      <div class="add-fields">
+        <label for="d">Descrição</label>
+        <input id="d" placeholder="Ex.: Compras no supermercado" maxlength="60" autocomplete="off">
+        <label for="a">Valor (€)</label>
+        <input id="a" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0,00">
+        <label class="share-check" for="s"><input type="checkbox" id="s" checked><span>Despesa partilhada</span></label>
+        <button id="add" type="button"><span aria-hidden="true">＋</span> Adicionar despesa</button>
+      </div>
+      <p class="mut helper">Com o visto ativo, a despesa é dividida igualmente.</p>
     </div>
-  </section>
-  <div class="card add-card">
-     <h2>Nova despesa</h2>
-     <div class="add-fields">
-       <label for="d">Descrição</label>
-       <input id="d" placeholder="Ex.: Compras no supermercado" maxlength="60" autocomplete="off">
-       <label for="a">Valor (€)</label>
-       <input id="a" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0,00">
-       <label class="share-check" for="s"><input type="checkbox" id="s" checked><span>Despesa partilhada</span></label>
-       <button id="add" type="button"><span aria-hidden="true">＋</span> Adicionar despesa</button>
-     </div>
-     <p class="mut helper">Com o visto ativo, a despesa é dividida igualmente.</p>
-   </div>
-   <div class="section-heading"><h2>Por categoria</h2></div>
-   <div class="card" id="cats"></div>
-   <div class="section-heading"><h2>Movimentos do mês</h2></div>
-   <div class="card" id="list"></div>
+    <div class="card recurring-card">
+      <h2>Despesas fixas</h2>
+      <p class="mut">Guarda aqui as despesas que se repetem todos os meses. A aplicação cria automaticamente a despesa no mês selecionado.</p>
+      <div class="add-fields">
+        <label for="rd">Descrição</label>
+        <input id="rd" placeholder="Ex.: Renda" maxlength="60" autocomplete="off">
+        <div class="recurring-grid">
+          <div>
+            <label for="ra">Valor (€)</label>
+            <input id="ra" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0,00">
+          </div>
+          <div>
+            <label for="rday">Dia do mês</label>
+            <input id="rday" type="number" inputmode="numeric" min="1" max="28" step="1" value="1">
+          </div>
+        </div>
+        <label class="share-check" for="rs"><input type="checkbox" id="rs" checked><span>Despesa partilhada</span></label>
+        <button id="addrecurring" type="button">Guardar despesa fixa</button>
+      </div>
+      <div id="recurringlist" class="recurring-list"></div>
+      <p id="recurringempty" class="mut hidden">Ainda não existem despesas fixas.</p>
+    </div>
+    <div class="section-heading"><h2>Por categoria</h2></div>
+    <div class="card" id="cats"></div>
+    <div class="section-heading"><h2>Movimentos do mês</h2></div>
+    <div class="card" id="list"></div>
   </section>
   <section id="chartview" class="hidden">
     <div class="period-toggle" role="group" aria-label="Período dos gráficos">
@@ -212,20 +237,37 @@ h2{font-size:17px;letter-spacing:-.2px;margin:0 0 15px}.add-fields{display:grid;
     <p id="spaceinfo" class="mut">Espaço partilhado</p>
     <button class="g" id="logout" type="button">Terminar sessão</button>
   </div></section>
+  <div id="editoverlay" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="edititle">
+    <div class="card modal-card">
+      <div class="row sp"><h2 id="edititle">Editar despesa</h2><button id="canceledit" class="g smallbtn" type="button">Fechar</button></div>
+      <div class="add-fields">
+        <label for="ed">Descrição</label>
+        <input id="ed" maxlength="60" autocomplete="off">
+        <label for="ea">Valor (€)</label>
+        <input id="ea" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0,00">
+        <label class="share-check" for="es"><input type="checkbox" id="es" checked><span>Despesa partilhada</span></label>
+        <div class="dual-actions"><button id="saveedit" type="button">Guardar alterações</button><button id="deleteedit" class="g" type="button">Apagar despesa</button></div>
+        <p class="mut helper">Editar uma despesa corrige apenas esse registo. Se a despesa veio de uma despesa fixa, os próximos meses continuam a ser gerados normalmente.</p>
+      </div>
+    </div>
+  </div>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const $=s=>document.querySelector(s), fmt=n=>Number(n||0).toLocaleString('pt-PT',{style:'currency',currency:'EUR'});
 const MES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
-let sbClient=null, session=null, me=null, householdId=null, inviteCode='', items=[], members=[], settlements=[], settlementsReady=false, channel=null;
+let sbClient=null, session=null, me=null, householdId=null, inviteCode='', items=[], members=[], settlements=[], settlementsReady=false, recurring=[], recurringReady=false, recurringError='', channel=null;
 const now=new Date();let month=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
-let activeTab='expenses', chartPeriod='month', selectedBarMonth=null;
+let activeTab='expenses', chartPeriod='month', selectedBarMonth=null, editingExpenseId=null;
 
 function show(id,on=true){$(id).classList.toggle('hidden',!on)}
 function message(id,msg,isError=false){$(id).textContent=msg;$(id).classList.toggle('error',isError)}
 function status(msg,error=false){message('#status',msg,error)}
 function savedConfig(){return {url:localStorage.getItem('despesas_sb_url')||'',key:localStorage.getItem('despesas_sb_key')||''}}
 function setConfigFields(){const c=savedConfig();$('#sburl').value=c.url;$('#sbkey').value=c.key}
+function firstDayOfMonth(period){return period+'-01'}
+function buildDate(period, day){const [y,m]=period.split('-').map(Number);const last=new Date(y,m,0).getDate();return period+'-'+String(Math.min(Math.max(Number(day)||1,1),last)).padStart(2,'0')}
+function normalizeAmount(value){return Math.round(Number(String(value).replace(',','.'))*100)/100}
 async function connect(){
  const c=savedConfig();
  if(!c.url||!c.key||!window.supabase){show('#config');show('#auth',false);return}
@@ -235,7 +277,7 @@ async function connect(){
  if(s){session=s;await afterLogin()}else{show('#auth');show('#household',false);show('#app',false)}
  sbClient.auth.onAuthStateChange((_event,s)=>{setTimeout(async()=>{session=s;if(s){await afterLogin()}else{resetApp();show('#auth');show('#household',false);show('#app',false)}},0)});
 }
-function resetApp(){if(channel)sbClient.removeChannel(channel);channel=null;me=null;householdId=null;items=[];members=[];settlements=[];settlementsReady=false}
+function resetApp(){if(channel)sbClient.removeChannel(channel);channel=null;me=null;householdId=null;items=[];members=[];settlements=[];settlementsReady=false;recurring=[];recurringReady=false;recurringError='';editingExpenseId=null;closeEditExpense()}
 async function afterLogin(){
  me=session.user;$('#who').textContent=me.email||'Utilizador';show('#auth',false);
  const {data:membership,error}=await sbClient.from('household_members').select('household_id').eq('user_id',me.id).limit(1).maybeSingle();
@@ -250,9 +292,34 @@ async function loadHousehold(){
  const {data:m,error:meErr}=await sbClient.from('household_members').select('user_id').eq('household_id',householdId);
  if(meErr){status('Erro ao carregar membros: '+meErr.message,true);return}
  members=(m||[]).map(x=>x.user_id);
- show('#household',false);show('#app');await loadExpenses();subscribe();
+ show('#household',false);show('#app');
+ await loadRecurring();
+ await loadExpenses({syncRecurring:true});
+ subscribe();
 }
-async function loadExpenses(){
+async function loadRecurring(){
+ recurringError='';
+ const {data,error}=await sbClient.from('recurring_expenses').select('*').eq('household_id',householdId).order('created_at',{ascending:false});
+ if(error){recurringReady=false;recurring=[];recurringError=error.message;renderRecurring();return}
+ recurringReady=true;recurring=data||[];renderRecurring();
+}
+async function ensureRecurringForMonth(period){
+ if(!recurringReady||!householdId||!recurring.length)return;
+ const periodKey=firstDayOfMonth(period);
+ const {data:existing,error:getError}=await sbClient.from('expenses').select('recurring_expense_id').eq('household_id',householdId).eq('recurring_period',periodKey).not('recurring_expense_id','is',null);
+ if(getError)return;
+ const have=new Set((existing||[]).map(r=>r.recurring_expense_id));
+ const rows=[];
+ for(const rec of recurring){
+  if(rec.active===false||have.has(rec.id))continue;
+  rows.push({household_id:householdId,description:rec.description,amount:Number(rec.amount),category:rec.category,shared:!!rec.shared,payer:rec.payer,date:buildDate(period, rec.day_of_month),recurring_expense_id:rec.id,recurring_period:periodKey});
+ }
+ if(!rows.length)return;
+ const {error}=await sbClient.from('expenses').insert(rows);
+ if(error && error.code!=='23505')status('Não foi possível gerar as despesas fixas: '+error.message,true);
+}
+async function loadExpenses({syncRecurring=false}={}){
+ if(syncRecurring)await ensureRecurringForMonth(month);
  const {data,error}=await sbClient.from('expenses').select('*').eq('household_id',householdId).order('date',{ascending:false});
  if(error){status('Erro ao carregar despesas: '+error.message,true);return}
  items=data||[];
@@ -261,16 +328,21 @@ async function loadExpenses(){
  settlements=paidRows||[];
  render();
  if(payError)status('Despesas carregadas. Para ativar os pagamentos, executa o ficheiro SQL de configuração no Supabase.',true);
+ else if(!recurringReady)status('Despesas carregadas. Para ativar as despesas fixas e a edição completa, executa o novo ficheiro SQL no Supabase.',true);
  else status('Ligado · as alterações são sincronizadas automaticamente.');
 }
 function subscribe(){
  if(channel)sbClient.removeChannel(channel);
- channel=sbClient.channel('expenses-'+householdId).on('postgres_changes',{event:'*',schema:'public',table:'expenses',filter:'household_id=eq.'+householdId},payload=>{
-   if(payload.eventType==='INSERT'&&!items.some(x=>x.id===payload.new.id))items.push(payload.new);
-   if(payload.eventType==='UPDATE')items=items.map(x=>x.id===payload.new.id?payload.new:x);
-   if(payload.eventType==='DELETE')items=items.filter(x=>x.id!==payload.old.id);
-   items.sort((a,b)=>(b.date||'').localeCompare(a.date||''));render();status('Atualizado agora · sincronização ativa.');
- }).on('postgres_changes',{event:'*',schema:'public',table:'settlements',filter:'household_id=eq.'+householdId},()=>{loadExpenses()}).subscribe(s=>{if(s==='CHANNEL_ERROR'||s==='TIMED_OUT')status('A ligação em tempo real foi interrompida. A tentar restabelecer…',true)});
+ channel=sbClient.channel('home-'+householdId)
+  .on('postgres_changes',{event:'*',schema:'public',table:'expenses',filter:'household_id=eq.'+householdId},payload=>{
+    if(payload.eventType==='INSERT'&&!items.some(x=>x.id===payload.new.id))items.push(payload.new);
+    if(payload.eventType==='UPDATE')items=items.map(x=>x.id===payload.new.id?payload.new:x);
+    if(payload.eventType==='DELETE')items=items.filter(x=>x.id!==payload.old.id);
+    items.sort((a,b)=>(b.date||'').localeCompare(a.date||''));render();status('Atualizado agora · sincronização ativa.');
+  })
+  .on('postgres_changes',{event:'*',schema:'public',table:'settlements',filter:'household_id=eq.'+householdId},()=>{loadExpenses()})
+  .on('postgres_changes',{event:'*',schema:'public',table:'recurring_expenses',filter:'household_id=eq.'+householdId},async()=>{await loadRecurring();await loadExpenses({syncRecurring:true})})
+  .subscribe(s=>{if(s==='CHANNEL_ERROR'||s==='TIMED_OUT')status('A ligação em tempo real foi interrompida. A tentar restabelecer…',true)});
 }
 function render(){
  const [y,m]=month.split('-').map(Number);const annualNav=activeTab==='charts'&&chartPeriod==='year';
@@ -285,19 +357,26 @@ function render(){
  const curPayments=settlements.filter(p=>p.period===month+'-01');
  const transferCents=curPayments.reduce((sum,p)=>sum+(p.sender===me.id?Math.round(Number(p.amount)*100):0)-(p.recipient===me.id?Math.round(Number(p.amount)*100):0),0);
  const net=Math.round(((paid[me.id]||0)-fair)*100+transferCents)/100, otherCount=Math.max(0,people.length-1);
- const b=$('#bal');b.className='bal';
- if(!otherCount||(!shTotal&&!curPayments.length)){b.textContent=!otherCount?'À espera da outra pessoa entrar no espaço.':'Sem despesas partilhadas este mês.';b.className='mut'}
+ const b=$('#bal');b.className='bal balance-line';
+ if(!otherCount||(!shTotal&&!curPayments.length)){b.textContent=!otherCount?'À espera da outra pessoa entrar no espaço.':'Sem despesas partilhadas este mês.';b.className='mut balance-line'}
  else if(Math.abs(net)<0.005)b.textContent='Estão quites.';
  else if(net>0)b.textContent='A outra pessoa deve-te '+fmt(net)+'.';
- else{b.textContent='Deves '+fmt(-net)+' à outra pessoa.';b.className='bal neg'}
+ else{b.textContent='Deves '+fmt(-net)+' à outra pessoa.';b.className='bal balance-line neg'}
  renderSettlements(net,curPayments,otherCount);
  const by=Object.create(null);cur.forEach(i=>{const category=categoryForExpense(i);by[category]=(by[category]||0)+Number(i.amount)});
  const cats=$('#cats');cats.textContent='';const ent=Object.entries(by).sort((a,b)=>b[1]-a[1]);
  if(!ent.length){cats.textContent='Sem despesas neste mês.';cats.className='card mut'}else{cats.className='card';ent.forEach(([k,v])=>{const d=document.createElement('div');d.style.marginBottom='8px';const r=document.createElement('div');r.className='row sp';const a=document.createElement('span');a.textContent=k;const z=document.createElement('span');z.textContent=fmt(v);r.append(a,z);const bar=document.createElement('div');bar.className='bar';bar.style.width=Math.max(4,v/total*100)+'%';d.append(r,bar);cats.append(d)})}
  const L=$('#list');L.textContent='';
- cur.forEach(i=>{const r=document.createElement('div');r.className='it row sp';const l=document.createElement('div');l.className='expense-info';const t=document.createElement('div');t.textContent=i.description;t.className='expense-title';const s=document.createElement('div');s.className='mut';s.textContent=(i.date||'').slice(8,10)+'/'+(i.date||'').slice(5,7)+' · '+categoryForExpense(i)+' · '+(i.payer===me.id?'pago por ti':'pago pela outra pessoa')+(i.shared?' · partilhada':'');l.append(t,s);const rt=document.createElement('div');rt.className='row expense-actions';const v=document.createElement('strong');v.textContent=fmt(i.amount);rt.append(v);if(i.payer===me.id){const x=document.createElement('button');x.className='x';x.textContent='×';x.title='Apagar despesa';x.setAttribute('aria-label','Apagar '+i.description);x.onclick=()=>deleteExpense(i.id);rt.append(x)}r.append(l,rt);L.append(r)});
- L.style.display=cur.length?'':'none';
- renderCharts();
+ cur.forEach(i=>{const r=document.createElement('div');r.className='it row sp';const l=document.createElement('div');l.className='expense-info';const t=document.createElement('div');t.textContent=i.description;t.className='expense-title';const s=document.createElement('div');s.className='mut';s.textContent=(i.date||'').slice(8,10)+'/'+(i.date||'').slice(5,7)+' · '+categoryForExpense(i)+' · '+(i.payer===me.id?'pago por ti':'pago pela outra pessoa')+(i.shared?' · partilhada':'');l.append(t,s);if(i.recurring_expense_id){const tag=document.createElement('div');tag.className='tag-fixed';tag.textContent='Despesa fixa';l.append(tag)}const rt=document.createElement('div');rt.className='row expense-actions';const v=document.createElement('strong');v.textContent=fmt(i.amount);rt.append(v);if(i.payer===me.id){const edit=document.createElement('button');edit.className='g smallbtn';edit.textContent='Editar';edit.onclick=()=>openEditExpense(i.id);rt.append(edit);const x=document.createElement('button');x.className='x';x.textContent='×';x.title='Apagar despesa';x.setAttribute('aria-label','Apagar '+i.description);x.onclick=()=>deleteExpense(i.id);rt.append(x)}r.append(l,rt);L.append(r)});
+ if(!cur.length){const p=document.createElement('p');p.className='mut';p.textContent='Ainda não existem despesas neste mês.';L.append(p)}
+ renderCharts();renderRecurring();
+}
+function renderRecurring(){
+ const list=$('#recurringlist'), empty=$('#recurringempty');list.replaceChildren();
+ if(!recurringReady){empty.classList.remove('hidden');empty.textContent='As despesas fixas ainda não estão configuradas. Executa o novo ficheiro SQL no Supabase para ativá-las.';return}
+ const active=recurring.filter(r=>r.active!==false);
+ empty.classList.toggle('hidden',active.length>0); if(!active.length){empty.textContent='Ainda não existem despesas fixas.';return}
+ active.forEach(r=>{const item=document.createElement('div');item.className='recurring-item';const left=document.createElement('div');left.className='recurring-main';const title=document.createElement('div');title.className='recurring-title';title.textContent=r.description;const meta=document.createElement('div');meta.className='mut recurring-meta';meta.textContent=fmt(r.amount)+' · dia '+r.day_of_month+(r.shared?' · partilhada':' · individual')+(r.payer===me.id?' · criada por ti':' · criada pela outra pessoa');left.append(title,meta);const right=document.createElement('div');right.className='inline-actions';if(r.payer===me.id){const del=document.createElement('button');del.type='button';del.className='g smallbtn';del.textContent='Remover';del.onclick=()=>deleteRecurring(r.id,r.description);right.append(del)}item.append(left,right);list.append(item)})
 }
 function renderSettlements(net,curPayments,otherCount){
  const hint=$('#settlehint'), input=$('#settleamount'), list=$('#settlelist');
@@ -368,7 +447,7 @@ function renderYearBars(yearItems,year){
  const amounts=Array(12).fill(0);
  yearItems.forEach(i=>{const n=Number((i.date||'').slice(5,7));if(n>=1&&n<=12)amounts[n-1]+=Number(i.amount||0)});
  const max=Math.max(0,...amounts),target=$('#yearbars');target.replaceChildren();
- if(selectedBarMonth===null)selectedBarMonth=amounts.indexOf(max);
+ if(selectedBarMonth===null)selectedBarMonth=amounts.indexOf(max<0?0:max); if(selectedBarMonth<0)selectedBarMonth=0;
  const short=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
  amounts.forEach((value,index)=>{
   const btn=document.createElement('button');btn.type='button';btn.className='yearbarbtn';
@@ -388,7 +467,7 @@ const pieColors=['#1f7a5c','#e3a347','#5875b9','#b56b9b','#d66e57','#7b8c51','#8
 function renderPie(by,total){
  const pie=$('#pie'), legend=$('#pielegend');legend.replaceChildren();$('#pietotal').textContent=fmt(total);
  const entries=Object.entries(by).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
- if(!entries.length){pie.style.background='#e4e2da';pie.setAttribute('aria-label','Sem despesas neste mês');const t=document.createElement('p');t.className='mut';t.textContent='Ainda não existem despesas neste mês.';legend.append(t);return}
+ if(!entries.length){pie.style.background='#e4e2da';pie.setAttribute('aria-label','Sem despesas neste mês');const t=document.createElement('p');t.className='mut';t.textContent='Ainda não existem despesas neste período.';legend.append(t);return}
  let offset=0;const stops=[];
  entries.forEach(([name,value],i)=>{
   const color=pieColors[i%pieColors.length], start=offset;offset+=value/total*100;stops.push(`${color} ${start.toFixed(4)}% ${offset.toFixed(4)}%`);
@@ -399,14 +478,12 @@ function renderPie(by,total){
  });
  pie.style.background='conic-gradient('+stops.join(',')+')';pie.setAttribute('aria-label',entries.map(([name,value])=>name+': '+fmt(value)).join('; '));
 }
-// Mantém o nome introduzido nas despesas sem categoria predefinida.
-// As despesas antigas classificadas como 'Outros' são apresentadas pelo nome sem alterar a base de dados.
 function categoryForExpense(expense){
  const stored=String(expense.category||'').trim();
  return !stored||stored.toLocaleLowerCase('pt-PT')==='outros' ? String(expense.description||'').trim()||'Sem descrição' : stored;
 }
 function categoryFromDescription(description){
- const d=description.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+ const d=description.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
  if(/supermercado|mercado|mercearia|comida|aliment|restaurante|cafe|almoco|jantar|padaria|continente|pingo doce|lidl|aldi|auchan|intermarche/.test(d))return 'Comida';
  if(/renda|agua|luz|eletric|gas|internet|condominio|casa|limpeza|mobilia|ikea/.test(d))return 'Casa';
  if(/combustivel|gasolina|gasoleo|uber|bolt|metro|comboio|autocarro|portagem|estacionamento|transporte|passe/.test(d))return 'Transportes';
@@ -427,14 +504,38 @@ function selectTab(which){
 for(const name of ['expenses','charts','history','share','account'])$('#tab'+name).onclick=()=>selectTab(name);
 $('#chartmonthly').onclick=()=>{chartPeriod='month';render()};
 $('#chartannual').onclick=()=>{chartPeriod='year';selectedBarMonth=null;render()};
-async function deleteExpense(id){if(!confirm('Queres apagar esta despesa?'))return;const {error}=await sbClient.from('expenses').delete().eq('id',id);if(error)status('Não foi possível apagar: '+error.message,true)}
-function shift(n){const [y,m]=month.split('-').map(Number),annual=activeTab==='charts'&&chartPeriod==='year';const d=new Date(y+(annual?n:0),m-1+(annual?0:n),1);month=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');selectedBarMonth=null;render()}
+async function deleteExpense(id){if(!confirm('Queres apagar esta despesa?'))return;const {error}=await sbClient.from('expenses').delete().eq('id',id);if(error){status('Não foi possível apagar: '+error.message,true);return}if(editingExpenseId===id)closeEditExpense()}
+function openEditExpense(id){const expense=items.find(x=>x.id===id&&x.payer===me.id);if(!expense)return;editingExpenseId=id;$('#ed').value=expense.description||'';$('#ea').value=(Math.round(Number(expense.amount)*100)/100).toFixed(2);$('#es').checked=!!expense.shared;show('#editoverlay');$('#ed').focus()}
+function closeEditExpense(){editingExpenseId=null;show('#editoverlay',false)}
+async function saveEditExpense(){
+ if(!editingExpenseId)return;
+ const description=$('#ed').value.trim(),amount=normalizeAmount($('#ea').value),shared=$('#es').checked;
+ if(!description||!(amount>0)){status('Indica uma descrição e um valor válido.',true);return}
+ const {error}=await sbClient.from('expenses').update({description,amount,category:categoryFromDescription(description),shared}).eq('id',editingExpenseId).eq('payer',me.id);
+ if(error){status('Não foi possível editar a despesa: '+error.message,true);return}
+ closeEditExpense();await loadExpenses();status('Despesa atualizada com sucesso.');
+}
+async function deleteEditedExpense(){if(!editingExpenseId)return;const id=editingExpenseId;closeEditExpense();await deleteExpense(id);await loadExpenses()}
+$('#canceledit').onclick=closeEditExpense;$('#saveedit').onclick=saveEditExpense;$('#deleteedit').onclick=deleteEditedExpense;$('#editoverlay').onclick=(e)=>{if(e.target.id==='editoverlay')closeEditExpense()};
+async function addRecurringExpense(){
+ const description=$('#rd').value.trim(), amount=normalizeAmount($('#ra').value), day=Math.round(Number($('#rday').value)), shared=$('#rs').checked;
+ if(!description||!(amount>0)){status('Indica uma descrição e um valor válido para a despesa fixa.',true);return}
+ if(!(day>=1&&day<=28)){status('Escolhe um dia do mês entre 1 e 28.',true);return}
+ const row={household_id:householdId,description,amount,category:categoryFromDescription(description),shared,payer:me.id,day_of_month:day,active:true};
+ const {error}=await sbClient.from('recurring_expenses').insert(row);
+ if(error){status('Não foi possível guardar a despesa fixa: '+error.message,true);return}
+ $('#rd').value='';$('#ra').value='';$('#rday').value='1';$('#rs').checked=true;
+ await loadRecurring();await loadExpenses({syncRecurring:true});status('Despesa fixa guardada. A aplicação vai adicioná-la automaticamente todos os meses.');
+}
+async function deleteRecurring(id,description){if(!confirm('Remover a despesa fixa "'+description+'"? Os movimentos já criados mantêm-se.'))return;const {error}=await sbClient.from('recurring_expenses').delete().eq('id',id).eq('payer',me.id);if(error){status('Não foi possível remover a despesa fixa: '+error.message,true);return}await loadRecurring();status('Despesa fixa removida.');}
+$('#addrecurring').onclick=addRecurringExpense;
+async function shift(n){const [y,m]=month.split('-').map(Number),annual=activeTab==='charts'&&chartPeriod==='year';const d=new Date(y+(annual?n:0),m-1+(annual?0:n),1);month=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');selectedBarMonth=null;await loadExpenses({syncRecurring:true})}
 window.saveConfigNow=function(){const out=document.querySelector('#configmsg');try{out.textContent='Botão acionado. A validar os dados…';out.classList.remove('error');const url=document.querySelector('#sburl').value.trim().replace(/\/$/,''),key=document.querySelector('#sbkey').value.trim();if(!url||!key){out.textContent='Preenche o URL do projeto e a chave pública.';out.classList.add('error');return}if(!/^https:\/\//i.test(url)){out.textContent='O URL deve começar por https://';out.classList.add('error');return}localStorage.setItem('despesas_sb_url',url);localStorage.setItem('despesas_sb_key',key);out.textContent='Configuração guardada. A abrir a aplicação…';connect().catch(e=>{out.textContent='Erro ao ligar: '+(e.message||e);out.classList.add('error')});}catch(e){out.textContent='Erro ao guardar no navegador: '+(e.message||e);out.classList.add('error');console.error(e)}};
 $('#signin').onclick=async()=>{const {error}=await sbClient.auth.signInWithPassword({email:$('#email').value.trim(),password:$('#password').value});message('#authmsg',error?error.message:'A iniciar sessão…',!!error)};
 $('#signup').onclick=async()=>{const {data,error}=await sbClient.auth.signUp({email:$('#email').value.trim(),password:$('#password').value});message('#authmsg',error?error.message:(data.session?'Conta criada.':'Conta criada. Confirma o email antes de iniciar sessão.'),!!error)};
 $('#createhome').onclick=async()=>{const {data,error}=await sbClient.rpc('create_household');if(error){message('#homemsg','Erro: '+error.message,true);return}householdId=data;await loadHousehold()};
 $('#joinhome').onclick=async()=>{const code=$('#invite').value.trim().toUpperCase();if(!code)return;const {data,error}=await sbClient.rpc('join_household',{p_code:code});if(error){message('#homemsg','Não foi possível entrar: '+error.message,true);return}householdId=data;await loadHousehold()};
-$('#add').onclick=async()=>{const description=$('#d').value.trim(),amount=Number($('#a').value);if(!description||!(amount>0)){status('Indica uma descrição e um valor válido.',true);return}const today=new Date(),date=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');const row={household_id:householdId,description,amount:Math.round(amount*100)/100,category:categoryFromDescription(description),shared:$('#s').checked,payer:me.id,date};const {error}=await sbClient.from('expenses').insert(row);if(error){status('Não foi possível adicionar: '+error.message,true);return}$('#d').value='';$('#a').value='';$('#s').checked=true;$('#d').focus();await loadExpenses();status('Despesa adicionada com sucesso ✓')};
+$('#add').onclick=async()=>{const description=$('#d').value.trim(),amount=normalizeAmount($('#a').value);if(!description||!(amount>0)){status('Indica uma descrição e um valor válido.',true);return}const today=new Date(),date=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');const row={household_id:householdId,description,amount,category:categoryFromDescription(description),shared:$('#s').checked,payer:me.id,date};const {error}=await sbClient.from('expenses').insert(row);if(error){status('Não foi possível adicionar: '+error.message,true);return}$('#d').value='';$('#a').value='';$('#s').checked=true;$('#d').focus();await loadExpenses();status('Despesa adicionada com sucesso ✓')};
 $('#prev').onclick=()=>shift(-1);$('#next').onclick=()=>shift(1);
 $('#logout').onclick=()=>sbClient.auth.signOut();
 $('#copycode').onclick=async()=>{try{await navigator.clipboard.writeText(inviteCode);status('Código copiado.')}catch(e){status('Código de convite: '+inviteCode)}};
