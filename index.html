@@ -11,6 +11,8 @@
 <link rel="apple-touch-icon" href="/icons/icon-192.png">
 <script>
 try { if (localStorage.getItem('a_nossa_casa_theme') === 'dark') document.documentElement.dataset.theme = 'dark'; } catch(e) {}
+// A barra do sistema acompanha o tema escolhido logo no arranque.
+document.querySelector('meta[name="theme-color"]').setAttribute('content', document.documentElement.dataset.theme === 'dark' ? '#101715' : '#f3f6f4');
 </script>
 <style>
 :root{--bg:#f6f5f1;--card:#fff;--tx:#1d1d1b;--mut:#6b6b66;--ac:#1f7a5c;--on:#fff;--bd:#e4e2da;--neg:#b3402e;box-sizing:border-box}
@@ -788,7 +790,7 @@ $('#prev').onclick=()=>shift(-1);$('#next').onclick=()=>shift(1);
 $('#logout').onclick=()=>sbClient.auth.signOut();
 $('#copycode').onclick=async()=>{try{await navigator.clipboard.writeText(inviteCode);status('Código copiado.')}catch(e){status('Código de convite: '+inviteCode)}};
 const themeButton=document.querySelector('#themetoggle');
-function updateThemeButton(){const dark=document.documentElement.dataset.theme==='dark';themeButton.setAttribute('aria-label',dark?'Ativar modo claro':'Ativar modo escuro');themeButton.setAttribute('aria-checked',String(dark));themeButton.title=dark?'Ativar modo claro':'Ativar modo escuro'}
+function updateThemeButton(){const dark=document.documentElement.dataset.theme==='dark';document.querySelector('meta[name="theme-color"]').setAttribute('content',dark?'#101715':'#f3f6f4');themeButton.setAttribute('aria-label',dark?'Ativar modo claro':'Ativar modo escuro');themeButton.setAttribute('aria-checked',String(dark));themeButton.title=dark?'Ativar modo claro':'Ativar modo escuro'}
 themeButton.addEventListener('click',()=>{const dark=document.documentElement.dataset.theme==='dark';if(dark)delete document.documentElement.dataset.theme;else document.documentElement.dataset.theme='dark';try{localStorage.setItem('a_nossa_casa_theme',dark?'light':'dark')}catch(e){}updateThemeButton()});
 updateThemeButton();
 setConfigFields();connect().catch(e=>{show('#config');message('#authmsg',e.message,true)});
