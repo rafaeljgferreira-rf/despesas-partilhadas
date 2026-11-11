@@ -3,7 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Despesas partilhadas</title>
+<title>A Nossa Casa</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#167552">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
 <script>
 try { if (localStorage.getItem('a_nossa_casa_theme') === 'dark') document.documentElement.dataset.theme = 'dark'; } catch(e) {}
 </script>
@@ -787,6 +792,9 @@ function updateThemeButton(){const dark=document.documentElement.dataset.theme==
 themeButton.addEventListener('click',()=>{const dark=document.documentElement.dataset.theme==='dark';if(dark)delete document.documentElement.dataset.theme;else document.documentElement.dataset.theme='dark';try{localStorage.setItem('a_nossa_casa_theme',dark?'light':'dark')}catch(e){}updateThemeButton()});
 updateThemeButton();
 setConfigFields();connect().catch(e=>{show('#config');message('#authmsg',e.message,true)});
+</script>
+<script>
+if ("serviceWorker" in navigator) { window.addEventListener("load", () => { navigator.serviceWorker.register("/sw.js").catch(err => console.warn("PWA:",err)); }); }
 </script>
 </body>
 </html>
