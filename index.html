@@ -223,6 +223,14 @@ h2{font-size:17px;letter-spacing:-.2px;margin:0 0 15px}.add-fields{display:grid;
       <div id="settlehistory"><div id="settlelist"></div></div>
       <p id="settleempty" class="mut hidden" role="status">Ainda não existem pagamentos registados neste mês.</p>
     </div>
+    <div class="card">
+      <details id="endedrecurringmanage" class="recurring-manage">
+        <summary>Despesas fixas terminadas <span id="endedrecurringcount"></span></summary>
+        <p class="mut helper">Despesas cujo último mês já passou relativamente ao mês selecionado. Podes consultar, editar ou reativar alterando o mês de fim.</p>
+        <div id="endedrecurringlist" class="recurring-list"></div>
+        <p id="endedrecurringempty" class="mut hidden">Não existem despesas fixas terminadas até este mês.</p>
+      </details>
+    </div>
   </section>
   <section id="shareview" class="hidden"><div class="card">
     <strong>Convite para a outra pessoa</strong>
@@ -396,11 +404,19 @@ function render(){
  renderCharts();renderRecurring();
 }
 function renderRecurring(){
- const list=$('#recurringlist'), empty=$('#recurringempty');list.replaceChildren();$('#recurringcount').textContent=recurringReady?'('+recurring.filter(r=>r.active!==false&&(!monthFromDate(r.end_month)||monthFromDate(r.end_month)>=periodNow())).length+')':'';
- if(!recurringReady){empty.classList.remove('hidden');empty.textContent='As despesas fixas ainda não estão configuradas. Executa o novo ficheiro SQL no Supabase para ativá-las.';return}
- const all=recurring.filter(r=>r.active!==false&&(!monthFromDate(r.end_month)||monthFromDate(r.end_month)>=periodNow()));
- empty.classList.toggle('hidden',all.length>0);if(!all.length){empty.textContent='Ainda não existem despesas fixas.';return}
- all.forEach(r=>{
+ const active=recurring.filter(r=>r.active!==false&&(!monthFromDate(r.end_month)||monthFromDate(r.end_month)>=month));
+ const ended=recurring.filter(r=>r.active!==false&&monthFromDate(r.end_month)&&monthFromDate(r.end_month)<month);
+ $('#recurringcount').textContent=recurringReady?'('+active.length+')':'';
+ $('#endedrecurringcount').textContent=recurringReady?'('+ended.length+')':'';
+ renderRecurringList('#recurringlist','#recurringempty',active,false);
+ renderRecurringList('#endedrecurringlist','#endedrecurringempty',ended,true);
+}
+function renderRecurringList(listSelector,emptySelector,records,isEnded){
+ const list=$(listSelector),empty=$(emptySelector);list.replaceChildren();
+ if(!recurringReady){empty.classList.remove('hidden');empty.textContent='As despesas fixas ainda não estão configuradas no Supabase.';return}
+ empty.classList.toggle('hidden',records.length>0);
+ if(!records.length){empty.textContent=isEnded?'Não existem despesas fixas terminadas até este mês.':'Ainda não existem despesas fixas para este mês.';return}
+ records.forEach(r=>{
   const item=document.createElement('div');item.className='recurring-item';const left=document.createElement('div');left.className='recurring-main';
   const title=document.createElement('div');title.className='recurring-title';title.textContent=r.description;
   const meta=document.createElement('div');meta.className='mut recurring-meta';
@@ -410,9 +426,9 @@ function renderRecurring(){
   if(excludedMonths(r).length){const skipped=document.createElement('div');skipped.className='mut';skipped.textContent='Meses excluídos: '+excludedMonths(r).map(monthName).join(', ');left.append(skipped)}
   const right=document.createElement('div');right.className='inline-actions';
   if(r.payer===me.id){
-    const edit=document.createElement('button');edit.type='button';edit.className='g smallbtn';edit.textContent='Editar';edit.onclick=()=>openEditRecurring(r.id);right.append(edit);
+    const edit=document.createElement('button');edit.type='button';edit.className='g smallbtn';edit.textContent=isEnded?'Editar / reativar':'Editar';edit.onclick=()=>openEditRecurring(r.id);right.append(edit);
     const del=document.createElement('button');del.type='button';del.className='g smallbtn';del.textContent='Remover';del.onclick=()=>removeRecurring(r.id);right.append(del);
-    if(month>=from&&(!end||month<=end)){
+    if(!isEnded&&month>=from&&(!end||month<=end)){
       const skip=document.createElement('button');skip.type='button';skip.className='g smallbtn';
       const excluded=excludedMonths(r).includes(month);
       skip.textContent=excluded?'Incluir '+MES[Number(month.slice(5,7))-1]:'Excluir '+MES[Number(month.slice(5,7))-1];
