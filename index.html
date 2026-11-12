@@ -178,7 +178,16 @@ body{min-height:100dvh;padding-bottom:max(48px,env(safe-area-inset-bottom,0px))}
     <input id="password" class="w" type="password" placeholder="Palavra-passe" autocomplete="current-password">
     <button id="signin">Iniciar sessão</button><button id="signup" class="g">Criar conta</button>
   </div>
-  <p id="authmsg" class="mut"></p>
+  <button id="forgotpassword" type="button" class="g" style="width:100%;margin-top:10px">Esqueceste-te da palavra-passe?</button>
+  <p id="authmsg" class="mut" role="status" aria-live="polite"></p>
+</section>
+<section id="passwordreset" class="card hidden">
+  <strong>Definir nova palavra-passe</strong>
+  <p class="mut">Escolhe uma nova palavra-passe para a tua conta.</p>
+  <input id="newpassword" type="password" placeholder="Nova palavra-passe (mínimo 8 caracteres)" autocomplete="new-password" minlength="8">
+  <input id="confirmnewpassword" type="password" placeholder="Confirmar nova palavra-passe" autocomplete="new-password" minlength="8" style="margin-top:8px">
+  <button id="savepassword" type="button" style="width:100%;margin-top:10px">Guardar nova palavra-passe</button>
+  <p id="resetmsg" class="mut" role="status" aria-live="polite"></p>
 </section>
 
 <section id="household" class="card hidden">
@@ -359,6 +368,7 @@ const MES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto
 let sbClient=null, session=null, me=null, householdId=null, inviteCode='', items=[], members=[], settlements=[], settlementsReady=false, recurring=[], recurringReady=false, recurringError='', channel=null;
 const now=new Date();let month=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
 let activeTab='expenses', chartPeriod='month', selectedBarMonth=null, editingExpenseId=null, editingRecurringId=null;
+let passwordRecoveryMode=false;
 
 function show(id,on=true){$(id).classList.toggle('hidden',!on)}
 function message(id,msg,isError=false){$(id).textContent=msg;$(id).classList.toggle('error',isError)}
@@ -384,9 +394,22 @@ async function connect(){
  if(!c.url||!c.key||!window.supabase){show('#config');show('#auth',false);return}
  sbClient=window.supabase.createClient(c.url,c.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
  show('#config',false);
+ sbClient.auth.onAuthStateChange((event,s)=>{setTimeout(async()=>{
+    session=s;
+    if(event==='PASSWORD_RECOVERY'){
+      passwordRecoveryMode=true;
+      show('#auth',false);show('#household',false);show('#app',false);show('#passwordreset');
+      return;
+    }
+    if(passwordRecoveryMode)return;
+    show('#passwordreset',false);
+    if(s){await afterLogin()}else{resetApp();show('#auth');show('#household',false);show('#app',false)}
+  },0)});
  const {data:{session:s}}=await sbClient.auth.getSession();
- if(s){session=s;await afterLogin()}else{show('#auth');show('#household',false);show('#app',false)}
- sbClient.auth.onAuthStateChange((_event,s)=>{setTimeout(async()=>{session=s;if(s){await afterLogin()}else{resetApp();show('#auth');show('#household',false);show('#app',false)}},0)});
+  // O Supabase pode processar a ligação de recuperação durante a inicialização.
+  // Não mostrar os dados da casa enquanto se define a nova palavra-passe.
+  if(s){session=s;if(!passwordRecoveryMode)await afterLogin()}else if(!passwordRecoveryMode){show('#auth');show('#household',false);show('#app',false)}
+
 }
 function resetApp(){if(channel)sbClient.removeChannel(channel);channel=null;me=null;householdId=null;items=[];members=[];settlements=[];settlementsReady=false;recurring=[];recurringReady=false;recurringError='';editingExpenseId=null;editingRecurringId=null;closeEditExpense();closeEditRecurring()}
 async function afterLogin(){
@@ -787,6 +810,31 @@ async function shift(n){const [y,m]=month.split('-').map(Number),annual=activeTa
 
 window.saveConfigNow=function(){const out=document.querySelector('#configmsg');try{out.textContent='Botão acionado. A validar os dados…';out.classList.remove('error');const url=document.querySelector('#sburl').value.trim().replace(/\/$/,''),key=document.querySelector('#sbkey').value.trim();if(!url||!key){out.textContent='Preenche o URL do projeto e a chave pública.';out.classList.add('error');return}if(!/^https:\/\//i.test(url)){out.textContent='O URL deve começar por https://';out.classList.add('error');return}localStorage.setItem('despesas_sb_url',url);localStorage.setItem('despesas_sb_key',key);out.textContent='Configuração guardada. A abrir a aplicação…';connect().catch(e=>{out.textContent='Erro ao ligar: '+(e.message||e);out.classList.add('error')});}catch(e){out.textContent='Erro ao guardar no navegador: '+(e.message||e);out.classList.add('error');console.error(e)}};
 $('#signin').onclick=async()=>{const {error}=await sbClient.auth.signInWithPassword({email:$('#email').value.trim(),password:$('#password').value});message('#authmsg',error?error.message:'A iniciar sessão…',!!error)};
+$('#forgotpassword').onclick=async()=>{
+  const email=$('#email').value.trim();
+  if(!email||!$('#email').checkValidity()){message('#authmsg','Introduz primeiro um endereço de email válido.',true);return}
+  const button=$('#forgotpassword');button.disabled=true;
+  try{
+    const {error}=await sbClient.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+window.location.pathname});
+    message('#authmsg',error?'Não foi possível enviar o email: '+error.message:'Se existir uma conta com este email, receberás uma ligação para definir uma nova palavra-passe. Verifica também o spam.',!!error);
+  }finally{button.disabled=false}
+};
+$('#savepassword').onclick=async()=>{
+  const password=$('#newpassword').value,confirmation=$('#confirmnewpassword').value;
+  if(password.length<8){message('#resetmsg','Utiliza pelo menos 8 caracteres.',true);return}
+  if(password!==confirmation){message('#resetmsg','As palavras-passe não coincidem.',true);return}
+  const button=$('#savepassword');button.disabled=true;
+  try{
+    const {error}=await sbClient.auth.updateUser({password});
+    if(error){message('#resetmsg','Não foi possível atualizar: '+error.message,true);return}
+    message('#resetmsg','Palavra-passe atualizada com sucesso.');
+    $('#newpassword').value='';$('#confirmnewpassword').value='';
+    passwordRecoveryMode=false;show('#passwordreset',false);
+    // Regressar à aplicação com a sessão autenticada.
+    const {data:{session:current}}=await sbClient.auth.getSession();
+    if(current){session=current;await afterLogin()}else{show('#auth')}
+  }finally{button.disabled=false}
+};
 $('#signup').onclick=async()=>{const {data,error}=await sbClient.auth.signUp({email:$('#email').value.trim(),password:$('#password').value});message('#authmsg',error?error.message:(data.session?'Conta criada.':'Conta criada. Confirma o email antes de iniciar sessão.'),!!error)};
 $('#createhome').onclick=async()=>{const {data,error}=await sbClient.rpc('create_household');if(error){message('#homemsg','Erro: '+error.message,true);return}householdId=data;await loadHousehold()};
 $('#joinhome').onclick=async()=>{const code=$('#invite').value.trim().toUpperCase();if(!code)return;const {data,error}=await sbClient.rpc('join_household',{p_code:code});if(error){message('#homemsg','Não foi possível entrar: '+error.message,true);return}householdId=data;await loadHousehold()};
