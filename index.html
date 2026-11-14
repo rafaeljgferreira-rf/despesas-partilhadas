@@ -157,19 +157,6 @@ body{min-height:100dvh;padding-bottom:max(48px,env(safe-area-inset-bottom,0px))}
   </button>
 </header>
 
-<section id="config" class="card">
-  <strong>Configuração da sincronização</strong>
-  <p class="mut">Para partilhar despesas entre dois utilizadores e todos os seus dispositivos, esta aplicação usa uma base de dados Supabase.</p>
-  <label class="mut" for="sburl">URL do projeto Supabase</label>
-  <input id="sburl" placeholder="https://xxxxxxxx.supabase.co" autocomplete="url">
-  <label class="mut" for="sbkey" style="display:block;margin-top:8px">Chave pública (anon / publishable)</label>
-  <input id="sbkey" placeholder="Chave pública do projeto" autocomplete="off">
-  <button id="saveconfig" type="button" onclick="window.saveConfigNow()" style="width:100%;margin-top:10px">Guardar configuração</button>
-  <p id="configmsg" class="mut" role="status" aria-live="polite"></p>
-  <p class="mut">A configuração fica guardada neste dispositivo. Terás de a introduzir também nos outros dispositivos, ou abrir a aplicação já configurada a partir de um alojamento comum.</p>
-  <details><summary>Como obter estes dados?</summary><ol class="mut"><li>Cria um projeto gratuito em <a href="https://supabase.com" target="_blank" rel="noopener">supabase.com</a>.</li><li>Em Project Settings → API, copia Project URL e a chave anon/public.</li><li>Executa o SQL fornecido no ficheiro <strong>configuracao_supabase.sql</strong> no SQL Editor do Supabase.</li></ol></details>
-</section>
-
 <section id="auth" class="card hidden">
   <strong>Aceder à aplicação</strong>
   <p class="mut">Cada pessoa deve usar a sua própria conta. Assim, a aplicação identifica quem registou cada despesa.</p>
@@ -401,8 +388,9 @@ let mfaPendingFactorId=null, mfaEnrollment=null, authFlowPromise=null, authGrant
 function show(id,on=true){$(id).classList.toggle('hidden',!on)}
 function message(id,msg,isError=false){$(id).textContent=msg;$(id).classList.toggle('error',isError)}
 function status(msg,error=false){message('#status',msg,error)}
-function savedConfig(){return {url:localStorage.getItem('despesas_sb_url')||'',key:localStorage.getItem('despesas_sb_key')||''}}
-function setConfigFields(){const c=savedConfig();$('#sburl').value=c.url;$('#sbkey').value=c.key}
+// Dados publicos do projeto. Nunca incluir service_role ou sb_secret_ aqui.
+const SUPABASE_URL='https://yinwpwywuvpborlfswzt.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY='sb_publishable_RnM64gagKaYaIHX5Zoj0ug_OtMl9DGN';
 function firstDayOfMonth(period){return period+'-01'}
 function buildDate(period, day){const [y,m]=period.split('-').map(Number);const last=new Date(y,m,0).getDate();return period+'-'+String(Math.min(Math.max(Number(day)||1,1),last)).padStart(2,'0')}
 function normalizeAmount(value){return Math.round(Number(String(value).replace(',','.'))*100)/100}
@@ -448,10 +436,12 @@ async function gateAfterLogin(){
  return authFlowPromise;
 }
 async function connect(){
- const c=savedConfig();
- if(!c.url||!c.key||!window.supabase){show('#config');show('#auth',false);return}
- sbClient=window.supabase.createClient(c.url,c.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
- show('#config',false);
+ if(!window.supabase){
+  show('#auth');
+  message('#authmsg','Não foi possível carregar a ligação ao Supabase. Atualiza a página e tenta novamente.',true);
+  return;
+ }
+ sbClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
  sbClient.auth.onAuthStateChange((event,s)=>{setTimeout(async()=>{
     session=s;
     if(event==='PASSWORD_RECOVERY'){
@@ -872,8 +862,6 @@ $('#closeeditrec').onclick=closeEditRecurring;$('#saveeditrec').onclick=saveEdit
 $('#editrecurringoverlay').onclick=(e)=>{if(e.target.id==='editrecurringoverlay')closeEditRecurring()};
 async function shift(n){const [y,m]=month.split('-').map(Number),annual=activeTab==='charts'&&chartPeriod==='year';const d=new Date(y+(annual?n:0),m-1+(annual?0:n),1);month=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');selectedBarMonth=null;syncExpenseDate();await loadExpenses({syncRecurring:true})}
 
-window.saveConfigNow=function(){const out=document.querySelector('#configmsg');try{out.textContent='Botão acionado. A validar os dados…';out.classList.remove('error');const url=document.querySelector('#sburl').value.trim().replace(/\/$/,''),key=document.querySelector('#sbkey').value.trim();if(!url||!key){out.textContent='Preenche o URL do projeto e a chave pública.';out.classList.add('error');return}if(!/^https:\/\//i.test(url)){out.textContent='O URL deve começar por https://';out.classList.add('error');return}localStorage.setItem('despesas_sb_url',url);localStorage.setItem('despesas_sb_key',key);out.textContent='Configuração guardada. A abrir a aplicação…';connect().catch(e=>{out.textContent='Erro ao ligar: '+(e.message||e);out.classList.add('error')});}catch(e){out.textContent='Erro ao guardar no navegador: '+(e.message||e);out.classList.add('error');console.error(e)}};
-
 function validMfaCode(code){return /^[0-9]{6}$/.test(code)}
 $('#mfaconfirm').onclick=async()=>{
  const code=$('#mfalogincode').value.trim();
@@ -998,7 +986,7 @@ const themeButton=document.querySelector('#themetoggle');
 function updateThemeButton(){const dark=document.documentElement.dataset.theme==='dark';document.querySelector('meta[name="theme-color"]').setAttribute('content',dark?'#101715':'#f3f6f4');themeButton.setAttribute('aria-label',dark?'Ativar modo claro':'Ativar modo escuro');themeButton.setAttribute('aria-checked',String(dark));themeButton.title=dark?'Ativar modo claro':'Ativar modo escuro'}
 themeButton.addEventListener('click',()=>{const dark=document.documentElement.dataset.theme==='dark';if(dark)delete document.documentElement.dataset.theme;else document.documentElement.dataset.theme='dark';try{localStorage.setItem('a_nossa_casa_theme',dark?'light':'dark')}catch(e){}updateThemeButton()});
 updateThemeButton();
-setConfigFields();connect().catch(e=>{show('#config');message('#authmsg',e.message,true)});
+connect().catch(e=>{show('#auth');message('#authmsg','Erro ao ligar ao Supabase: '+(e.message||e),true)});
 </script>
 <script>
 if ("serviceWorker" in navigator) { window.addEventListener("load", () => { navigator.serviceWorker.register("/sw.js").catch(err => console.warn("PWA:",err)); }); }
