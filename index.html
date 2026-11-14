@@ -181,6 +181,15 @@ body{min-height:100dvh;padding-bottom:max(48px,env(safe-area-inset-bottom,0px))}
   <button id="forgotpassword" type="button" class="g" style="width:100%;margin-top:10px">Esqueceste-te da palavra-passe?</button>
   <p id="authmsg" class="mut" role="status" aria-live="polite"></p>
 </section>
+<section id="mfachallenge" class="card hidden" aria-labelledby="mfachallengetitle">
+  <h2 id="mfachallengetitle">Confirmar autenticação em dois passos</h2>
+  <p class="mut">Introduz o código de 6 dígitos da tua aplicação autenticadora.</p>
+  <label for="mfalogincode">Código de autenticação</label>
+  <input id="mfalogincode" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" placeholder="000000">
+  <button id="mfaconfirm" type="button" style="width:100%;margin-top:10px">Confirmar código</button>
+  <button id="mfasignout" type="button" class="g" style="width:100%;margin-top:8px">Terminar sessão</button>
+  <p id="mfamsg" class="mut" role="status" aria-live="polite"></p>
+</section>
 <section id="passwordreset" class="card hidden">
   <strong>Definir nova palavra-passe</strong>
   <p class="mut">Escolhe uma nova palavra-passe para a tua conta.</p>
@@ -327,7 +336,25 @@ body{min-height:100dvh;padding-bottom:max(48px,env(safe-area-inset-bottom,0px))}
     <p class="mut">Email com que iniciaste sessão:</p>
     <p id="who" class="account-email">Conta</p>
     <p id="spaceinfo" class="mut">Espaço partilhado</p>
-    <button class="g" id="logout" type="button">Terminar sessão</button>
+    <div class="recurring-manage" id="mfamanage">
+      <h2>Autenticação em dois passos (opcional)</h2>
+      <p class="mut helper">Podes ativar a autenticação em dois passos para proteger o acesso à tua conta. Se a ativares, precisarás de um código da aplicação autenticadora ao iniciar sessão.</p>
+      <p id="mfaaccountstatus" class="mut">A verificar a proteção da conta…</p>
+      <div id="mfafactors"></div>
+      <button id="mfaenroll" type="button" class="g">Adicionar aplicação autenticadora</button>
+      <p class="mut helper">Antes de ativar, prepara uma forma segura de recuperar o acesso. O Supabase não fornece códigos de recuperação TOTP; podes adicionar outro autenticador como reserva.</p>
+      <div id="mfasetup" class="hidden" style="margin-top:12px">
+        <p class="mut">Lê este código QR com uma aplicação autenticadora. Se não conseguires, introduz a chave manualmente.</p>
+        <img id="mfaqr" alt="Código QR para configurar a autenticação em dois passos" style="display:block;width:min(230px,100%);margin:12px auto">
+        <p class="mut">Chave de configuração: <strong id="mfasecret" style="overflow-wrap:anywhere"></strong></p>
+        <label for="mfasetupcode">Código de 6 dígitos</label>
+        <input id="mfasetupcode" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" placeholder="000000">
+        <button id="mfaactivate" type="button" style="width:100%;margin-top:8px">Ativar autenticação em dois passos</button>
+        <button id="mfacancel" type="button" class="g" style="width:100%;margin-top:8px">Cancelar configuração</button>
+        <p id="mfasetupmsg" class="mut" role="status" aria-live="polite"></p>
+      </div>
+    </div>
+    <button class="g" id="logout" type="button" style="margin-top:16px">Terminar sessão</button>
   </div></section>
   <div id="editrecurringoverlay" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="er-title">
     <div class="card modal-card">
@@ -369,6 +396,7 @@ let sbClient=null, session=null, me=null, householdId=null, inviteCode='', items
 const now=new Date();let month=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
 let activeTab='expenses', chartPeriod='month', selectedBarMonth=null, editingExpenseId=null, editingRecurringId=null;
 let passwordRecoveryMode=false;
+let mfaPendingFactorId=null, mfaEnrollment=null, authFlowPromise=null, authGrantedKey=null;
 
 function show(id,on=true){$(id).classList.toggle('hidden',!on)}
 function message(id,msg,isError=false){$(id).textContent=msg;$(id).classList.toggle('error',isError)}
@@ -389,6 +417,36 @@ function monthName(period){const [y,m]=period.split('-').map(Number);return MES[
 $('#rstart').value=periodNow();
 function setRecurringMode(){const selected=$('#isrecurring').checked;show('#recurringoptions',selected);$('#isrecurring').setAttribute('aria-expanded',String(selected));$('#addlabel').textContent=selected?'Guardar despesa fixa':'Adicionar despesa'}
 $('#isrecurring').onchange=setRecurringMode;setRecurringMode();
+// MFA opcional: uma sessão com TOTP verificado só pode entrar após AAL2.
+async function gateAfterLogin(){
+ if(!session||passwordRecoveryMode)return;
+ if(authFlowPromise)return authFlowPromise;
+ const userId=session.user.id;
+ authFlowPromise=(async()=>{
+  const {data:aal,error:aalError}=await sbClient.auth.mfa.getAuthenticatorAssuranceLevel();
+  if(aalError)throw aalError;
+  if(!session||session.user.id!==userId||passwordRecoveryMode)return;
+  if(aal.currentLevel!=='aal2'&&aal.nextLevel==='aal2'){
+   authGrantedKey=null;
+   resetApp();show('#app',false);show('#household',false);show('#auth',false);show('#mfachallenge');
+   const {data:factors,error:factorError}=await sbClient.auth.mfa.listFactors();
+   if(factorError)throw factorError;
+   mfaPendingFactorId=(factors.totp||[]).find(f=>f.status==='verified')?.id||null;
+   if(!mfaPendingFactorId)throw new Error('Não foi encontrado um autenticador TOTP válido.');
+   message('#mfamsg','Introduz o código da tua aplicação autenticadora.');
+   return;
+  }
+  show('#mfachallenge',false);mfaPendingFactorId=null;
+  const key=userId+':'+aal.currentLevel;
+  if(authGrantedKey===key)return;
+  authGrantedKey=key;
+  try{await afterLogin()}catch(e){authGrantedKey=null;throw e}
+ })().catch(e=>{
+  authGrantedKey=null;show('#app',false);show('#household',false);show('#auth',false);show('#mfachallenge');
+  message('#mfamsg','Não foi possível verificar a autenticação: '+(e.message||e),true);
+ }).finally(()=>{authFlowPromise=null});
+ return authFlowPromise;
+}
 async function connect(){
  const c=savedConfig();
  if(!c.url||!c.key||!window.supabase){show('#config');show('#auth',false);return}
@@ -398,20 +456,25 @@ async function connect(){
     session=s;
     if(event==='PASSWORD_RECOVERY'){
       passwordRecoveryMode=true;
+      authGrantedKey=null;show('#mfachallenge',false);
       show('#auth',false);show('#household',false);show('#app',false);show('#passwordreset');
       return;
     }
     if(passwordRecoveryMode)return;
     show('#passwordreset',false);
-    if(s){await afterLogin()}else{resetApp();show('#auth');show('#household',false);show('#app',false)}
+    if(s){await gateAfterLogin()}else{resetApp();show('#mfachallenge',false);show('#auth');show('#household',false);show('#app',false)}
   },0)});
  const {data:{session:s}}=await sbClient.auth.getSession();
-  // O Supabase pode processar a ligação de recuperação durante a inicialização.
-  // Não mostrar os dados da casa enquanto se define a nova palavra-passe.
-  if(s){session=s;if(!passwordRecoveryMode)await afterLogin()}else if(!passwordRecoveryMode){show('#auth');show('#household',false);show('#app',false)}
-
+ if(s){session=s;if(!passwordRecoveryMode)await gateAfterLogin()}
+ else if(!passwordRecoveryMode){show('#auth');show('#household',false);show('#app',false)}
 }
-function resetApp(){if(channel)sbClient.removeChannel(channel);channel=null;me=null;householdId=null;items=[];members=[];settlements=[];settlementsReady=false;recurring=[];recurringReady=false;recurringError='';editingExpenseId=null;editingRecurringId=null;closeEditExpense();closeEditRecurring()}
+function resetApp(){
+ if(channel)sbClient.removeChannel(channel);
+ channel=null;me=null;householdId=null;items=[];members=[];settlements=[];settlementsReady=false;
+ recurring=[];recurringReady=false;recurringError='';editingExpenseId=null;editingRecurringId=null;
+ mfaPendingFactorId=null;mfaEnrollment=null;authGrantedKey=null;
+ closeEditExpense();closeEditRecurring();show('#mfasetup',false);
+}
 async function afterLogin(){
  me=session.user;$('#who').textContent=me.email||'Utilizador';show('#auth',false);
  const {data:membership,error}=await sbClient.from('household_members').select('household_id').eq('user_id',me.id).limit(1).maybeSingle();
@@ -697,6 +760,7 @@ function selectTab(which){
   show('#'+view,name===which);
   $('#tab'+name).setAttribute('aria-selected',String(name===which));
  }
+ if(which==='account')refreshMfaAccount();
  render();
 }
 for(const name of ['expenses','charts','history','share','account'])$('#tab'+name).onclick=()=>selectTab(name);
@@ -809,6 +873,94 @@ $('#editrecurringoverlay').onclick=(e)=>{if(e.target.id==='editrecurringoverlay'
 async function shift(n){const [y,m]=month.split('-').map(Number),annual=activeTab==='charts'&&chartPeriod==='year';const d=new Date(y+(annual?n:0),m-1+(annual?0:n),1);month=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');selectedBarMonth=null;syncExpenseDate();await loadExpenses({syncRecurring:true})}
 
 window.saveConfigNow=function(){const out=document.querySelector('#configmsg');try{out.textContent='Botão acionado. A validar os dados…';out.classList.remove('error');const url=document.querySelector('#sburl').value.trim().replace(/\/$/,''),key=document.querySelector('#sbkey').value.trim();if(!url||!key){out.textContent='Preenche o URL do projeto e a chave pública.';out.classList.add('error');return}if(!/^https:\/\//i.test(url)){out.textContent='O URL deve começar por https://';out.classList.add('error');return}localStorage.setItem('despesas_sb_url',url);localStorage.setItem('despesas_sb_key',key);out.textContent='Configuração guardada. A abrir a aplicação…';connect().catch(e=>{out.textContent='Erro ao ligar: '+(e.message||e);out.classList.add('error')});}catch(e){out.textContent='Erro ao guardar no navegador: '+(e.message||e);out.classList.add('error');console.error(e)}};
+
+function validMfaCode(code){return /^[0-9]{6}$/.test(code)}
+$('#mfaconfirm').onclick=async()=>{
+ const code=$('#mfalogincode').value.trim();
+ if(!validMfaCode(code)){message('#mfamsg','Introduz os 6 dígitos.',true);return}
+ if(!mfaPendingFactorId){message('#mfamsg','Não foi encontrado um autenticador. Termina a sessão e tenta novamente.',true);return}
+ const button=$('#mfaconfirm');button.disabled=true;
+ try{
+  const {error}=await sbClient.auth.mfa.challengeAndVerify({factorId:mfaPendingFactorId,code});
+  if(error)throw error;
+  $('#mfalogincode').value='';
+  const {data:{session:updated}}=await sbClient.auth.getSession();
+  if(!updated)throw new Error('Sessão indisponível após a verificação.');
+  session=updated;authGrantedKey=null;await gateAfterLogin();
+ }catch(e){message('#mfamsg','Código não confirmado: '+(e.message||e),true)}
+ finally{button.disabled=false}
+};
+$('#mfasignout').onclick=()=>sbClient.auth.signOut();
+async function refreshMfaAccount(){
+ if(!session)return;
+ try{
+  const {data,error}=await sbClient.auth.mfa.listFactors();
+  if(error)throw error;
+  const factors=(data.totp||[]).filter(f=>f.status==='verified');
+  $('#mfaaccountstatus').textContent=factors.length
+   ?'Ativada: '+factors.length+' aplicação(ões) autenticadora(s) associada(s).'
+   :'Desativada. Podes ativá-la quando quiseres.';
+  const container=$('#mfafactors');container.replaceChildren();
+  factors.forEach((factor,i)=>{
+   const row=document.createElement('div');row.className='row sp';row.style.margin='8px 0';
+   const name=document.createElement('span');name.className='mut';name.textContent=factor.friendly_name||'Autenticador '+(i+1);
+   const remove=document.createElement('button');remove.className='g smallbtn';remove.type='button';remove.textContent='Remover';
+   remove.onclick=()=>removeMfaFactor(factor.id);row.append(name,remove);container.append(row);
+  });
+ }catch(e){message('#mfaaccountstatus','Erro ao consultar MFA: '+(e.message||e),true)}
+}
+$('#mfaenroll').onclick=async()=>{
+ if(mfaEnrollment){message('#mfasetupmsg','Conclui ou cancela primeiro a configuração em curso.',true);show('#mfasetup');return}
+ if(!confirm('Vais associar uma aplicação autenticadora. Se perderes o acesso a todos os autenticadores, poderás precisar de ajuda administrativa para recuperar a conta. Queres continuar?'))return;
+ const button=$('#mfaenroll');button.disabled=true;
+ try{
+  const {data,error}=await sbClient.auth.mfa.enroll({factorType:'totp',friendlyName:'A Nossa Casa'});
+  if(error)throw error;
+  mfaEnrollment={id:data.id};
+  $('#mfaqr').src=data.totp.qr_code;
+  $('#mfasecret').textContent=data.totp.secret;
+  $('#mfasetupcode').value='';message('#mfasetupmsg','Depois de associar o autenticador, introduz o código de 6 dígitos.');
+  show('#mfasetup');
+ }catch(e){message('#mfaaccountstatus','Não foi possível iniciar a configuração: '+(e.message||e),true)}
+ finally{button.disabled=false}
+};
+$('#mfaactivate').onclick=async()=>{
+ const code=$('#mfasetupcode').value.trim();
+ if(!mfaEnrollment||!validMfaCode(code)){message('#mfasetupmsg','Introduz o código de 6 dígitos.',true);return}
+ const button=$('#mfaactivate');button.disabled=true;
+ try{
+  const {error}=await sbClient.auth.mfa.challengeAndVerify({factorId:mfaEnrollment.id,code});
+  if(error)throw error;
+  mfaEnrollment=null;$('#mfasecret').textContent='';$('#mfaqr').removeAttribute('src');$('#mfasetupcode').value='';show('#mfasetup',false);
+  message('#mfaaccountstatus','Autenticação em dois passos ativada. Guarda o acesso ao autenticador com cuidado.');
+  await refreshMfaAccount();
+  const {data:{session:updated}}=await sbClient.auth.getSession();
+  if(updated){session=updated;authGrantedKey=null;await gateAfterLogin()}
+ }catch(e){message('#mfasetupmsg','Não foi possível confirmar: '+(e.message||e),true)}
+ finally{button.disabled=false}
+};
+$('#mfacancel').onclick=async()=>{
+ if(!mfaEnrollment){show('#mfasetup',false);return}
+ const button=$('#mfacancel');button.disabled=true;
+ try{
+  const {error}=await sbClient.auth.mfa.unenroll({factorId:mfaEnrollment.id});
+  if(error)throw error;
+  mfaEnrollment=null;$('#mfasecret').textContent='';$('#mfaqr').removeAttribute('src');$('#mfasetupcode').value='';show('#mfasetup',false);
+  await refreshMfaAccount();
+ }catch(e){message('#mfasetupmsg','Não foi possível cancelar a configuração: '+(e.message||e),true)}
+ finally{button.disabled=false}
+};
+async function removeMfaFactor(factorId){
+ if(!confirm('Queres remover este autenticador? Se for o último, a autenticação em dois passos ficará desativada.'))return;
+ try{
+  const {error}=await sbClient.auth.mfa.unenroll({factorId});
+  if(error)throw error;
+  const {error:refreshError}=await sbClient.auth.refreshSession();
+  if(refreshError)throw refreshError;
+  await refreshMfaAccount();
+ }catch(e){message('#mfaaccountstatus','Não foi possível remover o autenticador: '+(e.message||e),true)}
+}
+
 $('#signin').onclick=async()=>{const {error}=await sbClient.auth.signInWithPassword({email:$('#email').value.trim(),password:$('#password').value});message('#authmsg',error?error.message:'A iniciar sessão…',!!error)};
 $('#forgotpassword').onclick=async()=>{
   const email=$('#email').value.trim();
@@ -832,7 +984,7 @@ $('#savepassword').onclick=async()=>{
     passwordRecoveryMode=false;show('#passwordreset',false);
     // Regressar à aplicação com a sessão autenticada.
     const {data:{session:current}}=await sbClient.auth.getSession();
-    if(current){session=current;await afterLogin()}else{show('#auth')}
+    if(current){session=current;authGrantedKey=null;await gateAfterLogin()}else{show('#auth')}
   }finally{button.disabled=false}
 };
 $('#signup').onclick=async()=>{const {data,error}=await sbClient.auth.signUp({email:$('#email').value.trim(),password:$('#password').value});message('#authmsg',error?error.message:(data.session?'Conta criada.':'Conta criada. Confirma o email antes de iniciar sessão.'),!!error)};
