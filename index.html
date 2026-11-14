@@ -398,6 +398,20 @@ const SUPABASE_PUBLISHABLE_KEY='sb_publishable_RnM64gagKaYaIHX5Zoj0ug_OtMl9DGN';
 function firstDayOfMonth(period){return period+'-01'}
 function buildDate(period, day){const [y,m]=period.split('-').map(Number);const last=new Date(y,m,0).getDate();return period+'-'+String(Math.min(Math.max(Number(day)||1,1),last)).padStart(2,'0')}
 function normalizeAmount(value){return Math.round(Number(String(value).replace(',','.'))*100)/100}
+function toCents(value){return Math.round(Number(value)*100)}
+// Divide o total partilhado em centimos inteiros: o centimo extra
+// cabe sempre ao membro com o ID alfabeticamente mais baixo.
+// A mesma regra aplica-se aos dois utilizadores, em todos os ecras.
+function balanceCents(sharedExpenses, payments, people, userId){
+ const totalCents=sharedExpenses.reduce((sum,e)=>sum+toCents(e.amount),0);
+ const paidCents=sharedExpenses.reduce((sum,e)=>sum+(e.payer===userId?toCents(e.amount):0),0);
+ const ordered=[...people].sort();
+ const fairCents=ordered.length===2
+  ? Math.floor(totalCents/2)+(ordered[0]===userId?totalCents%2:0)
+  : ordered.length===1?totalCents:0;
+ const transferCents=payments.reduce((sum,p)=>sum+(p.sender===userId?toCents(p.amount):0)-(p.recipient===userId?toCents(p.amount):0),0);
+ return paidCents-fairCents+transferCents;
+}
 function periodNow(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')}
 function dateInSelectedMonth(){const today=new Date(),day=Math.min(today.getDate(),new Date(Number(month.slice(0,4)),Number(month.slice(5,7)),0).getDate());return month+'-'+String(day).padStart(2,'0')}
 function syncExpenseDate(){const field=$('#expense-date');if(field)field.value=dateInSelectedMonth()}
@@ -543,11 +557,10 @@ function render(){
  const cur=items.filter(i=>(i.date||'').slice(0,7)===month);
  const total=cur.reduce((s,i)=>s+Number(i.amount),0), shared=cur.filter(i=>i.shared), shTotal=shared.reduce((s,i)=>s+Number(i.amount),0);
  $('#tot').textContent=fmt(total);
- const paid={};shared.forEach(i=>paid[i.payer]=(paid[i.payer]||0)+Number(i.amount));
- const people=members.length?members:[me.id], fair=people.length?shTotal/people.length:0;
+ const people=members.length?members:[me.id];
  const curPayments=settlements.filter(p=>p.period===month+'-01');
- const transferCents=curPayments.reduce((sum,p)=>sum+(p.sender===me.id?Math.round(Number(p.amount)*100):0)-(p.recipient===me.id?Math.round(Number(p.amount)*100):0),0);
- const net=Math.round(((paid[me.id]||0)-fair)*100+transferCents)/100, otherCount=Math.max(0,people.length-1);
+ const net=balanceCents(shared,curPayments,people,me.id)/100;
+ const otherCount=Math.max(0,people.length-1);
  const b=$('#bal');b.className='bal balance-line';
  if(!otherCount||(!shTotal&&!curPayments.length)){b.textContent=!otherCount?'À espera da outra pessoa entrar no espaço.':'Sem despesas partilhadas este mês.';b.className='mut balance-line'}
  else if(Math.abs(net)<0.005)b.textContent='Estão quites.';
@@ -628,10 +641,8 @@ async function registerSettlement(){
   const {data:payments,error:pError}=await sbClient.from('settlements').select('*').eq('household_id',householdId);
   if(eError||pError)throw eError||pError;
   const shared=(expenses||[]).filter(e=>e.shared&&(e.date||'').slice(0,7)===month);
-  const sharedTotal=shared.reduce((v,e)=>v+Math.round(Number(e.amount)*100),0);
-  const mine=shared.reduce((v,e)=>v+(e.payer===me.id?Math.round(Number(e.amount)*100):0),0);
-  const transfers=(payments||[]).filter(p=>p.period===month+'-01').reduce((v,p)=>v+(p.sender===me.id?Math.round(Number(p.amount)*100):0)-(p.recipient===me.id?Math.round(Number(p.amount)*100):0),0);
-  const debt=Math.round(sharedTotal/2)-mine-transfers;
+  const curPayments=(payments||[]).filter(p=>p.period===month+'-01');
+  const debt=-balanceCents(shared,curPayments,members,me.id);
   const amount=Math.round(Number($('#settleamount').value.replace(',','.'))*100);
   if(!(amount>0)||amount>debt){status('Indica um valor válido, até '+fmt(Math.max(0,debt)/100)+'.',true);return}
   const recipient=members.find(id=>id!==me.id);
