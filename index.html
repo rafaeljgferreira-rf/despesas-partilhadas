@@ -141,6 +141,10 @@ h2{font-size:17px;letter-spacing:-.2px;margin:0 0 15px}.add-fields{display:grid;
 html{background-color:#f3f6f4;color-scheme:light}
 html[data-theme="dark"]{background-color:#101715;color-scheme:dark}
 body{min-height:100dvh;padding-bottom:max(48px,env(safe-area-inset-bottom,0px))}
+/* Convite: manter o botão Copiar visível em ecrãs Android estreitos. */
+.invite-code-row{display:flex;flex-direction:column;align-items:stretch;gap:10px}
+.invite-code-row #code{display:block;max-width:100%;min-width:0;font-size:17px;letter-spacing:1px;line-height:1.55;overflow-wrap:anywhere;word-break:break-all}
+.invite-code-row #copycode{align-self:flex-start;flex:none;min-width:105px}
 </style>
 </head>
 <body>
@@ -316,7 +320,7 @@ body{min-height:100dvh;padding-bottom:max(48px,env(safe-area-inset-bottom,0px))}
   <section id="shareview" class="hidden"><div class="card">
     <strong>Convite para a outra pessoa</strong>
     <p class="mut">Partilha este código apenas com a pessoa que queres adicionar.</p>
-    <div class="row"><strong id="code" style="letter-spacing:2px;font-size:20px"></strong><button class="g" id="copycode">Copiar</button></div>
+    <div class="invite-code-row"><strong id="code"></strong><button type="button" class="g" id="copycode">Copiar</button></div>
   </div></section>
   <section id="accountview" class="hidden"><div class="card">
     <strong>A minha conta</strong>
