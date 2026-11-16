@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-HEJstwhlQtAa2k/Vce75sT1Ipj5Mzr7yJDhLGiKLRic=' 'sha256-gvScKu71eWTaewun8Ypl+DLiCx0clLjzoJjMeXjYOpI=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-HEJstwhlQtAa2k/Vce75sT1Ipj5Mzr7yJDhLGiKLRic=' 'sha256-jJe3Z3LuEkZ5120Aizj6z9b3tng6y9imCwep4dUmXAE=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
 <title>A Nossa Casa</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#167552">
@@ -407,6 +407,19 @@ body{max-width:640px;padding:22px 20px max(120px,env(safe-area-inset-bottom,0px)
 }
 @media(prefers-reduced-motion:reduce){.new-expense-chevron{transition:none}}
 
+
+/* Duas ações lado a lado no resumo; formulários fechados até ao clique. */
+#expenseview .balance-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:9px;margin-top:18px}
+#expenseview .balance-action{display:flex;align-items:center;justify-content:center;gap:8px;min-width:0;min-height:54px;padding:11px 8px;border-radius:13px;font-size:clamp(11px,2.9vw,14px);font-weight:750;line-height:1.2;text-align:center;white-space:normal}
+#expenseview .balance-action svg{width:20px;height:20px;flex:0 0 20px}
+#expenseview .balance-action-add{background:#f5f7f4;color:#101713;border:1px solid #f5f7f4}
+#expenseview .balance-action-settle{background:#103b20;color:#a5efba;border:1px solid #236d39}
+#expenseview .balance-action:focus-visible{outline:2px solid var(--ac);outline-offset:3px}
+#expenseview .balance-action[aria-expanded="true"]{outline:2px solid var(--ac);outline-offset:2px}
+#expenseview .add-panel{margin:0 0 16px}
+#expenseview .add-panel>.add-card{border:1px solid var(--bd);border-radius:16px;padding-top:20px}
+#expenseview #settlementpanel{margin:0 0 16px}
+@media(max-width:360px){#expenseview .balance-actions{gap:7px}#expenseview .balance-action{gap:5px;padding:10px 5px;font-size:11px}#expenseview .balance-action svg{width:17px;height:17px;flex-basis:17px}}
 </style>
 </head>
 <body>
@@ -482,9 +495,12 @@ body{max-width:640px;padding:22px 20px max(120px,env(safe-area-inset-bottom,0px)
         <div><div class="mut">Total de despesas</div><div class="big" id="tot">0 €</div></div>
       </div>
       <div id="bal" class="bal balance-line"></div>
+      <div class="balance-actions" role="group" aria-label="Ações de despesas e pagamentos">
+        <button id="openexpense" type="button" class="balance-action balance-action-add" aria-controls="newexpensepanel" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h10a2 2 0 0 1 2 2v16l-4-2-3 2-3-2-4 2V5a2 2 0 0 1 2-2z"/><path d="M12 8v7M8.5 11.5h7"/></svg><span>Adicionar despesa</span></button>
+        <button id="opensettlement" type="button" class="balance-action balance-action-settle" aria-controls="settlementpanel" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16m0 0-4-4m4 4-4 4M20 17H4m0 0 4-4m-4 4 4 4"/></svg><span>Acertar contas</span></button>
+      </div>
     </div>
-    <details id="newexpensepanel" class="add-panel">
-      <summary class="new-expense-trigger"><span class="new-expense-plus" aria-hidden="true">+</span><span>Nova despesa</span><span class="new-expense-chevron" aria-hidden="true">⌄</span></summary>
+    <section id="newexpensepanel" class="add-panel hidden" aria-label="Adicionar despesa">
     <div class="card add-card">
       <div class="add-fields">
         <label for="d">Descrição</label>
@@ -520,10 +536,8 @@ body{max-width:640px;padding:22px 20px max(120px,env(safe-area-inset-bottom,0px)
       <p class="mut helper">Com o visto «Despesa partilhada» ativo, o valor é dividido igualmente.</p>
 
     </div>
-    </details>
-    <div class="section-heading"><h2>Movimentos do mês</h2></div>
-    <div class="card" id="list"></div>
-    <section class="card settlement-card" aria-labelledby="settletitle">
+    </section>
+    <section id="settlementpanel" class="card settlement-card hidden" aria-labelledby="settletitle">
       <h2 id="settletitle">Acertar contas</h2>
       <p class="mut" id="settlehint">Os pagamentos entre vocês aparecem aqui, sem contar como novas despesas.</p>
       <div id="settleaction" class="hidden">
@@ -532,6 +546,8 @@ body{max-width:640px;padding:22px 20px max(120px,env(safe-area-inset-bottom,0px)
         <small>Regista o pagamento depois de o fazeres à outra pessoa.</small>
       </div>
     </section>
+    <div class="section-heading"><h2>Movimentos do mês</h2></div>
+    <div class="card" id="list"></div>
     <div class="recurring-section">
       <details id="recurringmanage" class="recurring-manage">
         <summary>Gerir despesas fixas <span id="recurringcount"></span></summary>
@@ -993,6 +1009,19 @@ async function undoSettlement(id){
  await loadExpenses();status('Pagamento anulado.');
 }
 $('#settlepay').onclick=registerSettlement;
+// Abre apenas o formulário escolhido, sem alterar o registo das despesas/pagamentos.
+function toggleBalanceAction(panelId){
+ const panels=[['#newexpensepanel','#openexpense'],['#settlementpanel','#opensettlement']];
+ const willOpen=$(panelId).classList.contains('hidden');
+ for(const [panel,button] of panels){
+  const isOpen=panel===panelId&&willOpen;
+  show(panel,isOpen);
+  $(button).setAttribute('aria-expanded',String(isOpen));
+ }
+}
+$('#openexpense').onclick=()=>toggleBalanceAction('#newexpensepanel');
+$('#opensettlement').onclick=()=>toggleBalanceAction('#settlementpanel');
+
 function renderCharts(){
  const isAnnual=chartPeriod==='year',year=month.slice(0,4);
  const chosen=items.filter(i=>isAnnual?(i.date||'').slice(0,4)===year:(i.date||'').slice(0,7)===month);
