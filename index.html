@@ -530,6 +530,21 @@ body{max-width:640px;padding:22px 20px max(120px,env(safe-area-inset-bottom,0px)
 #accountview .account-share .invite-code-row>strong{flex:1;min-width:0}
 #accountview .account-share .invite-code-row #copycode{display:inline-flex;align-items:center;justify-content:center;align-self:center;flex:0 0 44px;width:44px;min-width:44px;height:44px;padding:0;color:var(--ac)}
 #accountview .account-share .invite-code-row #copycode svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+/* Conta: segurança num submenu e saída apenas com ícone. */
+#accountview .account-mfa{margin-top:12px}
+#accountview .account-mfa .account-share-content>.mut:first-child{margin-top:0}
+#accountview #logout{display:flex;align-items:center;justify-content:flex-start;gap:14px;width:100%;min-height:52px;margin:16px 0 0;padding:12px 17px;border-radius:13px;color:var(--neg);font-size:15px;font-weight:700;text-align:left}
+#accountview #logout svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+#accountview #logout:focus-visible{outline:2px solid var(--ac);outline-offset:3px}
+/* Barra inferior ligeiramente mais baixa, sem comprometer os alvos táteis. */
+#app .tabnav{padding:5px 7px;border-radius:17px}
+#app .tabnav button{min-height:46px;padding:4px 2px;gap:2px;border-radius:11px}
+#app .tabnav svg{width:19px;height:19px}
+@media(max-width:420px){
+  #app .tabnav{padding:4px 5px;border-radius:15px}
+  #app .tabnav button{min-height:46px;padding:4px 2px;gap:2px}
+}
 </style>
 </head>
 <body>
@@ -735,8 +750,13 @@ body{max-width:640px;padding:22px 20px max(120px,env(safe-area-inset-bottom,0px)
         <div class="invite-code-row"><strong id="code"></strong><button type="button" class="g" id="copycode" aria-label="Copiar código de convite" title="Copiar código de convite"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg></button></div>
       </div>
     </details>
-    <div class="recurring-manage" id="mfamanage">
-      <h2>Autenticação em dois passos (opcional)</h2>
+    <details class="account-share account-mfa" id="mfamanage">
+      <summary>
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+        <span class="account-share-label"><strong>Autenticação em dois passos</strong><small>Segurança e aplicações autenticadoras</small></span>
+        <svg class="account-share-chevron" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 18 6-6-6-6"/></svg>
+      </summary>
+      <div class="account-share-content">
       <p class="mut helper">Podes ativar a autenticação em dois passos para proteger o acesso à tua conta. Se a ativares, precisarás de um código da aplicação autenticadora ao iniciar sessão.</p>
       <p id="mfaaccountstatus" class="mut">A verificar a proteção da conta…</p>
       <div id="mfafactors"></div>
@@ -752,8 +772,9 @@ body{max-width:640px;padding:22px 20px max(120px,env(safe-area-inset-bottom,0px)
         <button id="mfacancel" type="button" class="g" style="width:100%;margin-top:8px">Cancelar configuração</button>
         <p id="mfasetupmsg" class="mut" role="status" aria-live="polite"></p>
       </div>
-    </div>
-    <button class="g" id="logout" type="button" style="margin-top:16px">Terminar sessão</button>
+      </div>
+    </details>
+    <button class="g" id="logout" type="button" aria-label="Terminar sessão" title="Terminar sessão"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M10 17l5-5-5-5M15 12H3"/><path d="M12 3h6a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3h-6"/></svg><span>Terminar sessão</span></button>
   </div></section>
   <div id="editrecurringoverlay" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="er-title">
     <div class="card modal-card">
