@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-PzjPDk7P/XEZtRLkx1dKVl+p4NkXgibKAcKkgDDEdqM=' 'sha256-dj2TYFTCN3lCS0RVt5D+doLmk3PYtZqkg7ISUUmaKUM=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-PzjPDk7P/XEZtRLkx1dKVl+p4NkXgibKAcKkgDDEdqM=' 'sha256-biCYhGC9EYqc/5v3fH6e9cFc9CMCHznVcColk158YVo=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
 <title>A Nossa Casa</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#167552">
@@ -173,6 +173,7 @@ body{min-height:100dvh;padding-bottom:max(48px,env(safe-area-inset-bottom,0px))}
   <div class="f">
     <input id="email" class="w" type="email" placeholder="Email" autocomplete="email">
     <input id="password" class="w" type="password" placeholder="Palavra-passe" autocomplete="current-password">
+    <div id="turnstile" class="w" aria-label="Verificação anti-robôs"></div>
     <button id="signin">Iniciar sessão</button><button id="signup" class="g">Criar conta</button>
   </div>
   <button id="forgotpassword" type="button" class="g" style="width:100%;margin-top:10px">Esqueceste-te da palavra-passe?</button>
@@ -417,6 +418,7 @@ body{min-height:100dvh;padding-bottom:max(48px,env(safe-area-inset-bottom,0px))}
   </div>
 </main>
 <script src="/supabase.js"></script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" defer></script>
 <script>
 const $=s=>document.querySelector(s), fmt=n=>Number(n||0).toLocaleString('pt-PT',{style:'currency',currency:'EUR'});
 const MES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
@@ -426,7 +428,30 @@ let activeTab='expenses', chartPeriod='month', selectedBarMonth=null, editingExp
 let passwordRecoveryMode=false;
 let mfaPendingFactorId=null, mfaEnrollment=null, authFlowPromise=null, authGrantedKey=null;
 
-function show(id,on=true){$(id).classList.toggle('hidden',!on)}
+function show(id,on=true){$(id).classList.toggle('hidden',!on);if(id==='#auth'&&on)setTimeout(initTurnstile,0)}
+// CAPTCHA: chave publica do Cloudflare Turnstile; a chave secreta fica apenas no Supabase.
+const TURNSTILE_SITE_KEY='0x4AAAAAAGDlpZVVj5D2ihiO';
+let turnstileWidgetId=null;
+function initTurnstile(){
+ if(turnstileWidgetId!==null||!window.turnstile||$('#auth').classList.contains('hidden'))return;
+ try{
+  turnstileWidgetId=window.turnstile.render('#turnstile',{
+   sitekey:TURNSTILE_SITE_KEY,theme:'auto',
+   'expired-callback':()=>message('#authmsg','A verificação expirou. Aguarda que seja renovada.',true),
+   'error-callback':()=>message('#authmsg','Não foi possível concluir a verificação anti-robôs. Atualiza a página e tenta novamente.',true)
+  });
+ }catch(e){message('#authmsg','Não foi possível carregar a verificação anti-robôs. Atualiza a página e tenta novamente.',true)}
+}
+window.addEventListener('load',initTurnstile);
+function getCaptchaToken(){
+ initTurnstile();
+ const token=turnstileWidgetId!==null&&window.turnstile?window.turnstile.getResponse(turnstileWidgetId):'';
+ if(!token)message('#authmsg','Aguarda ou conclui a verificação anti-robôs antes de continuar.',true);
+ return token;
+}
+function resetCaptcha(){
+ if(turnstileWidgetId!==null&&window.turnstile)window.turnstile.reset(turnstileWidgetId);
+}
 function message(id,msg,isError=false){$(id).textContent=msg;$(id).classList.toggle('error',isError)}
 function status(msg,error=false){message('#status',msg,error)}
 // Dados publicos do projeto. Nunca incluir service_role ou sb_secret_ aqui.
@@ -1007,15 +1032,25 @@ async function removeMfaFactor(factorId){
  }catch(e){message('#mfaaccountstatus','Não foi possível remover o autenticador: '+(e.message||e),true)}
 }
 
-$('#signin').onclick=async()=>{const {error}=await sbClient.auth.signInWithPassword({email:$('#email').value.trim(),password:$('#password').value});message('#authmsg',error?error.message:'A iniciar sessão…',!!error)};
+$('#signin').onclick=async()=>{
+ const captchaToken=getCaptchaToken();if(!captchaToken)return;
+ const button=$('#signin');button.disabled=true;
+ try{
+  const {error}=await sbClient.auth.signInWithPassword({email:$('#email').value.trim(),password:$('#password').value,options:{captchaToken}});
+  message('#authmsg',error?error.message:'A iniciar sessão…',!!error);
+ }catch(e){message('#authmsg','Não foi possível iniciar sessão: '+(e.message||e),true)}
+ finally{resetCaptcha();button.disabled=false}
+};
 $('#forgotpassword').onclick=async()=>{
   const email=$('#email').value.trim();
   if(!email||!$('#email').checkValidity()){message('#authmsg','Introduz primeiro um endereço de email válido.',true);return}
+  const captchaToken=getCaptchaToken();if(!captchaToken)return;
   const button=$('#forgotpassword');button.disabled=true;
   try{
-    const {error}=await sbClient.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+window.location.pathname});
+    const {error}=await sbClient.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+window.location.pathname,captchaToken});
     message('#authmsg',error?'Não foi possível enviar o email: '+error.message:'Se existir uma conta com este email, receberás uma ligação para definir uma nova palavra-passe. Verifica também o spam.',!!error);
-  }finally{button.disabled=false}
+  }catch(e){message('#authmsg','Não foi possível enviar o email: '+(e.message||e),true)}
+  finally{resetCaptcha();button.disabled=false}
 };
 $('#savepassword').onclick=async()=>{
   const password=$('#newpassword').value,confirmation=$('#confirmnewpassword').value;
@@ -1033,7 +1068,15 @@ $('#savepassword').onclick=async()=>{
     if(current){session=current;authGrantedKey=null;await gateAfterLogin()}else{show('#auth')}
   }finally{button.disabled=false}
 };
-$('#signup').onclick=async()=>{const {data,error}=await sbClient.auth.signUp({email:$('#email').value.trim(),password:$('#password').value});message('#authmsg',error?error.message:(data.session?'Conta criada.':'Conta criada. Confirma o email antes de iniciar sessão.'),!!error)};
+$('#signup').onclick=async()=>{
+ const captchaToken=getCaptchaToken();if(!captchaToken)return;
+ const button=$('#signup');button.disabled=true;
+ try{
+  const {data,error}=await sbClient.auth.signUp({email:$('#email').value.trim(),password:$('#password').value,options:{captchaToken}});
+  message('#authmsg',error?error.message:(data.session?'Conta criada.':'Conta criada. Confirma o email antes de iniciar sessão.'),!!error);
+ }catch(e){message('#authmsg','Não foi possível criar a conta: '+(e.message||e),true)}
+ finally{resetCaptcha();button.disabled=false}
+};
 $('#createhome').onclick=async()=>{const {data,error}=await sbClient.rpc('create_household');if(error){message('#homemsg','Erro: '+error.message,true);return}householdId=data;await loadHousehold()};
 $('#joinhome').onclick=async()=>{const code=$('#invite').value.trim().toUpperCase();if(!code)return;const {data,error}=await sbClient.rpc('join_household',{p_code:code});if(error){message('#homemsg','Não foi possível entrar: '+error.message,true);return}householdId=data;await loadHousehold()};
 $('#add').onclick=async()=>{if($('#isrecurring').checked){await addRecurringExpense();return}const description=$('#d').value.trim(),amount=normalizeAmount($('#a').value);if(!description||!(amount>0)){status('Indica uma descrição e um valor válido.',true);return}const date=$('#expense-date').value;if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||Number.isNaN(new Date(date+'T12:00:00').getTime())){status('Escolhe uma data válida para a despesa.',true);return}const selectedPeriod=date.slice(0,7);if(selectedPeriod!==periodNow()){if(!confirm('Atenção: a data escolhida ('+date.split('-').reverse().join('/')+') não pertence ao mês atual.\n\nQueres mesmo adicionar esta despesa?'))return;}const row={household_id:householdId,description,amount,category:categorySelected('#c',description),shared:$('#s').checked,payer:me.id,date};const {error}=await sbClient.from('expenses').insert(row);if(error){status('Não foi possível adicionar: '+error.message,true);return}$('#d').value='';$('#a').value='';$('#c').value='';$('#s').checked=true;$('#d').focus();if(month!==date.slice(0,7)){month=date.slice(0,7);selectedBarMonth=null}syncExpenseDate();await loadExpenses();status('Despesa adicionada com sucesso ✓')};
