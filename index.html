@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-HEJstwhlQtAa2k/Vce75sT1Ipj5Mzr7yJDhLGiKLRic=' 'sha256-ZjWBYtmct7p4TDuR2Gk6OTAdQ4yP9SFlE2An4+X7AL0=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-HEJstwhlQtAa2k/Vce75sT1Ipj5Mzr7yJDhLGiKLRic=' 'sha256-sX1EF/scJzbNbhuYR/U1QmWNXkSBZoofWjC6b3kjho8=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
 <title>A Nossa Casa</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#167552">
@@ -64,7 +64,7 @@ h2{font-size:17px;letter-spacing:-.2px;margin:0 0 15px}.add-fields{display:grid;
 .notice{border-radius:12px}.pie{width:min(250px,70vw)}
 @media(max-width:380px){body{padding:14px 11px 40px}.card{padding:14px}.pagehead h1{font-size:22px}.totals-grid{gap:7px}.totals-grid>div+div{padding-left:9px}.expense-actions strong{font-size:13px}}
 /* Navegação compacta para telemóvel */
-.tabnav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;padding:4px}
+.tabnav{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:3px;padding:4px}
 .tabnav button{min-width:0;padding:8px 2px;font-size:clamp(10px,2.5vw,12px);display:flex;align-items:center;justify-content:center;gap:4px;flex-direction:column;min-height:54px}
 .tabnav svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .share-check{display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:550;padding:7px 0}
@@ -319,7 +319,7 @@ body{max-width:640px;padding:22px 20px max(120px,env(safe-area-inset-bottom,0px)
 #app .tabnav{
   position:fixed;z-index:30;left:50%;bottom:max(12px,env(safe-area-inset-bottom,0px));
   transform:translateX(-50%);width:min(calc(100% - 24px),600px);
-  display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:2px;
   padding:7px 8px;border:1px solid var(--bd);border-radius:20px;
   background:var(--nav-bg);box-shadow:0 14px 42px #0003;
   margin:0;
@@ -507,6 +507,29 @@ body{max-width:640px;padding:22px 20px max(120px,env(safe-area-inset-bottom,0px)
   #settlelist .settle-history-actions{gap:6px}
   #settlelist .settle-history-actions strong{font-size:13px}
 }
+
+/* A Partilha passa a ser uma opção expansível dentro de Conta. */
+#accountview .account-share{margin:17px 0;border:1px solid var(--bd);border-radius:14px;overflow:hidden;background:var(--surface-soft)}
+#accountview .account-share>summary{display:flex;align-items:center;gap:12px;padding:15px 13px;cursor:pointer;list-style:none;color:var(--tx)}
+#accountview .account-share>summary::-webkit-details-marker{display:none}
+#accountview .account-share>summary::marker{content:''}
+#accountview .account-share>summary>svg{width:21px;height:21px;flex:0 0 21px;fill:none;stroke:var(--ac);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#accountview .account-share-label{display:flex;flex:1;min-width:0;flex-direction:column;gap:2px}
+#accountview .account-share-label strong{font-size:14px}
+#accountview .account-share-label small{font-size:11px;color:var(--mut)}
+#accountview .account-share>summary .account-share-chevron{width:17px;height:17px;flex:0 0 17px;stroke:var(--mut);transition:transform .15s}
+#accountview .account-share[open]>summary .account-share-chevron{transform:rotate(90deg)}
+#accountview .account-share>summary:focus-visible{outline:2px solid var(--ac);outline-offset:-3px}
+#accountview .account-share-content{border-top:1px solid var(--bd);padding:15px 13px 17px}
+#accountview .account-share-content>.mut{margin:7px 0 12px}
+#accountview .account-share .invite-code-row{min-width:0;flex-wrap:wrap}
+#accountview .account-share .invite-code-row>strong{overflow-wrap:anywhere}
+@media(prefers-reduced-motion:reduce){#accountview .account-share-chevron{transition:none}}
+/* Botão de copiar apenas com ícone, mantendo a ação e a acessibilidade. */
+#accountview .account-share .invite-code-row{display:flex;flex-direction:row;align-items:center;gap:10px;flex-wrap:nowrap}
+#accountview .account-share .invite-code-row>strong{flex:1;min-width:0}
+#accountview .account-share .invite-code-row #copycode{display:inline-flex;align-items:center;justify-content:center;align-self:center;flex:0 0 44px;width:44px;min-width:44px;height:44px;padding:0;color:var(--ac)}
+#accountview .account-share .invite-code-row #copycode svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 </style>
 </head>
 <body>
@@ -573,7 +596,6 @@ body{max-width:640px;padding:22px 20px max(120px,env(safe-area-inset-bottom,0px)
     <button id="tabexpenses" type="button" aria-selected="true" aria-label="Despesas" title="Despesas"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg><span>Despesas</span></button>
     <button id="tabcharts" type="button" aria-selected="false" aria-label="Gráficos" title="Gráficos"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.21 15.89A10 10 0 1 1 8.11 2.99"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg><span>Gráficos</span></button>
     <button id="tabhistory" type="button" aria-selected="false" aria-label="Histórico de pagamentos" title="Histórico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 3v5h5"/><path d="M12 7v5l3.5 2"/></svg><span>Histórico</span></button>
-    <button id="tabshare" type="button" aria-selected="false" aria-label="Partilhar" title="Partilhar"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.7 10.6l6.6-4.2M8.7 13.4l6.6 4.2"/></svg><span>Partilhar</span></button>
     <button id="tabaccount" type="button" aria-selected="false" aria-label="Conta" title="Conta"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M9 21v-8h6v8"/></svg><span>Conta</span></button>
   </nav>
   <section id="expenseview">
@@ -696,16 +718,23 @@ body{max-width:640px;padding:22px 20px max(120px,env(safe-area-inset-bottom,0px)
       </details>
     </div>
   </section>
-  <section id="shareview" class="hidden"><div class="card">
-    <strong>Convite para a outra pessoa</strong>
-    <p class="mut">Partilha este código apenas com a pessoa que queres adicionar.</p>
-    <div class="invite-code-row"><strong id="code"></strong><button type="button" class="g" id="copycode">Copiar</button></div>
-  </div></section>
   <section id="accountview" class="hidden"><div class="card">
     <strong>A minha conta</strong>
     <p class="mut">Email com que iniciaste sessão:</p>
     <p id="who" class="account-email">Conta</p>
     <p id="spaceinfo" class="mut">Espaço partilhado</p>
+    <details id="shareview" class="account-share">
+      <summary>
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.7 10.6l6.6-4.2M8.7 13.4l6.6 4.2"/></svg>
+        <span class="account-share-label"><strong>Partilha da casa</strong><small>Membros, convites e gestão da partilha</small></span>
+        <svg class="account-share-chevron" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 18 6-6-6-6"/></svg>
+      </summary>
+      <div class="account-share-content">
+        <strong>Convite para a outra pessoa</strong>
+        <p class="mut">Partilha este código apenas com a pessoa que queres adicionar.</p>
+        <div class="invite-code-row"><strong id="code"></strong><button type="button" class="g" id="copycode" aria-label="Copiar código de convite" title="Copiar código de convite"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg></button></div>
+      </div>
+    </details>
     <div class="recurring-manage" id="mfamanage">
       <h2>Autenticação em dois passos (opcional)</h2>
       <p class="mut helper">Podes ativar a autenticação em dois passos para proteger o acesso à tua conta. Se a ativares, precisarás de um código da aplicação autenticadora ao iniciar sessão.</p>
@@ -1238,7 +1267,7 @@ function fillCategorySelect(selectId,stored){
 function selectTab(which){
  activeTab=which;
  show('#monthcard',which==='expenses'||which==='charts'||which==='history');
- const tabs={expenses:'expenseview',charts:'chartview',history:'historyview',share:'shareview',account:'accountview'};
+ const tabs={expenses:'expenseview',charts:'chartview',history:'historyview',account:'accountview'};
  for(const [name,view] of Object.entries(tabs)){
   show('#'+view,name===which);
   $('#tab'+name).setAttribute('aria-selected',String(name===which));
@@ -1246,7 +1275,7 @@ function selectTab(which){
  if(which==='account')refreshMfaAccount();
  render();
 }
-for(const name of ['expenses','charts','history','share','account'])$('#tab'+name).onclick=()=>selectTab(name);
+for(const name of ['expenses','charts','history','account'])$('#tab'+name).onclick=()=>selectTab(name);
 $('#chartmonthly').onclick=()=>{chartPeriod='month';render()};
 $('#chartannual').onclick=()=>{chartPeriod='year';selectedBarMonth=null;render()};
 async function deleteExpense(id){
