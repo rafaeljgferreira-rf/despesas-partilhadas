@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-PzjPDk7P/XEZtRLkx1dKVl+p4NkXgibKAcKkgDDEdqM=' 'sha256-gl3eSQMX091x1nFHGA8uceOZzrqZROc3JroOEQtCL8A=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-PzjPDk7P/XEZtRLkx1dKVl+p4NkXgibKAcKkgDDEdqM=' 'sha256-PM8YIihk05DQ42o2sn6yuSbep0ekP536lx2TeGl/OsM=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
 <title>A Nossa Casa</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#167552">
@@ -418,7 +418,7 @@ body{min-height:100dvh;padding-bottom:max(48px,env(safe-area-inset-bottom,0px))}
   </div>
 </main>
 <script src="/supabase.js"></script>
-<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" defer></script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&amp;onload=onTurnstileApiReady" defer></script>
 <script>
 const $=s=>document.querySelector(s), fmt=n=>Number(n||0).toLocaleString('pt-PT',{style:'currency',currency:'EUR'});
 const MES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
@@ -431,26 +431,42 @@ let mfaPendingFactorId=null, mfaEnrollment=null, authFlowPromise=null, authGrant
 function show(id,on=true){$(id).classList.toggle('hidden',!on);if(id==='#auth'&&on)setTimeout(initTurnstile,0)}
 // CAPTCHA: chave publica do Cloudflare Turnstile; a chave secreta fica apenas no Supabase.
 const TURNSTILE_SITE_KEY='0x4AAAAAAGDlpZVVj5D2ihiO';
-let turnstileWidgetId=null;
+let turnstileWidgetId=null,turnstileRetryTimer=null,turnstileRetryAttempts=0;
 function initTurnstile(){
- if(turnstileWidgetId!==null||!window.turnstile||$('#auth').classList.contains('hidden'))return;
+ if(turnstileWidgetId!==null||$('#auth').classList.contains('hidden'))return;
+ // A API pode criar window.turnstile antes de disponibilizar render().
+ // Nao tratar essa fase de carregamento como um erro de CAPTCHA.
+ if(typeof window.turnstile?.render!=='function'){
+  if(turnstileRetryTimer===null&&turnstileRetryAttempts<30){
+   turnstileRetryAttempts++;
+   turnstileRetryTimer=setTimeout(()=>{turnstileRetryTimer=null;initTurnstile()},500);
+  }else if(turnstileRetryTimer===null){
+   message('#authmsg','Não foi possível carregar a verificação anti-robôs. Atualiza a página e tenta novamente.',true);
+  }
+  return;
+ }
+ if(turnstileRetryTimer!==null){clearTimeout(turnstileRetryTimer);turnstileRetryTimer=null}
+ turnstileRetryAttempts=0;
  try{
   turnstileWidgetId=window.turnstile.render('#turnstile',{
    sitekey:TURNSTILE_SITE_KEY,theme:'auto',
    'expired-callback':()=>message('#authmsg','A verificação expirou. Aguarda que seja renovada.',true),
    'error-callback':()=>message('#authmsg','Não foi possível concluir a verificação anti-robôs. Atualiza a página e tenta novamente.',true)
   });
+  if($('#authmsg').textContent==='Não foi possível carregar a verificação anti-robôs. Atualiza a página e tenta novamente.')message('#authmsg','');
  }catch(e){console.error('[A Nossa Casa] Erro ao iniciar o Turnstile:',e);message('#authmsg','Não foi possível carregar a verificação anti-robôs. Atualiza a página e tenta novamente.',true)}
 }
+// O callback oficial do Turnstile avisa quando a API terminou de carregar.
+window.onTurnstileApiReady=initTurnstile;
 window.addEventListener('load',initTurnstile);
 function getCaptchaToken(){
  initTurnstile();
- const token=turnstileWidgetId!==null&&window.turnstile?window.turnstile.getResponse(turnstileWidgetId):'';
+ const token=turnstileWidgetId!==null&&typeof window.turnstile?.getResponse==='function'?window.turnstile.getResponse(turnstileWidgetId):'';
  if(!token)message('#authmsg','Aguarda ou conclui a verificação anti-robôs antes de continuar.',true);
  return token;
 }
 function resetCaptcha(){
- if(turnstileWidgetId!==null&&window.turnstile)window.turnstile.reset(turnstileWidgetId);
+ if(turnstileWidgetId!==null&&typeof window.turnstile?.reset==='function')window.turnstile.reset(turnstileWidgetId);
 }
 function message(id,msg,isError=false){$(id).textContent=msg;$(id).classList.toggle('error',isError)}
 function status(msg,error=false){message('#status',msg,error)}
