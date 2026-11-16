@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-HEJstwhlQtAa2k/Vce75sT1Ipj5Mzr7yJDhLGiKLRic=' 'sha256-tgMagWm0q7ACiiP7XVe3rxi4YsBXevUpjRA2AucHRfM=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='    ; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-HEJstwhlQtAa2k/Vce75sT1Ipj5Mzr7yJDhLGiKLRic=' 'sha256-4wqTREKQa+UNIxIJ3w0mxgBb1/fSaUVWi9J9m9/9lCM=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='    ; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
 <title>A Nossa Casa</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#167552">
@@ -568,6 +568,14 @@ body{max-width:640px;padding:22px 20px max(120px,env(safe-area-inset-bottom,0px)
 #accountview .import-checkbox{display:flex;align-items:flex-start;gap:9px;font-size:12px}
 #accountview .import-checkbox input{width:auto;margin:3px 0 0;flex:none}
 #accountview .import-msg{font-size:12px;overflow-wrap:anywhere}
+
+/* Exportação: ações discretas, mantendo o estilo de Conta */
+#accountview .account-export .account-share-content{display:grid;gap:10px}
+#accountview .account-export .account-share-content>p{margin:0}
+#accountview .export-option{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:48px;padding:11px 12px}
+#accountview .export-option svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+#accountview .export-secondary{background:transparent;color:var(--tx);border:1px solid var(--bd)}
+#accountview .export-note{font-size:11px;line-height:1.5}
 </style>
 </head>
 <body>
@@ -801,17 +809,31 @@ body{max-width:640px;padding:22px 20px max(120px,env(safe-area-inset-bottom,0px)
     <details class="account-share account-import" id="splitwisemanage">
       <summary>
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3v12m-4-4 4 4 4-4"/><path d="M4 16v4h16v-4"/></svg>
-        <span class="account-share-label"><strong>Importar dados do Splitwise</strong><small>Pré-visualizar despesas e pagamentos antes de guardar</small></span>
+        <span class="account-share-label"><strong>Importar dados</strong><small>Adicionar movimentos a partir de um ficheiro CSV</small></span>
         <svg class="account-share-chevron" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 18 6-6-6-6"/></svg>
       </summary>
       <div class="account-share-content">
-        <p class="mut">Importa um CSV exportado do Splitwise. Mantém os dados atuais e pede confirmação antes de adicionar movimentos.</p>
-        <div class="import-field"><label for="splitwise-file">Ficheiro CSV do Splitwise</label><input id="splitwise-file" type="file" accept=".csv,text/csv"></div>
-        <div id="splitwise-mapping" class="import-field hidden"><label for="splitwise-self">Qual destas pessoas és tu no Splitwise?</label><select id="splitwise-self"></select></div>
+        <p class="mut">Importa despesas e pagamentos de um ficheiro CSV compatível com o formato de grupo do Splitwise. Os dados atuais são mantidos e nada é guardado sem confirmação.</p>
+        <div class="import-field"><label for="splitwise-file">Selecionar ficheiro CSV</label><input id="splitwise-file" type="file" accept=".csv,text/csv"></div>
+        <div id="splitwise-mapping" class="import-field hidden"><label for="splitwise-self">Qual destas pessoas és tu no ficheiro?</label><select id="splitwise-self"></select></div>
         <label class="import-checkbox"><input id="splitwise-skip-existing" type="checkbox" checked><span>Ignorar movimentos já existentes com a mesma data, descrição, valor e pagador (ou pagamento equivalente).</span></label>
         <div id="splitwise-preview" class="import-preview hidden" aria-live="polite"></div>
         <button id="splitwise-confirm" class="import-confirm" type="button" disabled>Confirmar e importar</button>
         <p id="splitwise-msg" class="mut import-msg" role="status" aria-live="polite">Nenhum ficheiro selecionado. Só quem criou a casa pode importar dados das duas pessoas.</p>
+      </div>
+    </details>
+    <details class="account-share account-export" id="exportmanage">
+      <summary>
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 16V4m-4 8 4 4 4-4"/><path d="M4 18v3h16v-3"/></svg>
+        <span class="account-share-label"><strong>Exportar dados</strong><small>Cópia de segurança e ficheiro para Excel</small></span>
+        <svg class="account-share-chevron" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 18 6-6-6-6"/></svg>
+      </summary>
+      <div class="account-share-content">
+        <p class="mut">Descarrega os dados da casa: despesas, pagamentos e despesas fixas. Os ficheiros são criados no teu dispositivo, sem alterar os registos.</p>
+        <button id="export-json" type="button" class="export-option"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M4 17v4h16v-4"/></svg><span>Cópia de segurança (JSON)</span></button>
+        <button id="export-csv" type="button" class="export-option export-secondary"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M4 17v4h16v-4"/></svg><span>Exportar para Excel (CSV)</span></button>
+        <p class="mut export-note">O JSON guarda os registos para arquivo. A reposição automática desta cópia ainda não está disponível. Guarda o ficheiro num local seguro.</p>
+        <p id="export-msg" class="mut import-msg" role="status" aria-live="polite"></p>
       </div>
     </details>
     <button class="g" id="logout" type="button" aria-label="Terminar sessão" title="Terminar sessão"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M10 17l5-5-5-5M15 12H3"/><path d="M12 3h6a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3h-6"/></svg><span>Terminar sessão</span></button>
@@ -1728,7 +1750,7 @@ $('#splitwise-file').onchange=async()=>{
   const select=$('#splitwise-self');select.replaceChildren();
   parsed.people.forEach((name,i)=>{const opt=document.createElement('option');opt.value=String(i);opt.textContent=name;select.append(opt)});
   // Não inferir identidades a partir do email; a pessoa confirma a associação.
-  select.value='';show('#splitwise-mapping');splitwiseMessage('Seleciona quem és no Splitwise para veres a pré-visualização.');
+  select.value='';show('#splitwise-mapping');splitwiseMessage('Seleciona a pessoa que te corresponde no ficheiro para veres a pré-visualização.');
  }catch(e){splitwiseMessage('Não foi possível ler o CSV: '+(e.message||e),true)}
 };
 $('#splitwise-self').onchange=splitwisePreview;
@@ -1750,11 +1772,68 @@ $('#splitwise-confirm').onclick=async()=>{
   if(error)throw error;
   await loadExpenses();
   splitwiseMessage('Importação concluída: '+data.expenses+' despesas e '+data.payments+' pagamentos adicionados. '+data.already_imported+' já importados anteriormente e '+data.existing+' possíveis duplicados ignorados.');
-  status('Dados do Splitwise importados com sucesso.');
+  status('Dados importados com sucesso.');
   splitwiseImport=null;$('#splitwise-file').value='';show('#splitwise-preview',false);show('#splitwise-mapping',false);
  }catch(e){splitwiseMessage('Importação não concluída: '+(e.message||e)+'. Confirma que executaste primeiro o ficheiro SQL no Supabase.',true)}
  finally{button.textContent='Confirmar e importar';button.disabled=!splitwiseImport}
 };
+
+// Exportação local: consulta todas as páginas para não perder movimentos antigos.
+// Os ficheiros nunca são enviados para serviços externos.
+function exportDownload(filename,content,type){
+ const blob=new Blob([content],{type});
+ const url=URL.createObjectURL(blob);
+ const link=document.createElement('a');
+ link.href=url;link.download=filename;
+ document.body.append(link);link.click();link.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),60000);
+}
+function exportCsvCell(value){
+ let text=String(value??'');
+ // Evita a execução de fórmulas quando o CSV é aberto no Excel/Sheets.
+ if(/^[\s\u0000-\u001f]*[=+\-@]/.test(text))text="'"+text;
+ return '"'+text.replace(/"/g,'""')+'"';
+}
+function exportCsvMoney(value){
+ const n=Number(value);
+ return Number.isFinite(n)?n.toFixed(2).replace('.',','):'';
+}
+async function exportHousehold(format){
+ const jsonButton=$('#export-json'),csvButton=$('#export-csv'),msg=$('#export-msg');
+ if(!householdId||!me||!sbClient){msg.textContent='Inicia sessão e entra numa casa para exportar.';return}
+ jsonButton.disabled=true;csvButton.disabled=true;
+ msg.textContent='A preparar a exportação completa…';
+ try{
+  const currentHousehold=householdId;
+  const [expenses,payments,fixed]=await Promise.all([
+   loadHouseholdTable('expenses','date'),
+   loadHouseholdTable('settlements','created_at'),
+   loadHouseholdTable('recurring_expenses','created_at')
+  ]);
+  if(currentHousehold!==householdId||!me)throw new Error('A sessão mudou durante a exportação.');
+  const stamp=new Date().toISOString().slice(0,10);
+  const prefix='a_nossa_casa_'+stamp;
+  if(format==='json'){
+   const backup={format:'a-nossa-casa-backup',version:1,exported_at:new Date().toISOString(),
+    household_id:currentHousehold,members:[...members],
+    expenses,settlements:payments,recurring_expenses:fixed};
+   exportDownload(prefix+'_copia.json',JSON.stringify(backup,null,2),'application/json;charset=utf-8');
+  }else{
+   const who=id=>id===me.id?'Eu':members.includes(id)?'Outra pessoa':'';
+   const headers=['Tipo','Data','Descrição','Categoria','Valor (€)','Partilhada','Pagador','De','Para','Início','Fim','Dia do mês','Ativa'];
+   const rows=[];
+   expenses.forEach(e=>rows.push(['Despesa',e.date,e.description,e.category,exportCsvMoney(e.amount),e.shared?'Sim':'Não',who(e.payer),'','','','','','']));
+   payments.forEach(p=>rows.push(['Pagamento',String(p.created_at||'').slice(0,10),'Acerto de contas','',exportCsvMoney(p.amount),'','',who(p.sender),who(p.recipient),'','','','']));
+   fixed.forEach(r=>rows.push(['Despesa fixa','',r.description,r.category,exportCsvMoney(r.amount),r.shared?'Sim':'Não',who(r.payer),'','',r.start_month||'',r.end_month||'',r.day_of_month??'',r.active===false?'Não':'Sim']));
+   const csv='\uFEFF'+[headers,...rows].map(row=>row.map(exportCsvCell).join(';')).join('\r\n')+'\r\n';
+   exportDownload(prefix+'_movimentos.csv',csv,'text/csv;charset=utf-8');
+  }
+  msg.textContent='Ficheiro preparado: '+expenses.length+' despesas, '+payments.length+' pagamentos e '+fixed.length+' despesas fixas.';
+ }catch(error){msg.textContent='Não foi possível exportar: '+(error.message||error)}
+ finally{jsonButton.disabled=false;csvButton.disabled=false}
+}
+$('#export-json').onclick=()=>exportHousehold('json');
+$('#export-csv').onclick=()=>exportHousehold('csv');
 
 $('#logout').onclick=()=>sbClient.auth.signOut();
 $('#copycode').onclick=async()=>{try{await navigator.clipboard.writeText(inviteCode);status('Código copiado.')}catch(e){status('Código de convite: '+inviteCode)}};
