@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-PzjPDk7P/XEZtRLkx1dKVl+p4NkXgibKAcKkgDDEdqM=' 'sha256-PM8YIihk05DQ42o2sn6yuSbep0ekP536lx2TeGl/OsM=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-HEJstwhlQtAa2k/Vce75sT1Ipj5Mzr7yJDhLGiKLRic=' 'sha256-PM8YIihk05DQ42o2sn6yuSbep0ekP536lx2TeGl/OsM=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
 <title>A Nossa Casa</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#167552">
@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="apple-touch-icon" href="/icons/icon-192.png">
 <script>
-try { if (localStorage.getItem('a_nossa_casa_theme') === 'dark') document.documentElement.dataset.theme = 'dark'; } catch(e) {}
+try { if (localStorage.getItem('a_nossa_casa_theme') !== 'light') document.documentElement.dataset.theme = 'dark'; } catch(e) { document.documentElement.dataset.theme = 'dark'; }
 // A barra do sistema acompanha o tema escolhido logo no arranque.
 document.querySelector('meta[name="theme-color"]').setAttribute('content', document.documentElement.dataset.theme === 'dark' ? '#101715' : '#f3f6f4');
 </script>
@@ -151,6 +151,141 @@ body{min-height:100dvh;padding-bottom:max(48px,env(safe-area-inset-bottom,0px))}
 .invite-code-row{display:flex;flex-direction:column;align-items:stretch;gap:10px}
 .invite-code-row #code{display:block;max-width:100%;min-width:0;font-size:17px;letter-spacing:1px;line-height:1.55;overflow-wrap:anywhere;word-break:break-all}
 .invite-code-row #copycode{align-self:flex-start;flex:none;min-width:105px}
+
+/* A Nossa Casa — visual escuro, elegante e minimalista.
+   Apenas apresentação: sem alterações à lógica ou aos dados. */
+:root[data-theme="dark"]{
+  --bg:#101613;
+  --card:#1a231e;
+  --tx:#edf3ee;
+  --mut:#a4b7a9;
+  --ac:#81d7a7;
+  --on:#102018;
+  --bd:#304037;
+  --neg:#f1a69c;
+}
+html[data-theme="dark"]{background-color:#101613}
+:root[data-theme="dark"] body{
+  background:var(--bg);
+  -webkit-font-smoothing:antialiased;
+}
+body{
+  max-width:640px;
+  padding:20px 16px max(56px,env(safe-area-inset-bottom,0px));
+}
+.pagehead{margin:4px 0 20px}
+.brand-home{font-size:20px;letter-spacing:-.55px;gap:11px}
+.brand-home svg{width:22px;height:22px}
+.card{border-radius:16px;padding:18px;margin-bottom:12px}
+h2{font-size:16px;letter-spacing:-.25px}
+.mut,small{line-height:1.5}
+.big{font-size:clamp(24px,6vw,30px);letter-spacing:-.85px}
+button{font-weight:650;letter-spacing:-.1px}
+button:focus-visible,input:focus-visible,select:focus-visible,
+summary:focus-visible{outline:2px solid var(--ac);outline-offset:3px}
+:root[data-theme="dark"] .card{box-shadow:none}
+:root[data-theme="dark"] .totals-card{
+  background:#1d2b23;
+  border-color:#385243;
+}
+:root[data-theme="dark"] .totals-card .mut{color:#b1c4b6}
+:root[data-theme="dark"] .balance-line{
+  background:#243b2e;
+  color:#d3f3de;
+  border:1px solid #385b45;
+}
+:root[data-theme="dark"] .balance-line.neg{
+  background:#392925;
+  border-color:#68443d;
+  color:#ffd1c9;
+}
+:root[data-theme="dark"] .tabnav,
+:root[data-theme="dark"] .period-toggle{
+  background:#19231d;
+  border:1px solid var(--bd);
+  border-radius:13px;
+}
+:root[data-theme="dark"] .tabnav button[aria-selected="true"],
+:root[data-theme="dark"] .period-toggle button[aria-pressed="true"]{
+  background:var(--ac);
+  color:var(--on);
+}
+:root[data-theme="dark"] .tabnav button[aria-selected="false"],
+:root[data-theme="dark"] .period-toggle button[aria-pressed="false"]{
+  background:transparent;
+  color:#b0c0b4;
+  border-color:transparent;
+}
+:root[data-theme="dark"] button.g{
+  background:transparent;
+  color:var(--tx);
+  border-color:#405247;
+}
+:root[data-theme="dark"] button.g:active{background:#26362c}
+:root[data-theme="dark"] input,
+:root[data-theme="dark"] select{
+  background:#131b16;
+  border:1px solid #3a4c40;
+  color:var(--tx);
+}
+:root[data-theme="dark"] input::placeholder{color:#93a699;opacity:1}
+:root[data-theme="dark"] input:focus,
+:root[data-theme="dark"] select:focus{border-color:#81d7a7}
+:root[data-theme="dark"] .month-card{background:#19231e}
+:root[data-theme="dark"] .month-card strong{font-weight:700}
+:root[data-theme="dark"] .month-arrow{color:var(--ac);border-color:transparent}
+:root[data-theme="dark"] .chart-summary>div,
+:root[data-theme="dark"] .compare-grid>div,
+:root[data-theme="dark"] .bar-detail,
+:root[data-theme="dark"] .recurring-options{
+  background:#202e25;
+  border-color:var(--bd);
+}
+:root[data-theme="dark"] .compare-track{background:#2b3b31}
+:root[data-theme="dark"] .compare-fill{background:#708b7a}
+:root[data-theme="dark"] .compare-fill.current{background:#81d7a7}
+:root[data-theme="dark"] .yearbarbtn .bar-fill{background:#578d6c}
+:root[data-theme="dark"] .yearbarbtn[aria-pressed="true"] .bar-fill{background:#81d7a7}
+:root[data-theme="dark"] .yearbarbtn[aria-pressed="true"] .bar-label{color:#a8ebc4}
+:root[data-theme="dark"] .pie{background:#2c3a30}
+:root[data-theme="dark"] .pie[aria-label^="Sem despesas"]{background:#2c3a30!important}
+:root[data-theme="dark"] .pie-hole{background:var(--card)}
+:root[data-theme="dark"] .tag-fixed{background:#263d30;color:#b8edcb}
+:root[data-theme="dark"] .notice{background:#213b2d;color:#d0efdb}
+:root[data-theme="dark"] .notice.error,
+:root[data-theme="dark"] .error{background:#442d29;color:#ffd0c8}
+:root[data-theme="dark"] .theme-toggle{
+  background:#2a4534;
+  border-color:#456a50;
+}
+:root[data-theme="dark"] .theme-toggle .theme-knob{background:#e7f1e9}
+:root[data-theme="dark"] .theme-knob .moon-icon{stroke:#385d4b}
+:root[data-theme="dark"] .modal-backdrop{background:rgba(4,10,6,.78)}
+:root[data-theme="dark"] .x{color:#b6c9bb}
+:root[data-theme="dark"] .x:hover{background:#2a3930}
+:root[data-theme="dark"] .bar{background:#81d7a7}
+:root[data-theme="dark"] .compare-result.up{color:#ffb3a9}
+:root[data-theme="dark"] .compare-result.down{color:#a4ebbc}
+:root[data-theme="dark"] .settle-history-item,
+:root[data-theme="dark"] .legendrow,
+:root[data-theme="dark"] .recurring-item,
+:root[data-theme="dark"] .it{border-color:var(--bd)}
+:root[data-theme="dark"] ::selection{background:#365e45;color:#fff}
+@media(max-width:420px){
+  body{padding:16px 12px max(48px,env(safe-area-inset-bottom,0px))}
+  .card{padding:16px;border-radius:15px}
+  .pagehead{margin:2px 2px 16px}
+  .brand-home{font-size:19px}
+  .tabnav{gap:2px}
+  .tabnav button{min-height:56px;font-size:11px}
+  .month-card{padding:9px 12px}
+  .totals-grid{gap:9px}
+  .totals-grid>div+div{padding-left:12px}
+}
+@media(prefers-reduced-motion:reduce){
+  button,.yearbarbtn .bar-fill{transition:none}
+}
+
 </style>
 </head>
 <body>
