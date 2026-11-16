@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-PzjPDk7P/XEZtRLkx1dKVl+p4NkXgibKAcKkgDDEdqM=' 'sha256-biCYhGC9EYqc/5v3fH6e9cFc9CMCHznVcColk158YVo=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-PzjPDk7P/XEZtRLkx1dKVl+p4NkXgibKAcKkgDDEdqM=' 'sha256-gl3eSQMX091x1nFHGA8uceOZzrqZROc3JroOEQtCL8A=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
 <title>A Nossa Casa</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#167552">
@@ -440,7 +440,7 @@ function initTurnstile(){
    'expired-callback':()=>message('#authmsg','A verificação expirou. Aguarda que seja renovada.',true),
    'error-callback':()=>message('#authmsg','Não foi possível concluir a verificação anti-robôs. Atualiza a página e tenta novamente.',true)
   });
- }catch(e){message('#authmsg','Não foi possível carregar a verificação anti-robôs. Atualiza a página e tenta novamente.',true)}
+ }catch(e){console.error('[A Nossa Casa] Erro ao iniciar o Turnstile:',e);message('#authmsg','Não foi possível carregar a verificação anti-robôs. Atualiza a página e tenta novamente.',true)}
 }
 window.addEventListener('load',initTurnstile);
 function getCaptchaToken(){
