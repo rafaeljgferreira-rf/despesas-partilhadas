@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-HEJstwhlQtAa2k/Vce75sT1Ipj5Mzr7yJDhLGiKLRic=' 'sha256-PM8YIihk05DQ42o2sn6yuSbep0ekP536lx2TeGl/OsM=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-HEJstwhlQtAa2k/Vce75sT1Ipj5Mzr7yJDhLGiKLRic=' 'sha256-gvScKu71eWTaewun8Ypl+DLiCx0clLjzoJjMeXjYOpI=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
 <title>A Nossa Casa</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#167552">
@@ -364,7 +364,7 @@ body{max-width:640px;padding:22px 20px max(120px,env(safe-area-inset-bottom,0px)
 /* Movimentos sem cartões empilhados: só divisórias finas. */
 .section-heading{margin:25px 2px 11px}
 .section-heading h2{font-size:15px;letter-spacing:-.2px;font-weight:750}
-#list,#cats{border:0;background:transparent;padding:0 2px;border-radius:0;box-shadow:none;margin-bottom:25px}
+#list{border:0;background:transparent;padding:0 2px;border-radius:0;box-shadow:none;margin-bottom:25px}
 #list .it{padding:16px 1px;border-color:var(--bd);gap:10px;align-items:center}
 #list .it:first-child{border-top:1px solid var(--bd)}
 #list .it:last-child{border-bottom:1px solid var(--bd)}
@@ -375,9 +375,6 @@ body{max-width:640px;padding:22px 20px max(120px,env(safe-area-inset-bottom,0px)
 #list .expense-actions .smallbtn{min-height:30px;border:0!important;padding:4px 6px;background:transparent!important;color:var(--mut)!important;font-size:11px}
 #list .expense-actions .x{font-size:18px;min-height:30px;min-width:25px;padding:0 3px}
 #list .tag-fixed{font-size:10px;font-weight:600;padding:2px 6px;margin-top:5px}
-#cats{padding:3px 2px 0}
-#cats>.mut{margin:0}
-#cats .bar{height:4px;border-radius:999px;margin-top:7px;max-width:100%}
 /* Ações secundárias ficam depois dos movimentos. */
 #expenseview .settlement-card{background:var(--card)!important;border-color:var(--bd);padding:18px 19px}
 #expenseview .settlement-card h2{font-size:15px;margin-bottom:7px}
@@ -526,8 +523,6 @@ body{max-width:640px;padding:22px 20px max(120px,env(safe-area-inset-bottom,0px)
     </details>
     <div class="section-heading"><h2>Movimentos do mês</h2></div>
     <div class="card" id="list"></div>
-    <div class="section-heading"><h2>Por categoria</h2></div>
-    <div class="card" id="cats"></div>
     <section class="card settlement-card" aria-labelledby="settletitle">
       <h2 id="settletitle">Acertar contas</h2>
       <p class="mut" id="settlehint">Os pagamentos entre vocês aparecem aqui, sem contar como novas despesas.</p>
@@ -909,9 +904,6 @@ function render(){
  else if(net>0)b.textContent='A outra pessoa deve-te '+fmt(net)+'.';
  else{b.textContent='Deves '+fmt(-net)+' à outra pessoa.';b.className='bal balance-line neg'}
  renderSettlements(net,curPayments,otherCount);
- const by=Object.create(null);cur.forEach(i=>{const category=categoryForExpense(i);by[category]=(by[category]||0)+Number(i.amount)});
- const cats=$('#cats');cats.textContent='';const ent=Object.entries(by).sort((a,b)=>b[1]-a[1]);
- if(!ent.length){cats.textContent='Sem despesas neste mês.';cats.className='card mut'}else{cats.className='card';ent.forEach(([k,v])=>{const d=document.createElement('div');d.style.marginBottom='8px';const r=document.createElement('div');r.className='row sp';const a=document.createElement('span');a.textContent=k;const z=document.createElement('span');z.textContent=fmt(v);r.append(a,z);const bar=document.createElement('div');bar.className='bar';bar.style.width=Math.max(4,v/total*100)+'%';d.append(r,bar);cats.append(d)})}
  const L=$('#list');L.textContent='';
  cur.forEach(i=>{const r=document.createElement('div');r.className='it row sp';const l=document.createElement('div');l.className='expense-info';const t=document.createElement('div');t.textContent=i.description;t.className='expense-title';const s=document.createElement('div');s.className='mut';s.textContent=(i.date||'').slice(8,10)+'/'+(i.date||'').slice(5,7)+' · '+categoryForExpense(i)+' · '+(i.payer===me.id?'pago por ti':'pago pela outra pessoa')+(i.shared?' · partilhada':'');l.append(t,s);if(i.recurring_expense_id){const tag=document.createElement('div');tag.className='tag-fixed';tag.textContent='Despesa fixa';l.append(tag)}const rt=document.createElement('div');rt.className='row expense-actions';const v=document.createElement('strong');v.textContent=fmt(i.amount);rt.append(v);if(i.payer===me.id){const edit=document.createElement('button');edit.className='g smallbtn';edit.textContent='Editar';edit.onclick=()=>openEditExpense(i.id);rt.append(edit);const x=document.createElement('button');x.className='x';x.textContent='×';x.title='Apagar despesa';x.setAttribute('aria-label','Apagar '+i.description);x.onclick=()=>deleteExpense(i.id);rt.append(x)}r.append(l,rt);L.append(r)});
  if(!cur.length){const p=document.createElement('p');p.className='mut';p.textContent='Ainda não existem despesas neste mês.';L.append(p)}
