@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-HEJstwhlQtAa2k/Vce75sT1Ipj5Mzr7yJDhLGiKLRic=' 'sha256-sX1EF/scJzbNbhuYR/U1QmWNXkSBZoofWjC6b3kjho8=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-HEJstwhlQtAa2k/Vce75sT1Ipj5Mzr7yJDhLGiKLRic=' 'sha256-tgMagWm0q7ACiiP7XVe3rxi4YsBXevUpjRA2AucHRfM=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='    ; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
 <title>A Nossa Casa</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#167552">
@@ -545,6 +545,29 @@ body{max-width:640px;padding:22px 20px max(120px,env(safe-area-inset-bottom,0px)
   #app .tabnav{padding:4px 5px;border-radius:15px}
   #app .tabnav button{min-height:46px;padding:4px 2px;gap:2px}
 }
+
+/* Importação Splitwise: integrada no submenu Conta, sem alterar os outros ecrãs. */
+#accountview .account-import{margin-top:12px}
+#accountview .account-import .account-share-content{display:grid;gap:12px}
+#accountview .account-import .account-share-content>p{margin:0}
+#accountview .import-field{display:grid;gap:6px;min-width:0}
+#accountview .import-field label{font-size:13px;font-weight:700}
+#accountview .import-field input[type="file"]{font-size:12px;min-width:0;padding:10px}
+#accountview .import-field select{min-width:0}
+#accountview .import-preview{border:1px solid var(--bd);border-radius:12px;padding:13px;background:var(--card);display:grid;gap:10px}
+#accountview .import-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+#accountview .import-stats>div{border:1px solid var(--bd);border-radius:10px;padding:9px;min-width:0}
+#accountview .import-stats strong{display:block;font-size:21px;font-variant-numeric:tabular-nums}
+#accountview .import-stats span{display:block;font-size:11px;color:var(--mut)}
+#accountview .import-sample{border-top:1px solid var(--bd);padding:8px 0;display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:12px}
+#accountview .import-all>summary{cursor:pointer;color:var(--ac);font-size:12px;font-weight:700;padding:7px 0}
+#accountview .import-all-list{max-height:300px;overflow:auto;border:1px solid var(--bd);border-radius:10px;padding:4px 10px}
+#accountview .import-sample>div{min-width:0;overflow-wrap:anywhere}
+#accountview .import-sample strong{flex:0 0 auto;white-space:nowrap}
+#accountview .import-confirm{width:100%;min-height:48px}
+#accountview .import-checkbox{display:flex;align-items:flex-start;gap:9px;font-size:12px}
+#accountview .import-checkbox input{width:auto;margin:3px 0 0;flex:none}
+#accountview .import-msg{font-size:12px;overflow-wrap:anywhere}
 </style>
 </head>
 <body>
@@ -774,6 +797,23 @@ body{max-width:640px;padding:22px 20px max(120px,env(safe-area-inset-bottom,0px)
       </div>
       </div>
     </details>
+
+    <details class="account-share account-import" id="splitwisemanage">
+      <summary>
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3v12m-4-4 4 4 4-4"/><path d="M4 16v4h16v-4"/></svg>
+        <span class="account-share-label"><strong>Importar dados do Splitwise</strong><small>Pré-visualizar despesas e pagamentos antes de guardar</small></span>
+        <svg class="account-share-chevron" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 18 6-6-6-6"/></svg>
+      </summary>
+      <div class="account-share-content">
+        <p class="mut">Importa um CSV exportado do Splitwise. Mantém os dados atuais e pede confirmação antes de adicionar movimentos.</p>
+        <div class="import-field"><label for="splitwise-file">Ficheiro CSV do Splitwise</label><input id="splitwise-file" type="file" accept=".csv,text/csv"></div>
+        <div id="splitwise-mapping" class="import-field hidden"><label for="splitwise-self">Qual destas pessoas és tu no Splitwise?</label><select id="splitwise-self"></select></div>
+        <label class="import-checkbox"><input id="splitwise-skip-existing" type="checkbox" checked><span>Ignorar movimentos já existentes com a mesma data, descrição, valor e pagador (ou pagamento equivalente).</span></label>
+        <div id="splitwise-preview" class="import-preview hidden" aria-live="polite"></div>
+        <button id="splitwise-confirm" class="import-confirm" type="button" disabled>Confirmar e importar</button>
+        <p id="splitwise-msg" class="mut import-msg" role="status" aria-live="polite">Nenhum ficheiro selecionado. Só quem criou a casa pode importar dados das duas pessoas.</p>
+      </div>
+    </details>
     <button class="g" id="logout" type="button" aria-label="Terminar sessão" title="Terminar sessão"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M10 17l5-5-5-5M15 12H3"/><path d="M12 3h6a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3h-6"/></svg><span>Terminar sessão</span></button>
   </div></section>
   <div id="editrecurringoverlay" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="er-title">
@@ -835,6 +875,7 @@ body{max-width:640px;padding:22px 20px max(120px,env(safe-area-inset-bottom,0px)
 const $=s=>document.querySelector(s), fmt=n=>Number(n||0).toLocaleString('pt-PT',{style:'currency',currency:'EUR'});
 const MES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 let sbClient=null, session=null, me=null, householdId=null, inviteCode='', items=[], members=[], settlements=[], settlementsReady=false, recurring=[], recurringReady=false, recurringError='', channel=null;
+let splitwiseImport=null, isHouseholdCreator=false;
 const now=new Date();let month=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
 let activeTab='expenses', chartPeriod='month', selectedBarMonth=null, editingExpenseId=null, editingRecurringId=null;
 let passwordRecoveryMode=false;
@@ -893,14 +934,18 @@ function toCents(value){return Math.round(Number(value)*100)}
 // cabe sempre ao membro com o ID alfabeticamente mais baixo.
 // A mesma regra aplica-se aos dois utilizadores, em todos os ecras.
 function balanceCents(sharedExpenses, payments, people, userId){
- const totalCents=sharedExpenses.reduce((sum,e)=>sum+toCents(e.amount),0);
- const paidCents=sharedExpenses.reduce((sum,e)=>sum+(e.payer===userId?toCents(e.amount):0),0);
+ // O Splitwise arredonda a divisão por movimento; guardar o saldo líquido
+ // original evita desvios acumulados nos cêntimos de despesas importadas.
+ const normal=sharedExpenses.filter(e=>e.splitwise_net_cents===null||e.splitwise_net_cents===undefined);
+ const totalCents=normal.reduce((sum,e)=>sum+toCents(e.amount),0);
+ const paidCents=normal.reduce((sum,e)=>sum+(e.payer===userId?toCents(e.amount):0),0);
+ const importedNet=sharedExpenses.reduce((sum,e)=>e.splitwise_net_cents===null||e.splitwise_net_cents===undefined?sum:sum+(e.payer===userId?Number(e.splitwise_net_cents):-Number(e.splitwise_net_cents)),0);
  const ordered=[...people].sort();
  const fairCents=ordered.length===2
   ? Math.floor(totalCents/2)+(ordered[0]===userId?totalCents%2:0)
   : ordered.length===1?totalCents:0;
  const transferCents=payments.reduce((sum,p)=>sum+(p.sender===userId?toCents(p.amount):0)-(p.recipient===userId?toCents(p.amount):0),0);
- return paidCents-fairCents+transferCents;
+ return paidCents-fairCents+importedNet+transferCents;
 }
 function periodNow(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')}
 function dateInSelectedMonth(){const today=new Date(),day=Math.min(today.getDate(),new Date(Number(month.slice(0,4)),Number(month.slice(5,7)),0).getDate());return month+'-'+String(day).padStart(2,'0')}
@@ -968,7 +1013,7 @@ async function connect(){
 }
 function resetApp(){
  if(channel)sbClient.removeChannel(channel);
- channel=null;me=null;householdId=null;items=[];members=[];settlements=[];settlementsReady=false;
+ channel=null;me=null;householdId=null;items=[];members=[];settlements=[];settlementsReady=false;isHouseholdCreator=false;splitwiseImport=null;
  recurring=[];recurringReady=false;recurringError='';editingExpenseId=null;editingRecurringId=null;
  mfaPendingFactorId=null;mfaEnrollment=null;authGrantedKey=null;
  closeEditExpense();closeEditRecurring();show('#mfasetup',false);
@@ -981,9 +1026,9 @@ async function afterLogin(){
  householdId=membership.household_id;await loadHousehold();
 }
 async function loadHousehold(){
- const {data:h,error}=await sbClient.from('households').select('invite_code').eq('id',householdId).single();
+ const {data:h,error}=await sbClient.from('households').select('invite_code,created_by').eq('id',householdId).single();
  if(error){status('Não foi possível carregar o espaço: '+error.message,true);return}
- inviteCode=h.invite_code;$('#code').textContent=inviteCode;$('#spaceinfo').textContent='Espaço partilhado · sincronização ativa';
+ inviteCode=h.invite_code;isHouseholdCreator=h.created_by===me.id;$('#code').textContent=inviteCode;$('#spaceinfo').textContent='Espaço partilhado · sincronização ativa';
  const {data:m,error:meErr}=await sbClient.from('household_members').select('user_id').eq('household_id',householdId);
  if(meErr){status('Erro ao carregar membros: '+meErr.message,true);return}
  members=(m||[]).map(x=>x.user_id);
@@ -1013,16 +1058,28 @@ async function ensureRecurringForMonth(period){
  const {error}=await sbClient.from('expenses').insert(rows);
  if(error && error.code!=='23505')status('Não foi possível gerar as despesas fixas: '+error.message,true);
 }
+// O Supabase limita cada resposta a 1000 registos; percorrer todas as páginas.
+async function loadHouseholdTable(table,sortField){
+ const all=[];
+ for(let offset=0;offset<20000;offset+=1000){
+  const {data,error}=await sbClient.from(table).select('*').eq('household_id',householdId).order(sortField,{ascending:false}).range(offset,offset+999);
+  if(error)throw error;
+  all.push(...(data||[]));
+  if(!data||data.length<1000)return all;
+ }
+ throw new Error('O número de movimentos excede o limite de carregamento.');
+}
 async function loadExpenses({syncRecurring=false}={}){
  if(syncRecurring)await ensureRecurringForMonth(month);
- const {data,error}=await sbClient.from('expenses').select('*').eq('household_id',householdId).order('date',{ascending:false});
- if(error){status('Erro ao carregar despesas: '+error.message,true);return}
- items=data||[];
- const {data:paidRows,error:payError}=await sbClient.from('settlements').select('*').eq('household_id',householdId).order('created_at',{ascending:false});
- settlementsReady=!payError;
- settlements=paidRows||[];
+ let data,paidRows;
+ try{data=await loadHouseholdTable('expenses','date')}
+ catch(error){status('Erro ao carregar despesas: '+error.message,true);return}
+ items=data;
+ try{paidRows=await loadHouseholdTable('settlements','created_at');settlementsReady=true}
+ catch(error){paidRows=[];settlementsReady=false}
+ settlements=paidRows;
  render();
- if(payError)status('Despesas carregadas. Para ativar os pagamentos, executa o ficheiro SQL de configuração no Supabase.',true);
+ if(!settlementsReady)status('Despesas carregadas, mas não foi possível consultar os pagamentos.',true);
  else if(!recurringReady)status('Despesas carregadas. Para ativar as despesas fixas e a edição completa, executa o novo ficheiro SQL no Supabase.',true);
  else status('Ligado · as alterações são sincronizadas automaticamente.');
 }
@@ -1319,7 +1376,7 @@ async function saveEditExpense(){
  if(!editingExpenseId)return;
  const description=$('#ed').value.trim(),amount=normalizeAmount($('#ea').value),shared=$('#es').checked;
  if(!description||!(amount>0)){status('Indica uma descrição e um valor válido.',true);return}
- const {error}=await sbClient.from('expenses').update({description,amount,category:categorySelected('#ec',description),shared}).eq('id',editingExpenseId).eq('payer',me.id);
+ const {error}=await sbClient.from('expenses').update({description,amount,category:categorySelected('#ec',description),shared,splitwise_net_cents:null}).eq('id',editingExpenseId).eq('payer',me.id);
  if(error){status('Não foi possível editar a despesa: '+error.message,true);return}
  closeEditExpense();await loadExpenses();status('Despesa atualizada com sucesso.');
 }
@@ -1541,6 +1598,164 @@ $('#createhome').onclick=async()=>{const {data,error}=await sbClient.rpc('create
 $('#joinhome').onclick=async()=>{const code=$('#invite').value.trim().toUpperCase();if(!code)return;const {data,error}=await sbClient.rpc('join_household',{p_code:code});if(error){message('#homemsg','Não foi possível entrar: '+error.message,true);return}householdId=data;await loadHousehold()};
 $('#add').onclick=async()=>{if($('#isrecurring').checked){await addRecurringExpense();return}const description=$('#d').value.trim(),amount=normalizeAmount($('#a').value);if(!description||!(amount>0)){status('Indica uma descrição e um valor válido.',true);return}const date=$('#expense-date').value;if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||Number.isNaN(new Date(date+'T12:00:00').getTime())){status('Escolhe uma data válida para a despesa.',true);return}const selectedPeriod=date.slice(0,7);if(selectedPeriod!==periodNow()){if(!confirm('Atenção: a data escolhida ('+date.split('-').reverse().join('/')+') não pertence ao mês atual.\n\nQueres mesmo adicionar esta despesa?'))return;}const row={household_id:householdId,description,amount,category:categorySelected('#c',description),shared:$('#s').checked,payer:me.id,date};const {error}=await sbClient.from('expenses').insert(row);if(error){status('Não foi possível adicionar: '+error.message,true);return}$('#d').value='';$('#a').value='';$('#c').value='';$('#s').checked=true;$('#d').focus();if(month!==date.slice(0,7)){month=date.slice(0,7);selectedBarMonth=null}syncExpenseDate();await loadExpenses();status('Despesa adicionada com sucesso ✓')};
 $('#prev').onclick=()=>shift(-1);$('#next').onclick=()=>shift(1);
+
+// Splitwise CSV: pré-visualização, validação, associação de pessoas e confirmação.
+// Os dados do ficheiro nunca são enviados antes da confirmação do utilizador.
+function parseCsvRfc4180(text){
+ const rows=[];let row=[],field='',quoted=false,closed=false;
+ text=String(text).replace(/^\uFEFF/,'');
+ for(let i=0;i<text.length;i++){
+  const ch=text[i];
+  if(quoted){if(ch==='"'&&text[i+1]==='"'){field+='"';i++}else if(ch==='"'){quoted=false;closed=true}else field+=ch;continue}
+  if(ch==='"'&&!field&&!closed){quoted=true;continue}
+  if(ch===','){row.push(field);field='';closed=false;continue}
+  if(ch==='\n'||ch==='\r'){if(ch==='\r'&&text[i+1]==='\n')i++;row.push(field);if(row.some(x=>x.trim()))rows.push(row);row=[];field='';closed=false;continue}
+  if(closed&&!/\s/.test(ch))throw new Error('CSV mal formatado: texto depois de aspas.');
+  if(ch==='"')throw new Error('CSV mal formatado: aspas inesperadas.');
+  field+=ch;
+ }
+ if(quoted)throw new Error('CSV mal formatado: aspas não fechadas.');
+ row.push(field);if(row.some(x=>x.trim()))rows.push(row);
+ return rows;
+}
+function splitwiseMoney(value,allowNegative=false){
+ const raw=String(value||'').trim().replace(',','.');
+ if(!/^-?\d+(?:\.\d{1,2})?$/.test(raw))throw new Error('Valor monetário inválido: '+raw.slice(0,30));
+ const neg=raw.startsWith('-');if(neg&&!allowNegative)throw new Error('O custo não pode ser negativo.');
+ const [euros,cent='']=raw.replace('-','').split('.');
+ const cents=Number(euros)*100+Number(cent.padEnd(2,'0'));
+ if(!Number.isSafeInteger(cents)||cents>1000000000)throw new Error('Valor monetário demasiado elevado.');
+ return neg?-cents:cents;
+}
+function splitwiseValidDate(value){
+ const date=String(value||'').trim();
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||new Date(date+'T12:00:00Z').toISOString().slice(0,10)!==date)throw new Error('Data inválida: '+date);
+ return date;
+}
+function splitwiseRead(text){
+ const rows=parseCsvRfc4180(text);
+ if(rows.length<2)throw new Error('O ficheiro não contém movimentos.');
+ if(rows.length>1002)throw new Error('O ficheiro contém demasiadas linhas.');
+ const headers=rows.shift().map(v=>v.trim());
+ if(headers.length!==7||headers.slice(0,5).join('|')!=='Data|Descrição|Categoria|Custo|Moeda'||!headers[5]||!headers[6]||headers[5]===headers[6])throw new Error('Este não parece ser o CSV de grupo do Splitwise com duas pessoas.');
+ const parsed=[];let ignored=0;
+ for(let i=0;i<rows.length;i++){
+  const cells=rows[i];if(cells.length!==7)throw new Error('Número de colunas inválido na linha '+(i+2));
+  const [dateRaw,descRaw,catRaw,costRaw,currency,aRaw,bRaw]=cells;
+  if(descRaw.trim()==='Saldo total'){ignored++;continue}
+  if(currency.trim()!=='EUR')throw new Error('Apenas valores em euros são suportados (linha '+(i+2)+').');
+  const date=splitwiseValidDate(dateRaw),description=descRaw.trim(),category=catRaw.trim();
+  const amountCents=splitwiseMoney(costRaw),a=splitwiseMoney(aRaw,true),b=splitwiseMoney(bRaw,true);
+  if(!description||description.length>60||!amountCents||a+b!==0)throw new Error('Movimento inválido na linha '+(i+2)+'.');
+  const kind=category==='Pagamento'?'payment':'expense';
+  if((a>0)===(b>0))throw new Error('Não foi possível identificar o pagador na linha '+(i+2)+'.');
+  if(kind==='expense'&&Math.abs(Math.abs(a)*2-amountCents)>2)throw new Error('A divisão da linha '+(i+2)+' não é compatível com duas pessoas.');
+  if(kind==='payment'&&Math.abs(a)!==amountCents)throw new Error('O pagamento na linha '+(i+2)+' não corresponde ao valor transferido.');
+  parsed.push({kind,date,description,category:category||'Outros',amountCents,netCents:Math.abs(a),positiveIndex:a>0?0:1,a,b});
+ }
+ if(!parsed.length)throw new Error('Não existem despesas nem pagamentos para importar.');
+ return {people:headers.slice(5),records:parsed,ignored};
+}
+async function splitwiseHash(text){
+ const bytes=new TextEncoder().encode(text);
+ const digest=await crypto.subtle.digest('SHA-256',bytes);
+ return [...new Uint8Array(digest)].map(n=>n.toString(16).padStart(2,'0')).join('');
+}
+async function splitwiseWithKeys(parsed){
+ const seen=new Map();
+ const keys=await Promise.all(parsed.records.map(r=>{
+  const canonical=JSON.stringify([r.kind,r.date,r.description,r.category,r.amountCents,r.a,r.b]);
+  const occurrence=(seen.get(canonical)||0)+1;seen.set(canonical,occurrence);
+  return splitwiseHash(canonical+'#'+occurrence);
+ }));
+ parsed.records.forEach((r,i)=>{r.source_key=keys[i]});
+ return parsed;
+}
+function splitwiseMessage(text,error=false){
+ const node=$('#splitwise-msg');node.textContent=text;node.style.color=error?'var(--neg)':'';
+}
+function splitwisePreview(){
+ const preview=$('#splitwise-preview'),button=$('#splitwise-confirm');
+ preview.replaceChildren();button.disabled=true;
+ if(!splitwiseImport)return;
+ const people=splitwiseImport.people,selection=Number($('#splitwise-self').value);
+ if(!Number.isInteger(selection)||selection<0||selection>1)return;
+ const nExp=splitwiseImport.records.filter(r=>r.kind==='expense').length;
+ const nPay=splitwiseImport.records.length-nExp;
+ const stats=document.createElement('div');stats.className='import-stats';
+ for(const [value,label] of [[nExp,'Despesas'],[nPay,'Pagamentos'],[splitwiseImport.ignored,'Saldos ignorados'],[splitwiseImport.records.length,'Total de movimentos']]){
+  const tile=document.createElement('div'),strong=document.createElement('strong'),small=document.createElement('span');
+  strong.textContent=value;small.textContent=label;tile.append(strong,small);stats.append(tile);
+ }
+ preview.append(stats);
+ const note=document.createElement('p');note.className='mut';note.textContent='Eu: '+people[selection]+' · Outra pessoa: '+people[1-selection]+'. Os pagamentos serão registados no mês original. Os valores líquidos mantêm os cêntimos do Splitwise.';preview.append(note);
+ const title=document.createElement('strong');title.textContent='Exemplos de movimentos';preview.append(title);
+ const makeSample=r=>{
+  const row=document.createElement('div');row.className='import-sample';
+  const left=document.createElement('div');left.textContent=r.date+' · '+r.description+' · '+(r.kind==='expense'?'Despesa':'Pagamento')+' de '+people[r.positiveIndex];
+  const amount=document.createElement('strong');amount.textContent=fmt(r.amountCents/100);row.append(left,amount);return row;
+ };
+ splitwiseImport.records.slice(0,6).forEach(r=>preview.append(makeSample(r)));
+ const all=document.createElement('details');all.className='import-all';
+ const summary=document.createElement('summary');summary.textContent='Ver todos os '+splitwiseImport.records.length+' movimentos';all.append(summary);
+ const fullList=document.createElement('div');fullList.className='import-all-list';
+ splitwiseImport.records.forEach(r=>fullList.append(makeSample(r)));
+ all.append(fullList);preview.append(all);
+ const mapped=[null,null];mapped[selection]=me?.id;mapped[1-selection]=members.find(id=>id!==me?.id);
+ let possible=0;
+ if(mapped[0]&&mapped[1]){
+  const expenseKeys=new Set(items.map(e=>[e.date,e.description,toCents(e.amount),e.payer].join('|')));
+  const paymentKeys=new Set(settlements.map(p=>[String(p.created_at||'').slice(0,10),toCents(p.amount),p.sender,p.recipient].join('|')));
+  possible=splitwiseImport.records.filter(r=>r.kind==='expense'
+    ?expenseKeys.has([r.date,r.description,r.amountCents,mapped[r.positiveIndex]].join('|'))
+    :paymentKeys.has([r.date,r.amountCents,mapped[r.positiveIndex],mapped[1-r.positiveIndex]].join('|'))).length;
+ }
+ const warning=document.createElement('p');warning.className='mut';warning.textContent='Possíveis movimentos já existentes: '+possible+'. A verificação definitiva de duplicados é feita no servidor. A operação não apaga dados.';preview.append(warning);
+ show('#splitwise-preview');
+ const ready=!!householdId&&!!me&&members.length===2&&isHouseholdCreator;
+ button.disabled=!ready;
+ if(!ready)splitwiseMessage('Para importar as despesas das duas pessoas, ambas têm de pertencer à casa e deves iniciar sessão com a conta que criou a casa.',true);
+ else splitwiseMessage('Pré-visualização pronta. Confirma os nomes e revê os movimentos antes de importar.');
+}
+$('#splitwise-file').onchange=async()=>{
+ splitwiseImport=null;show('#splitwise-preview',false);$('#splitwise-confirm').disabled=true;
+ const file=$('#splitwise-file').files?.[0];if(!file)return;
+ if(file.size>2*1024*1024){splitwiseMessage('O ficheiro excede 2 MB.',true);return}
+ splitwiseMessage('A ler e validar o ficheiro…');
+ try{
+  const parsed=await splitwiseWithKeys(splitwiseRead(await file.text()));
+  splitwiseImport=parsed;
+  const select=$('#splitwise-self');select.replaceChildren();
+  parsed.people.forEach((name,i)=>{const opt=document.createElement('option');opt.value=String(i);opt.textContent=name;select.append(opt)});
+  // Não inferir identidades a partir do email; a pessoa confirma a associação.
+  select.value='';show('#splitwise-mapping');splitwiseMessage('Seleciona quem és no Splitwise para veres a pré-visualização.');
+ }catch(e){splitwiseMessage('Não foi possível ler o CSV: '+(e.message||e),true)}
+};
+$('#splitwise-self').onchange=splitwisePreview;
+$('#splitwise-confirm').onclick=async()=>{
+ if(!splitwiseImport||!householdId||!me||members.length!==2||!isHouseholdCreator)return;
+ const selection=Number($('#splitwise-self').value);if(selection!==0&&selection!==1)return;
+ const map=[null,null];map[selection]=me.id;map[1-selection]=members.find(id=>id!==me.id);
+ if(!map[0]||!map[1])return;
+ const nExp=splitwiseImport.records.filter(r=>r.kind==='expense').length,nPay=splitwiseImport.records.length-nExp;
+ const skip=$('#splitwise-skip-existing').checked;
+ if(!confirm('Confirmas a importação de '+nExp+' despesas e '+nPay+' pagamentos?\n\n'+splitwiseImport.people[selection]+' = a tua conta\n'+splitwiseImport.people[1-selection]+' = a outra pessoa\n\n'+(skip?'Os possíveis duplicados serão ignorados.':'Os possíveis duplicados existentes NÃO serão ignorados.')+'\n\nEsta operação não apaga movimentos existentes.'))return;
+ const button=$('#splitwise-confirm');button.disabled=true;button.textContent='A importar…';
+ try{
+  const payload=splitwiseImport.records.map(r=>{
+   const base={source_key:r.source_key,kind:r.kind,date:r.date,amount_cents:r.amountCents};
+   return r.kind==='expense'?{...base,description:r.description,category:r.category,payer:map[r.positiveIndex],net_cents:r.netCents}:{...base,sender:map[r.positiveIndex],recipient:map[1-r.positiveIndex]};
+  });
+  const {data,error}=await sbClient.rpc('import_splitwise_records',{p_household_id:householdId,p_rows:payload,p_skip_existing:skip});
+  if(error)throw error;
+  await loadExpenses();
+  splitwiseMessage('Importação concluída: '+data.expenses+' despesas e '+data.payments+' pagamentos adicionados. '+data.already_imported+' já importados anteriormente e '+data.existing+' possíveis duplicados ignorados.');
+  status('Dados do Splitwise importados com sucesso.');
+  splitwiseImport=null;$('#splitwise-file').value='';show('#splitwise-preview',false);show('#splitwise-mapping',false);
+ }catch(e){splitwiseMessage('Importação não concluída: '+(e.message||e)+'. Confirma que executaste primeiro o ficheiro SQL no Supabase.',true)}
+ finally{button.textContent='Confirmar e importar';button.disabled=!splitwiseImport}
+};
+
 $('#logout').onclick=()=>sbClient.auth.signOut();
 $('#copycode').onclick=async()=>{try{await navigator.clipboard.writeText(inviteCode);status('Código copiado.')}catch(e){status('Código de convite: '+inviteCode)}};
 const themeButton=document.querySelector('#themetoggle');
