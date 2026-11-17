@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-HEJstwhlQtAa2k/Vce75sT1Ipj5Mzr7yJDhLGiKLRic=' 'sha256-4wqTREKQa+UNIxIJ3w0mxgBb1/fSaUVWi9J9m9/9lCM=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='    ; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-HEJstwhlQtAa2k/Vce75sT1Ipj5Mzr7yJDhLGiKLRic=' 'sha256-qcsYyC+SgJHfRt0h1CBg5npI0DrtxBds+plkPg43eXc=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='    ; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
 <title>A Nossa Casa</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#167552">
@@ -546,10 +546,12 @@ body{max-width:640px;padding:22px 20px max(120px,env(safe-area-inset-bottom,0px)
   #app .tabnav button{min-height:46px;padding:4px 2px;gap:2px}
 }
 
-/* Importação Splitwise: integrada no submenu Conta, sem alterar os outros ecrãs. */
+/* Importação CSV e cópias JSON: integradas no submenu Conta. */
 #accountview .account-import{margin-top:12px}
 #accountview .account-import .account-share-content{display:grid;gap:12px}
 #accountview .account-import .account-share-content>p{margin:0}
+#accountview .import-format-panel{display:grid;gap:12px;min-width:0}
+#accountview .import-format-panel>p{margin:0}
 #accountview .import-field{display:grid;gap:6px;min-width:0}
 #accountview .import-field label{font-size:13px;font-weight:700}
 #accountview .import-field input[type="file"]{font-size:12px;min-width:0;padding:10px}
@@ -809,17 +811,31 @@ body{max-width:640px;padding:22px 20px max(120px,env(safe-area-inset-bottom,0px)
     <details class="account-share account-import" id="splitwisemanage">
       <summary>
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3v12m-4-4 4 4 4-4"/><path d="M4 16v4h16v-4"/></svg>
-        <span class="account-share-label"><strong>Importar dados</strong><small>Adicionar movimentos a partir de um ficheiro CSV</small></span>
+        <span class="account-share-label"><strong>Importar dados</strong><small>Ficheiro CSV ou cópia de segurança JSON</small></span>
         <svg class="account-share-chevron" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 18 6-6-6-6"/></svg>
       </summary>
       <div class="account-share-content">
-        <p class="mut">Importa despesas e pagamentos de um ficheiro CSV compatível com o formato de grupo do Splitwise. Os dados atuais são mantidos e nada é guardado sem confirmação.</p>
-        <div class="import-field"><label for="splitwise-file">Selecionar ficheiro CSV</label><input id="splitwise-file" type="file" accept=".csv,text/csv"></div>
-        <div id="splitwise-mapping" class="import-field hidden"><label for="splitwise-self">Qual destas pessoas és tu no ficheiro?</label><select id="splitwise-self"></select></div>
-        <label class="import-checkbox"><input id="splitwise-skip-existing" type="checkbox" checked><span>Ignorar movimentos já existentes com a mesma data, descrição, valor e pagador (ou pagamento equivalente).</span></label>
-        <div id="splitwise-preview" class="import-preview hidden" aria-live="polite"></div>
-        <button id="splitwise-confirm" class="import-confirm" type="button" disabled>Confirmar e importar</button>
-        <p id="splitwise-msg" class="mut import-msg" role="status" aria-live="polite">Nenhum ficheiro selecionado. Só quem criou a casa pode importar dados das duas pessoas.</p>
+        <div class="import-field"><label for="import-format">Formato a importar</label>
+          <select id="import-format"><option value="csv">Movimentos (CSV)</option><option value="json">Cópia de segurança (JSON)</option></select>
+        </div>
+        <div id="import-csv-panel" class="import-format-panel">
+          <p class="mut">Importa despesas e pagamentos de um ficheiro CSV compatível com o formato de grupo do Splitwise. Os dados atuais são mantidos e nada é guardado sem confirmação.</p>
+          <div class="import-field"><label for="splitwise-file">Selecionar ficheiro CSV</label><input id="splitwise-file" type="file" accept=".csv,text/csv"></div>
+          <div id="splitwise-mapping" class="import-field hidden"><label for="splitwise-self">Qual destas pessoas és tu no ficheiro?</label><select id="splitwise-self"></select></div>
+          <label class="import-checkbox"><input id="splitwise-skip-existing" type="checkbox" checked><span>Ignorar movimentos já existentes com a mesma data, descrição, valor e pagador (ou pagamento equivalente).</span></label>
+          <div id="splitwise-preview" class="import-preview hidden" aria-live="polite"></div>
+          <button id="splitwise-confirm" class="import-confirm" type="button" disabled>Confirmar e importar</button>
+          <p id="splitwise-msg" class="mut import-msg" role="status" aria-live="polite">Nenhum ficheiro selecionado. Só quem criou a casa pode importar dados das duas pessoas.</p>
+        </div>
+        <div id="import-json-panel" class="import-format-panel hidden">
+          <p class="mut">Importa uma cópia JSON exportada por A Nossa Casa, com despesas, pagamentos e despesas fixas. Os registos existentes nunca são apagados nem alterados.</p>
+          <div class="import-field"><label for="backup-json-file">Selecionar cópia de segurança (JSON)</label><input id="backup-json-file" type="file" accept=".json,application/json"></div>
+          <div id="backup-json-mapping" class="import-field hidden"><label for="backup-json-self">Qual das pessoas do ficheiro corresponde à tua conta?</label><select id="backup-json-self"></select><p class="mut import-msg">O ficheiro não contém nomes. Confirma a associação pelo identificador da conta original.</p></div>
+          <label class="import-checkbox"><input id="backup-json-skip-existing" type="checkbox" checked><span>Ignorar possíveis registos duplicados. Os registos já importados anteriormente são sempre ignorados.</span></label>
+          <div id="backup-json-preview" class="import-preview hidden" aria-live="polite"></div>
+          <button id="backup-json-confirm" class="import-confirm" type="button" disabled>Confirmar e importar JSON</button>
+          <p id="backup-json-msg" class="mut import-msg" role="status" aria-live="polite">Nenhum ficheiro selecionado. Só quem criou a casa pode importar a cópia completa.</p>
+        </div>
       </div>
     </details>
     <details class="account-share account-export" id="exportmanage">
@@ -832,7 +848,7 @@ body{max-width:640px;padding:22px 20px max(120px,env(safe-area-inset-bottom,0px)
         <p class="mut">Descarrega os dados da casa: despesas, pagamentos e despesas fixas. Os ficheiros são criados no teu dispositivo, sem alterar os registos.</p>
         <button id="export-json" type="button" class="export-option"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M4 17v4h16v-4"/></svg><span>Cópia de segurança (JSON)</span></button>
         <button id="export-csv" type="button" class="export-option export-secondary"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M4 17v4h16v-4"/></svg><span>Exportar para Excel (CSV)</span></button>
-        <p class="mut export-note">O JSON guarda os registos para arquivo. A reposição automática desta cópia ainda não está disponível. Guarda o ficheiro num local seguro.</p>
+        <p class="mut export-note">Podes importar esta cópia através de Conta → Importar dados → Cópia de segurança (JSON). Guarda o ficheiro num local seguro.</p>
         <p id="export-msg" class="mut import-msg" role="status" aria-live="polite"></p>
       </div>
     </details>
@@ -897,7 +913,7 @@ body{max-width:640px;padding:22px 20px max(120px,env(safe-area-inset-bottom,0px)
 const $=s=>document.querySelector(s), fmt=n=>Number(n||0).toLocaleString('pt-PT',{style:'currency',currency:'EUR'});
 const MES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 let sbClient=null, session=null, me=null, householdId=null, inviteCode='', items=[], members=[], settlements=[], settlementsReady=false, recurring=[], recurringReady=false, recurringError='', channel=null;
-let splitwiseImport=null, isHouseholdCreator=false;
+let splitwiseImport=null, backupJsonImport=null, isHouseholdCreator=false;
 const now=new Date();let month=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
 let activeTab='expenses', chartPeriod='month', selectedBarMonth=null, editingExpenseId=null, editingRecurringId=null;
 let passwordRecoveryMode=false;
@@ -1035,7 +1051,7 @@ async function connect(){
 }
 function resetApp(){
  if(channel)sbClient.removeChannel(channel);
- channel=null;me=null;householdId=null;items=[];members=[];settlements=[];settlementsReady=false;isHouseholdCreator=false;splitwiseImport=null;
+ channel=null;me=null;householdId=null;items=[];members=[];settlements=[];settlementsReady=false;isHouseholdCreator=false;splitwiseImport=null;backupJsonImport=null;
  recurring=[];recurringReady=false;recurringError='';editingExpenseId=null;editingRecurringId=null;
  mfaPendingFactorId=null;mfaEnrollment=null;authGrantedKey=null;
  closeEditExpense();closeEditRecurring();show('#mfasetup',false);
@@ -1776,6 +1792,172 @@ $('#splitwise-confirm').onclick=async()=>{
   splitwiseImport=null;$('#splitwise-file').value='';show('#splitwise-preview',false);show('#splitwise-mapping',false);
  }catch(e){splitwiseMessage('Importação não concluída: '+(e.message||e)+'. Confirma que executaste primeiro o ficheiro SQL no Supabase.',true)}
  finally{button.textContent='Confirmar e importar';button.disabled=!splitwiseImport}
+};
+
+// Importação de cópia JSON v1: validação local, pré-visualização e confirmação.
+// A escrita completa é uma transação protegida no Supabase (import_household_backup_json).
+$('#import-format').onchange=()=>{
+ const json=$('#import-format').value==='json';
+ show('#import-csv-panel',!json);show('#import-json-panel',json);
+};
+function backupJsonMessage(text,error=false){
+ const el=$('#backup-json-msg');el.textContent=text;el.style.color=error?'var(--neg)':'';
+}
+function backupIsUuid(value){return typeof value==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)}
+function backupIsDate(value){
+ if(typeof value!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(value))return false;
+ const d=new Date(value+'T12:00:00Z');return !Number.isNaN(d.getTime())&&d.toISOString().slice(0,10)===value;
+}
+function backupReadJson(text){
+ let data;
+ try{data=JSON.parse(String(text).replace(/^\uFEFF/,''))}
+ catch(e){throw new Error('O ficheiro não contém JSON válido.')}
+ if(!data||Array.isArray(data)||data.format!=='a-nossa-casa-backup'||data.version!==1)
+  throw new Error('Este não é um backup JSON v1 exportado por A Nossa Casa.');
+ if(!backupIsUuid(data.household_id)||!Array.isArray(data.members)||!Array.isArray(data.expenses)
+    ||!Array.isArray(data.settlements)||!Array.isArray(data.recurring_expenses))
+  throw new Error('Faltam dados obrigatórios na cópia de segurança.');
+ if(data.members.length<1||data.members.length>2||data.members.some(id=>!backupIsUuid(id))
+    ||new Set(data.members).size!==data.members.length)
+  throw new Error('Os membros da cópia de segurança são inválidos.');
+ const count=data.expenses.length+data.settlements.length+data.recurring_expenses.length;
+ if(count>10000)throw new Error('A cópia excede o limite de 10 000 registos.');
+ const sourceMembers=new Set(data.members);
+ const fixedIds=new Set();
+ for(const [kind,records] of [['despesa',data.expenses],['pagamento',data.settlements],['despesa fixa',data.recurring_expenses]]){
+  const seen=new Set();
+  for(const r of records){
+   if(!r||Array.isArray(r)||typeof r!=='object'||!backupIsUuid(r.id)||r.household_id!==data.household_id
+      ||seen.has(r.id))throw new Error('Existe um identificador inválido ou repetido numa '+kind+'.');
+   seen.add(r.id);
+   if(!Number.isFinite(Number(r.amount))||Number(r.amount)<=0||Number(r.amount)>999999999)
+    throw new Error('Existe um valor inválido numa '+kind+'.');
+   if(kind==='pagamento'){
+    if(!sourceMembers.has(r.sender)||!sourceMembers.has(r.recipient)||r.sender===r.recipient
+       ||!backupIsDate(r.period)||!Number.isFinite(Date.parse(r.created_at)))
+      throw new Error('Existe um pagamento com pessoas ou datas inválidas.');
+   }else{
+    if(!sourceMembers.has(r.payer)||typeof r.description!=='string'||!r.description.trim()
+       ||typeof r.shared!=='boolean')throw new Error('Existe uma '+kind+' com dados inválidos.');
+    if(kind==='despesa'){
+     if(!backupIsDate(r.date)||(r.recurring_period!=null&&!backupIsDate(r.recurring_period)))
+      throw new Error('Existe uma despesa com uma data inválida.');
+    }else{
+     if(!Number.isInteger(r.day_of_month)||r.day_of_month<1||r.day_of_month>28
+        ||!backupIsDate(r.start_month)||r.end_month!=null&&!backupIsDate(r.end_month)
+        ||!Array.isArray(r.excluded_months)||r.excluded_months.some(d=>!backupIsDate(d)))
+      throw new Error('Existe uma despesa fixa com datas ou repetição inválidas.');
+     fixedIds.add(r.id);
+    }
+   }
+  }
+ }
+ if(data.expenses.some(r=>r.recurring_expense_id!=null&&!fixedIds.has(r.recurring_expense_id)))
+  throw new Error('A cópia contém despesas associadas a despesas fixas em falta.');
+ return data;
+}
+function backupMemberMap(){
+ if(!backupJsonImport||!me)return null;
+ const source=backupJsonImport.members;
+ if(source.length>members.length)return null;
+ if(source.length===1)return {[source[0]]:me.id};
+ if(members.length!==2)return null;
+ const chosen=$('#backup-json-self').value;
+ if(!source.includes(chosen))return null;
+ const other=members.find(id=>id!==me.id);
+ if(!other)return null;
+ return {[chosen]:me.id,[source.find(id=>id!==chosen)]:other};
+}
+function backupJsonPreview(){
+ const preview=$('#backup-json-preview'),button=$('#backup-json-confirm');
+ preview.replaceChildren();button.disabled=true;
+ if(!backupJsonImport){show('#backup-json-preview',false);return}
+ const data=backupJsonImport,map=backupMemberMap();
+ const stats=document.createElement('div');stats.className='import-stats';
+ for(const [count,label] of [[data.expenses.length,'Despesas'],[data.settlements.length,'Pagamentos'],
+   [data.recurring_expenses.length,'Despesas fixas'],[data.expenses.length+data.settlements.length+data.recurring_expenses.length,'Total de registos']]){
+  const cell=document.createElement('div'),n=document.createElement('strong'),l=document.createElement('span');
+  n.textContent=count;l.textContent=label;cell.append(n,l);stats.append(cell);
+ }
+ preview.append(stats);
+ const note=document.createElement('p');note.className='mut';
+ const date=Date.parse(data.exported_at);
+ note.textContent='Cópia de '+(Number.isFinite(date)?new Date(date).toLocaleDateString('pt-PT'):'data não indicada')
+   +(data.household_id===householdId?' · mesma casa.':' · casa de origem diferente.');
+ preview.append(note);
+ if(map){
+  const people=document.createElement('p');people.className='mut';
+  people.textContent='Associação: '+Object.entries(map).map(([oldId,newId])=>oldId.slice(0,8)+'… → '+(newId===me.id?'tu':'outra pessoa')).join(' · ');
+  preview.append(people);
+ }
+ const samples=[...data.expenses.map(r=>({date:r.date,desc:r.description,amount:r.amount,kind:'Despesa'})),
+  ...data.settlements.map(r=>({date:String(r.created_at).slice(0,10),desc:'Acerto de contas',amount:r.amount,kind:'Pagamento'})),
+  ...data.recurring_expenses.map(r=>({date:r.start_month,desc:r.description,amount:r.amount,kind:'Despesa fixa'}))];
+ const sampleTitle=document.createElement('strong');sampleTitle.textContent='Exemplos de registos';preview.append(sampleTitle);
+ for(const r of samples.slice(0,6)){
+  const line=document.createElement('div');line.className='import-sample';
+  const left=document.createElement('div');left.textContent=r.date+' · '+r.kind+' · '+r.desc;
+  const right=document.createElement('strong');right.textContent=fmt(r.amount);line.append(left,right);preview.append(line);
+ }
+ if(samples.length>6){const extra=document.createElement('p');extra.className='mut';extra.textContent='Mais '+(samples.length-6)+' registos incluídos na importação.';preview.append(extra)}
+ const warning=document.createElement('p');warning.className='mut';
+ warning.textContent='Os registos com identificadores já importados serão ignorados. '+
+  ($('#backup-json-skip-existing').checked?'Também serão ignorados possíveis duplicados com os mesmos dados.':'Não serão filtrados possíveis duplicados por conteúdo.')+
+  ' A verificação definitiva é feita no servidor. Nada será apagado ou substituído.';
+ preview.append(warning);show('#backup-json-preview');
+ const ready=!!householdId&&!!me&&isHouseholdCreator&&!!map;
+ button.disabled=!ready;
+ if(!isHouseholdCreator)backupJsonMessage('Só quem criou a casa pode importar a cópia de segurança completa.',true);
+ else if(!map)backupJsonMessage(data.members.length>members.length
+   ?'A casa atual ainda não tem as duas pessoas necessárias para importar esta cópia.'
+   :'Seleciona a tua conta original para associar as pessoas corretamente.',true);
+ else backupJsonMessage('Pré-visualização pronta. Confirma os registos e a associação das pessoas antes de importar.');
+}
+$('#backup-json-file').onchange=async()=>{
+ backupJsonImport=null;show('#backup-json-preview',false);show('#backup-json-mapping',false);
+ $('#backup-json-confirm').disabled=true;
+ const file=$('#backup-json-file').files?.[0];if(!file)return;
+ if(file.size>5*1024*1024){backupJsonMessage('O ficheiro excede 5 MB.',true);return}
+ backupJsonMessage('A ler e validar a cópia de segurança…');
+ try{
+  const parsed=backupReadJson(await file.text());
+  backupJsonImport=parsed;
+  const select=$('#backup-json-self');select.replaceChildren();
+  if(parsed.members.length===2){
+   const placeholder=document.createElement('option');placeholder.value='';placeholder.textContent='Selecionar pessoa';select.append(placeholder);
+   parsed.members.forEach((id,i)=>{const option=document.createElement('option');option.value=id;option.textContent='Pessoa '+(i+1)+' · '+id.slice(0,8)+'…';select.append(option)});
+   select.value=parsed.members.includes(me?.id)?me.id:'';
+   show('#backup-json-mapping');
+  }
+  backupJsonPreview();
+ }catch(e){backupJsonMessage('Não foi possível preparar o JSON: '+(e.message||e),true)}
+};
+$('#backup-json-self').onchange=backupJsonPreview;
+$('#backup-json-skip-existing').onchange=backupJsonPreview;
+$('#backup-json-confirm').onclick=async()=>{
+ const map=backupMemberMap();
+ if(!backupJsonImport||!map||!householdId||!me||!isHouseholdCreator)return;
+ const data=backupJsonImport,skip=$('#backup-json-skip-existing').checked;
+ if(!confirm('Confirmas a importação desta cópia JSON?\n\n'+data.expenses.length+' despesas, '
+   +data.settlements.length+' pagamentos e '+data.recurring_expenses.length+' despesas fixas.\n\n'
+   +(skip?'Possíveis duplicados serão ignorados.':'Possíveis duplicados por conteúdo poderão ser adicionados.')
+   +'\n\nOs registos existentes não serão apagados nem alterados.'))return;
+ const button=$('#backup-json-confirm');button.disabled=true;button.textContent='A importar JSON…';
+ try{
+  const currentHousehold=householdId,currentUser=me.id;
+  const {data:result,error}=await sbClient.rpc('import_household_backup_json',{
+   p_household_id:currentHousehold,p_backup:data,p_member_map:map,p_skip_existing:skip
+  });
+  if(error)throw error;
+  if(householdId!==currentHousehold||me?.id!==currentUser)throw new Error('A sessão mudou durante a importação.');
+  await loadRecurring();await loadExpenses();
+  backupJsonMessage('Importação concluída: '+result.expenses+' despesas, '+result.payments+' pagamentos e '
+   +result.recurring+' despesas fixas adicionados. Ignorados: '+result.skipped_expenses+' despesas, '
+   +result.skipped_payments+' pagamentos e '+result.skipped_recurring+' despesas fixas.');
+  status('Cópia JSON importada com sucesso.');
+  backupJsonImport=null;$('#backup-json-file').value='';show('#backup-json-preview',false);show('#backup-json-mapping',false);
+ }catch(e){backupJsonMessage('Importação não concluída: '+(e.message||e)+'. Verifica se executaste o SQL de importação JSON no Supabase.',true)}
+ finally{button.textContent='Confirmar e importar JSON';button.disabled=!backupJsonImport}
 };
 
 // Exportação local: consulta todas as páginas para não perder movimentos antigos.
