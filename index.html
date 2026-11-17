@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-HEJstwhlQtAa2k/Vce75sT1Ipj5Mzr7yJDhLGiKLRic=' 'sha256-0PKSEfQDYnEthmr8xqj6N2S0s7JQiIMKkkyz1xnO68s=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='    ; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-HEJstwhlQtAa2k/Vce75sT1Ipj5Mzr7yJDhLGiKLRic=' 'sha256-fBqeQLojchQzHvchOrJ8IArfY4xKCpWYof5NYI4+etM=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='    ; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
 <title>A Nossa Casa</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#167552">
@@ -345,6 +345,7 @@ body{max-width:640px;padding:22px 20px max(120px,env(safe-area-inset-bottom,0px)
 #expenseview .balance-line.neg{color:var(--neg)!important}
 #expenseview .balance-line.mut{color:var(--mut)!important}
 #expenseview #balanceperiod{margin-top:5px;text-transform:none;letter-spacing:0;font-size:11px;font-weight:500}
+#expenseview #globalbalance{margin-top:10px;padding:9px 11px;border:1px solid var(--bd);border-radius:10px;font-size:12px;font-weight:600}
 /* O formulário não ocupa o ecrã até ser pedido. */
 .add-panel{margin:0 0 25px}
 .add-panel>summary{list-style:none;cursor:pointer}
@@ -653,7 +654,8 @@ body{max-width:640px;padding:22px 20px max(120px,env(safe-area-inset-bottom,0px)
         <div><div class="mut">Total de despesas</div><div class="big" id="tot">0 €</div></div>
       </div>
       <div id="bal" class="bal balance-line"></div>
-      <div id="balanceperiod" class="mut" aria-live="polite">Saldo acumulado até ao mês selecionado</div>
+      <div id="balanceperiod" class="mut" aria-live="polite">Estado atual das dívidas deste mês</div>
+      <div id="globalbalance" class="mut" aria-live="polite"></div>
       <div class="balance-actions" role="group" aria-label="Ações de despesas e pagamentos">
         <button id="openexpense" type="button" class="balance-action balance-action-add" aria-controls="newexpensepanel" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h10a2 2 0 0 1 2 2v16l-4-2-3 2-3-2-4 2V5a2 2 0 0 1 2-2z"/><path d="M12 8v7M8.5 11.5h7"/></svg><span>Adicionar despesa</span></button>
         <button id="opensettlement" type="button" class="balance-action balance-action-settle" aria-controls="settlementpanel" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16m0 0-4-4m4 4-4 4M20 17H4m0 0 4-4m-4 4 4 4"/></svg><span>Acertar contas</span></button>
@@ -755,7 +757,7 @@ body{max-width:640px;padding:22px 20px max(120px,env(safe-area-inset-bottom,0px)
   <section id="historyview" class="hidden" aria-labelledby="historytitle">
     <div class="card">
       <h2 id="historytitle">Histórico de pagamentos</h2>
-      <p class="mut">Pagamentos registados no mês selecionado. Não contam como despesas; o saldo em Despesas inclui também os meses anteriores.</p>
+      <p class="mut">Pagamentos registados no mês selecionado. Os pagamentos posteriores podem liquidar retroativamente dívidas antigas; o saldo global mantém-se atualizado.</p>
       <div id="settlehistory"><div id="settlelist"></div></div>
       <p id="settleempty" class="mut hidden" role="status">Ainda não existem pagamentos registados neste mês.</p>
     </div>
@@ -987,12 +989,57 @@ function balanceCents(sharedExpenses, payments, people, userId){
  const transferCents=payments.reduce((sum,p)=>sum+(p.sender===userId?toCents(p.amount):0)-(p.recipient===userId?toCents(p.amount):0),0);
  return paidCents-fairCents+importedNet+transferCents;
 }
-// Saldo até ao fim do mês selecionado: inclui dívidas anteriores e os
-// pagamentos feitos para as liquidar. Os totais de despesas mantêm-se mensais.
+// O saldo global continua a servir para "Acertar contas".
 function balanceThroughMonth(expenses,payments,people,userId,period){
  const shared=(expenses||[]).filter(e=>e.shared&&(e.date||'').slice(0,7)<=period);
  const paid=(payments||[]).filter(p=>(p.period||'').slice(0,7)<=period);
  return balanceCents(shared,paid,people,userId);
+}
+// Estado retroativo por mês: pagamentos e saldos de sentido contrário
+// liquidam primeiro as obrigações mais antigas. Só muda a apresentação;
+// os movimentos e respetivas datas permanecem intactos.
+function monthlyOpenBalances(expenses,payments,people,userId,asOfPeriod){
+ const expenseMonths=new Map(),paymentMonths=new Map();
+ for(const e of expenses||[]){
+  const period=String(e.date||'').slice(0,7);
+  if(!e.shared||!/^\d{4}-\d{2}$/.test(period)||period>asOfPeriod)continue;
+  if(!expenseMonths.has(period))expenseMonths.set(period,[]);
+  expenseMonths.get(period).push(e);
+ }
+ for(const p of payments||[]){
+  const period=String(p.period||'').slice(0,7);
+  if(!/^\d{4}-\d{2}$/.test(period)||period>asOfPeriod)continue;
+  const signed=(p.sender===userId?toCents(p.amount):0)-(p.recipient===userId?toCents(p.amount):0);
+  paymentMonths.set(period,(paymentMonths.get(period)||0)+signed);
+ }
+ const periods=[...new Set([...expenseMonths.keys(),...paymentMonths.keys()])].sort();
+ const open=new Map(),lots=[];
+ // O cêntimo ímpar é distribuído no total acumulado, como no saldo global.
+ let cumulative=[],previousExpenseBalance=0;
+ function apply(signed,period){
+  let remainder=signed;
+  if(!remainder)return;
+  for(const lot of lots){
+   if(!remainder)break;
+   if(!lot.remaining||Math.sign(lot.remaining)===Math.sign(remainder))continue;
+   const settled=Math.min(Math.abs(remainder),Math.abs(lot.remaining));
+   const lotSign=Math.sign(lot.remaining);
+   lot.remaining-=lotSign*settled;
+   remainder+=lotSign*settled;
+  }
+  if(remainder)lots.push({period,remaining:remainder});
+ }
+ for(const period of periods){
+  cumulative.push(...(expenseMonths.get(period)||[]));
+  const expenseBalance=balanceCents(cumulative,[],people,userId);
+  apply(expenseBalance-previousExpenseBalance,period);
+  previousExpenseBalance=expenseBalance;
+  apply(paymentMonths.get(period)||0,null);
+ }
+ for(const lot of lots){
+  if(lot.period!==null)open.set(lot.period,(open.get(lot.period)||0)+lot.remaining);
+ }
+ return open;
 }
 function periodNow(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')}
 function dateInSelectedMonth(){const today=new Date(),day=Math.min(today.getDate(),new Date(Number(month.slice(0,4)),Number(month.slice(5,7)),0).getDate());return month+'-'+String(day).padStart(2,'0')}
@@ -1153,18 +1200,25 @@ function render(){
  $('#tot').textContent=fmt(total);
  const people=members.length?members:[me.id];
  const curPayments=settlements.filter(p=>p.period===month+'-01');
- const netCents=balanceThroughMonth(items,settlements,people,me.id,month);
- const net=netCents/100;
+ const asOfPeriod=month>periodNow()?month:periodNow();
+ const outstanding=monthlyOpenBalances(items,settlements,people,me.id,asOfPeriod);
+ const monthCents=outstanding.get(month)||0;
+ const globalCents=balanceThroughMonth(items,settlements,people,me.id,asOfPeriod);
  const otherCount=Math.max(0,people.length-1);
- const hasPastMovements=items.some(e=>e.shared&&(e.date||'').slice(0,7)<=month)
-  ||settlements.some(p=>(p.period||'').slice(0,7)<=month);
+ const hasMonthMovements=items.some(e=>e.shared&&(e.date||'').slice(0,7)===month);
  const b=$('#bal');b.className='bal balance-line';
- $('#balanceperiod').textContent='Saldo acumulado até '+monthName(month);
- if(!otherCount||!hasPastMovements){b.textContent=!otherCount?'À espera da outra pessoa entrar no espaço.':'Sem movimentos partilhados até este mês.';b.className='mut balance-line'}
- else if(netCents===0)b.textContent='Estão quites.';
- else if(netCents>0)b.textContent='A outra pessoa deve-te '+fmt(net)+'.';
- else{b.textContent='Deves '+fmt(-net)+' à outra pessoa.';b.className='bal balance-line neg'}
- renderSettlements(net,curPayments,otherCount);
+ $('#balanceperiod').textContent='Estado atual das dívidas de '+monthName(month)+' · inclui acertos posteriores';
+ if(!otherCount){b.textContent='À espera da outra pessoa entrar no espaço.';b.className='mut balance-line'}
+ else if(!hasMonthMovements){b.textContent='Sem despesas partilhadas neste mês.';b.className='mut balance-line'}
+ else if(monthCents===0)b.textContent='Estão quites.';
+ else if(monthCents>0)b.textContent='Por liquidar deste mês: a outra pessoa deve-te '+fmt(monthCents/100)+'.';
+ else{b.textContent='Por liquidar deste mês: deves '+fmt(-monthCents/100)+' à outra pessoa.';b.className='bal balance-line neg'}
+ const global=$('#globalbalance');
+ if(!otherCount)global.textContent='';
+ else if(globalCents===0)global.textContent='Saldo global '+(asOfPeriod===periodNow()?'atual':'até '+monthName(asOfPeriod))+': estão quites.';
+ else global.textContent='Saldo global '+(asOfPeriod===periodNow()?'atual':'até '+monthName(asOfPeriod))+': '+(globalCents<0?'deves ':'a outra pessoa deve-te ')+fmt(Math.abs(globalCents)/100)+'.';
+ const currentDebt=balanceThroughMonth(items,settlements,people,me.id,periodNow())/100;
+ renderSettlements(currentDebt,curPayments,otherCount);
  const L=$('#list');L.textContent='';
  cur.forEach(i=>{const r=document.createElement('div');r.className='it row sp';const l=document.createElement('div');l.className='expense-info';const t=document.createElement('div');t.textContent=i.description;t.className='expense-title';const s=document.createElement('div');s.className='mut';s.textContent=(i.date||'').slice(8,10)+'/'+(i.date||'').slice(5,7)+' · '+categoryForExpense(i)+' · '+(i.payer===me.id?'pago por ti':'pago pela outra pessoa')+(i.shared?' · partilhada':'');l.append(t,s);if(i.recurring_expense_id){const tag=document.createElement('div');tag.className='tag-fixed';tag.textContent='Despesa fixa';l.append(tag)}const rt=document.createElement('div');rt.className='expense-actions';const v=document.createElement('strong');v.textContent=fmt(i.amount);if(i.payer===me.id){const controls=document.createElement('div');controls.className='expense-controls';controls.append(createExpenseIconButton('edit','Editar '+i.description,()=>openEditExpense(i.id)),createExpenseIconButton('remove','Remover '+i.description,()=>deleteExpense(i.id)));rt.append(controls)}rt.append(v);r.append(l,rt);L.append(r)});
  if(!cur.length){const p=document.createElement('p');p.className='mut';p.textContent='Ainda não existem despesas neste mês.';L.append(p)}
@@ -1232,9 +1286,9 @@ function renderSettlements(net,curPayments,otherCount){
  show('#settleempty',settlementsReady&&curPayments.length===0);
  if(!settlementsReady){hint.textContent='Os pagamentos ainda não estão configurados no Supabase.';return}
  if(!otherCount)hint.textContent='Quando a outra pessoa entrar, poderão registar aqui os pagamentos.';
- else if(net<-.005)hint.textContent='Podes registar um pagamento até '+fmt(-net)+' à outra pessoa.';
- else if(net>.005)hint.textContent='Tens '+fmt(net)+' a receber. A outra pessoa pode registar aqui o pagamento.';
- else hint.textContent='Contas acertadas até '+monthName(month)+'.';
+ else if(net<-.005)hint.textContent='Podes registar um pagamento até '+fmt(-net)+' à outra pessoa. O pagamento será registado no mês atual e liquidará primeiro as dívidas mais antigas.';
+ else if(net>.005)hint.textContent='Tens '+fmt(net)+' a receber no saldo global atual. A outra pessoa pode registar aqui o pagamento.';
+ else hint.textContent='Contas globais acertadas à data de hoje.';
  if(net<-.005&&document.activeElement!==input)input.value=(Math.round(-net*100)/100).toFixed(2);
  list.replaceChildren();
  for(const p of curPayments){
@@ -1259,14 +1313,16 @@ async function registerSettlement(){
    loadHouseholdTable('expenses','date'),
    loadHouseholdTable('settlements','created_at')
   ]);
-  const debt=-balanceThroughMonth(expenses,payments,members,me.id,month);
+  const debt=-balanceThroughMonth(expenses,payments,members,me.id,periodNow());
   const amount=Math.round(Number($('#settleamount').value.replace(',','.'))*100);
   if(!(amount>0)||amount>debt){status('Indica um valor válido, até '+fmt(Math.max(0,debt)/100)+'.',true);return}
   const recipient=members.find(id=>id!==me.id);
   if(!recipient||!confirm('Confirmas que pagaste '+fmt(amount/100)+' à outra pessoa? Este botão regista o pagamento, não transfere dinheiro.'))return;
-  const {error}=await sbClient.from('settlements').insert({household_id:householdId,period:month+'-01',sender:me.id,recipient,amount:amount/100});
+  const paymentPeriod=periodNow();
+  const {error}=await sbClient.from('settlements').insert({household_id:householdId,period:paymentPeriod+'-01',sender:me.id,recipient,amount:amount/100});
   if(error)throw error;
-  await loadExpenses();status('Pagamento registado. O saldo foi atualizado.');
+  if(month!==paymentPeriod){month=paymentPeriod;selectedBarMonth=null;syncExpenseDate()}
+  await loadExpenses();status('Pagamento registado no mês atual. As dívidas anteriores foram atualizadas.');
  }catch(error){status('Não foi possível registar o pagamento: '+error.message,true)}finally{btn.disabled=false}
 }
 async function undoSettlement(id){
