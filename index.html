@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-HEJstwhlQtAa2k/Vce75sT1Ipj5Mzr7yJDhLGiKLRic=' 'sha256-qcsYyC+SgJHfRt0h1CBg5npI0DrtxBds+plkPg43eXc=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='    ; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-HEJstwhlQtAa2k/Vce75sT1Ipj5Mzr7yJDhLGiKLRic=' 'sha256-0PKSEfQDYnEthmr8xqj6N2S0s7JQiIMKkkyz1xnO68s=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='    ; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
 <title>A Nossa Casa</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#167552">
@@ -344,6 +344,7 @@ body{max-width:640px;padding:22px 20px max(120px,env(safe-area-inset-bottom,0px)
 }
 #expenseview .balance-line.neg{color:var(--neg)!important}
 #expenseview .balance-line.mut{color:var(--mut)!important}
+#expenseview #balanceperiod{margin-top:5px;text-transform:none;letter-spacing:0;font-size:11px;font-weight:500}
 /* O formulário não ocupa o ecrã até ser pedido. */
 .add-panel{margin:0 0 25px}
 .add-panel>summary{list-style:none;cursor:pointer}
@@ -652,6 +653,7 @@ body{max-width:640px;padding:22px 20px max(120px,env(safe-area-inset-bottom,0px)
         <div><div class="mut">Total de despesas</div><div class="big" id="tot">0 €</div></div>
       </div>
       <div id="bal" class="bal balance-line"></div>
+      <div id="balanceperiod" class="mut" aria-live="polite">Saldo acumulado até ao mês selecionado</div>
       <div class="balance-actions" role="group" aria-label="Ações de despesas e pagamentos">
         <button id="openexpense" type="button" class="balance-action balance-action-add" aria-controls="newexpensepanel" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h10a2 2 0 0 1 2 2v16l-4-2-3 2-3-2-4 2V5a2 2 0 0 1 2-2z"/><path d="M12 8v7M8.5 11.5h7"/></svg><span>Adicionar despesa</span></button>
         <button id="opensettlement" type="button" class="balance-action balance-action-settle" aria-controls="settlementpanel" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16m0 0-4-4m4 4-4 4M20 17H4m0 0 4-4m-4 4 4 4"/></svg><span>Acertar contas</span></button>
@@ -753,7 +755,7 @@ body{max-width:640px;padding:22px 20px max(120px,env(safe-area-inset-bottom,0px)
   <section id="historyview" class="hidden" aria-labelledby="historytitle">
     <div class="card">
       <h2 id="historytitle">Histórico de pagamentos</h2>
-      <p class="mut">Pagamentos registados no mês selecionado. Não contam como despesas e servem para acertar o saldo entre vocês.</p>
+      <p class="mut">Pagamentos registados no mês selecionado. Não contam como despesas; o saldo em Despesas inclui também os meses anteriores.</p>
       <div id="settlehistory"><div id="settlelist"></div></div>
       <p id="settleempty" class="mut hidden" role="status">Ainda não existem pagamentos registados neste mês.</p>
     </div>
@@ -985,6 +987,13 @@ function balanceCents(sharedExpenses, payments, people, userId){
  const transferCents=payments.reduce((sum,p)=>sum+(p.sender===userId?toCents(p.amount):0)-(p.recipient===userId?toCents(p.amount):0),0);
  return paidCents-fairCents+importedNet+transferCents;
 }
+// Saldo até ao fim do mês selecionado: inclui dívidas anteriores e os
+// pagamentos feitos para as liquidar. Os totais de despesas mantêm-se mensais.
+function balanceThroughMonth(expenses,payments,people,userId,period){
+ const shared=(expenses||[]).filter(e=>e.shared&&(e.date||'').slice(0,7)<=period);
+ const paid=(payments||[]).filter(p=>(p.period||'').slice(0,7)<=period);
+ return balanceCents(shared,paid,people,userId);
+}
 function periodNow(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')}
 function dateInSelectedMonth(){const today=new Date(),day=Math.min(today.getDate(),new Date(Number(month.slice(0,4)),Number(month.slice(5,7)),0).getDate());return month+'-'+String(day).padStart(2,'0')}
 function syncExpenseDate(){const field=$('#expense-date');if(field)field.value=dateInSelectedMonth()}
@@ -1140,16 +1149,20 @@ function render(){
  $('#prev').setAttribute('aria-label',annualNav?'Ano anterior':'Mês anterior');
  $('#next').setAttribute('aria-label',annualNav?'Ano seguinte':'Mês seguinte');
  const cur=items.filter(i=>(i.date||'').slice(0,7)===month);
- const total=cur.reduce((s,i)=>s+Number(i.amount),0), shared=cur.filter(i=>i.shared), shTotal=shared.reduce((s,i)=>s+Number(i.amount),0);
+ const total=cur.reduce((s,i)=>s+Number(i.amount),0);
  $('#tot').textContent=fmt(total);
  const people=members.length?members:[me.id];
  const curPayments=settlements.filter(p=>p.period===month+'-01');
- const net=balanceCents(shared,curPayments,people,me.id)/100;
+ const netCents=balanceThroughMonth(items,settlements,people,me.id,month);
+ const net=netCents/100;
  const otherCount=Math.max(0,people.length-1);
+ const hasPastMovements=items.some(e=>e.shared&&(e.date||'').slice(0,7)<=month)
+  ||settlements.some(p=>(p.period||'').slice(0,7)<=month);
  const b=$('#bal');b.className='bal balance-line';
- if(!otherCount||(!shTotal&&!curPayments.length)){b.textContent=!otherCount?'À espera da outra pessoa entrar no espaço.':'Sem despesas partilhadas este mês.';b.className='mut balance-line'}
- else if(Math.abs(net)<0.005)b.textContent='Estão quites.';
- else if(net>0)b.textContent='A outra pessoa deve-te '+fmt(net)+'.';
+ $('#balanceperiod').textContent='Saldo acumulado até '+monthName(month);
+ if(!otherCount||!hasPastMovements){b.textContent=!otherCount?'À espera da outra pessoa entrar no espaço.':'Sem movimentos partilhados até este mês.';b.className='mut balance-line'}
+ else if(netCents===0)b.textContent='Estão quites.';
+ else if(netCents>0)b.textContent='A outra pessoa deve-te '+fmt(net)+'.';
  else{b.textContent='Deves '+fmt(-net)+' à outra pessoa.';b.className='bal balance-line neg'}
  renderSettlements(net,curPayments,otherCount);
  const L=$('#list');L.textContent='';
@@ -1221,7 +1234,7 @@ function renderSettlements(net,curPayments,otherCount){
  if(!otherCount)hint.textContent='Quando a outra pessoa entrar, poderão registar aqui os pagamentos.';
  else if(net<-.005)hint.textContent='Podes registar um pagamento até '+fmt(-net)+' à outra pessoa.';
  else if(net>.005)hint.textContent='Tens '+fmt(net)+' a receber. A outra pessoa pode registar aqui o pagamento.';
- else hint.textContent='Contas acertadas para este mês.';
+ else hint.textContent='Contas acertadas até '+monthName(month)+'.';
  if(net<-.005&&document.activeElement!==input)input.value=(Math.round(-net*100)/100).toFixed(2);
  list.replaceChildren();
  for(const p of curPayments){
@@ -1241,12 +1254,12 @@ async function registerSettlement(){
  if(!settlementsReady||!me||members.length!==2)return;
  const btn=$('#settlepay');btn.disabled=true;
  try{
-  const {data:expenses,error:eError}=await sbClient.from('expenses').select('amount,payer,shared,date').eq('household_id',householdId);
-  const {data:payments,error:pError}=await sbClient.from('settlements').select('*').eq('household_id',householdId);
-  if(eError||pError)throw eError||pError;
-  const shared=(expenses||[]).filter(e=>e.shared&&(e.date||'').slice(0,7)===month);
-  const curPayments=(payments||[]).filter(p=>p.period===month+'-01');
-  const debt=-balanceCents(shared,curPayments,members,me.id);
+  // Revalidar no servidor todos os meses e os cêntimos importados do Splitwise.
+  const [expenses,payments]=await Promise.all([
+   loadHouseholdTable('expenses','date'),
+   loadHouseholdTable('settlements','created_at')
+  ]);
+  const debt=-balanceThroughMonth(expenses,payments,members,me.id,month);
   const amount=Math.round(Number($('#settleamount').value.replace(',','.'))*100);
   if(!(amount>0)||amount>debt){status('Indica um valor válido, até '+fmt(Math.max(0,debt)/100)+'.',true);return}
   const recipient=members.find(id=>id!==me.id);
