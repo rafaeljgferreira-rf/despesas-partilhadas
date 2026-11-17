@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-N7QRcXXYx9zGpRBI8r5Da0o/NRRbUTH2K43zzBfH2d4=' 'sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=' 'sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=' 'sha256-B27Q/xsXNA2e0Eb+9KtniI36k2z0Sb6g6I+6X1onYb8=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-N7QRcXXYx9zGpRBI8r5Da0o/NRRbUTH2K43zzBfH2d4=' 'sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=' 'sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=' 'sha256-fPwaDUWHGXc80xJ+8U3rx+gZIZbUaKs9lSvfQDXZIVk=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
 <title>A Nossa Casa</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#167552">
@@ -672,6 +672,23 @@ body{max-width:640px;padding:22px 20px max(120px,env(safe-area-inset-bottom,0px)
   .header-period .period-icon{left:9px;width:15px;height:15px}
   .header-period .period-chevron{right:7px;width:14px;height:14px}
 }
+
+/* Desbloqueio local com credencial WebAuthn (sem alterar a sessão Supabase). */
+.account-biometric .account-share-content{display:grid;gap:12px}
+.account-biometric .bio-actions{display:flex;gap:8px;flex-wrap:wrap}
+.account-biometric .bio-actions button{flex:1 1 140px;min-height:44px}
+.account-biometric select{width:100%}
+.account-biometric label{font-size:13px;font-weight:700}
+#biometric-lock{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:22px;background:var(--bg);color:var(--tx);overflow:auto}
+#biometric-lock.hidden{display:none!important}
+#biometric-lock .bio-lock-card{width:min(100%,390px);background:var(--card);border:1px solid var(--bd);border-radius:22px;padding:28px 23px;text-align:center;box-shadow:0 18px 55px #0002}
+#biometric-lock .bio-lock-symbol{display:flex;align-items:center;justify-content:center;width:66px;height:66px;margin:0 auto 17px;border-radius:20px;background:var(--surface-soft);color:var(--ac)}
+#biometric-lock .bio-lock-symbol svg{width:37px;height:37px;stroke:currentColor;stroke-width:1.7;fill:none;stroke-linecap:round;stroke-linejoin:round}
+#biometric-lock h2{margin:0 0 7px;font-size:22px}
+#biometric-lock p{margin:0 0 16px}
+#biometric-lock button{display:block;width:100%;min-height:47px;margin-top:10px}
+#biometric-lock #bio-lock-signout{background:transparent;color:var(--tx);border:1px solid var(--bd)}
+html.biometric-locked #app,html.biometric-locked #household,html.biometric-locked #auth,html.biometric-locked #mfachallenge,html.biometric-locked #passwordreset,html.biometric-locked .pagehead{visibility:hidden!important}
 </style>
 </head>
 <body>
@@ -728,6 +745,16 @@ body{max-width:640px;padding:22px 20px max(120px,env(safe-area-inset-bottom,0px)
   <p id="homemsg" class="mut"></p>
 </section>
 
+<section id="biometric-lock" class="hidden" role="dialog" aria-modal="true" aria-labelledby="bio-lock-title">
+  <div class="bio-lock-card">
+    <div class="bio-lock-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 11a3 3 0 0 0-3 3v2m6-2v3M7 11V9a5 5 0 0 1 10 0v3M4 12V9a8 8 0 0 1 16 0v3M8 19c1 1 3 2 4 2s3-1 4-2"/></svg></div>
+    <h2 id="bio-lock-title">A Nossa Casa bloqueada</h2>
+    <p class="mut">Confirma a tua identidade no dispositivo para continuar.</p>
+    <button id="bio-lock-unlock" type="button">Desbloquear</button>
+    <button id="bio-lock-signout" type="button">Terminar sessão e entrar com palavra-passe</button>
+    <p id="bio-lock-msg" class="mut" role="status" aria-live="polite"></p>
+  </div>
+</section>
 <main id="app" class="hidden">
   <nav class="tabnav" aria-label="Secções">
     <button id="tabexpenses" type="button" aria-selected="true" aria-label="Despesas" title="Despesas"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg><span>Despesas</span></button>
@@ -906,6 +933,28 @@ body{max-width:640px;padding:22px 20px max(120px,env(safe-area-inset-bottom,0px)
         <strong>Convite para a outra pessoa</strong>
         <p class="mut">Partilha este código apenas com a pessoa que queres adicionar.</p>
         <div class="invite-code-row"><strong id="code"></strong><button type="button" class="g" id="copycode" aria-label="Copiar código de convite" title="Copiar código de convite"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg></button></div>
+      </div>
+    </details>
+    <details class="account-share account-biometric" id="biometricmanage">
+      <summary>
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 11a3 3 0 0 0-3 3v2m6-2v3M7 11V9a5 5 0 0 1 10 0v3M4 12V9a8 8 0 0 1 16 0v3M8 19c1 1 3 2 4 2s3-1 4-2"/></svg>
+        <span class="account-share-label"><strong>Desbloqueio biométrico</strong><small>Face ID, impressão digital ou código do dispositivo</small></span>
+        <svg class="account-share-chevron" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 18 6-6-6-6"/></svg>
+      </summary>
+      <div class="account-share-content">
+        <p class="mut helper">Desbloqueia esta aplicação com a verificação do teu dispositivo enquanto a sessão Supabase estiver válida. É uma proteção local do ecrã, não substitui a palavra-passe nem a autenticação em dois passos.</p>
+        <p id="bio-status" class="mut" role="status" aria-live="polite">A verificar disponibilidade…</p>
+        <div class="bio-actions"><button id="bio-enable" type="button">Ativar neste dispositivo</button><button id="bio-test" type="button" class="g hidden">Testar bloqueio</button><button id="bio-disable" type="button" class="g hidden">Desativar</button></div>
+        <label for="bio-timeout">Pedir desbloqueio depois de sair da aplicação</label>
+        <select id="bio-timeout">
+          <option value="0">Sempre que sair</option>
+          <option value="300000">Após 5 minutos</option>
+          <option value="900000">Após 15 minutos</option>
+          <option value="3600000">Após 1 hora</option>
+          <option value="86400000">Após 24 horas</option>
+          <option value="604800000">Após 7 dias</option>
+        </select>
+        <p class="mut helper">O prazo conta desde que a aplicação passa para segundo plano ou é fechada. O navegador pode não detetar o encerramento exato; a proteção é aplicada ao regressar. A configuração é individual e fica apenas neste navegador.</p>
       </div>
     </details>
     <details class="account-share account-mfa" id="mfamanage">
@@ -1173,6 +1222,163 @@ function monthName(period){const [y,m]=period.split('-').map(Number);return MES[
 $('#rstart').value=periodNow();
 function setRecurringMode(){const selected=$('#isrecurring').checked;show('#recurringoptions',selected);$('#isrecurring').setAttribute('aria-expanded',String(selected));$('#addlabel').textContent=selected?'Guardar despesa fixa':'Adicionar despesa'}
 $('#isrecurring').onchange=setRecurringMode;setRecurringMode();
+
+// WebAuthn local: exige prova criptográfica da credencial antes de retirar o bloqueio visual.
+// Não é uma autorização de servidor nem protege tokens de scripts maliciosos no mesmo origin.
+let biometricLocked=false,biometricBusy=false,biometricUserId=null;
+const BIO_PREFIX='anc_bio_v1_';
+const bioKey=(userId)=>BIO_PREFIX+location.origin+'_'+userId;
+const bioBytes=(buffer)=>new Uint8Array(buffer);
+const bio64=(buffer)=>btoa(String.fromCharCode(...bioBytes(buffer))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+const bioFrom64=(value)=>{const v=value.replace(/-/g,'+').replace(/_/g,'/');return Uint8Array.from(atob(v+'='.repeat((4-v.length%4)%4)),c=>c.charCodeAt(0))};
+const bioRandom=()=>crypto.getRandomValues(new Uint8Array(32));
+function bioGet(userId){
+ try{const config=JSON.parse(localStorage.getItem(bioKey(userId))||'null');
+  if(config?.id&&config?.key&&Number.isFinite(config.timeout)&&config.timeout>=0&&config.timeout<=604800000)return config;
+ }catch(e){}
+ return null;
+}
+function bioSave(userId,config){localStorage.setItem(bioKey(userId),JSON.stringify(config))}
+function bioAvailable(){return !!(window.isSecureContext&&window.PublicKeyCredential&&navigator.credentials&&crypto?.subtle)}
+function bioClientData(buffer,type,challenge){
+ const value=JSON.parse(new TextDecoder().decode(buffer));
+ if(value.type!==type||value.challenge!==bio64(challenge)||value.origin!==location.origin||value.crossOrigin===true)throw new Error('A validação de origem da credencial falhou.');
+}
+function bioRawSignature(der){
+ const bytes=bioBytes(der);let at=0;
+ function readLen(){let n=bytes[at++];if(n===0x81)n=bytes[at++];else if(n===0x82)n=bytes[at++]*256+bytes[at++];return n}
+ if(bytes[at++]!==0x30)throw new Error('Assinatura inválida.');
+ const total=readLen(),end=at+total;if(end!==bytes.length)throw new Error('Assinatura incompleta.');
+ const out=new Uint8Array(64);
+ for(let i=0;i<2;i++){
+  if(bytes[at++]!==0x02)throw new Error('Assinatura inválida.');
+  const n=readLen();let chunk=bytes.slice(at,at+n);at+=n;
+  while(chunk.length>32&&chunk[0]===0)chunk=chunk.slice(1);
+  if(chunk.length>32||!chunk.length)throw new Error('Assinatura inválida.');
+  out.set(chunk,32*i+32-chunk.length);
+ }
+ if(at!==end)throw new Error('Assinatura inválida.');
+ return out;
+}
+async function bioVerify(config,challenge,credential){
+ if(!credential||credential.type!=='public-key'||bio64(credential.rawId)!==config.id)throw new Error('Credencial não reconhecida neste dispositivo.');
+ bioClientData(credential.response.clientDataJSON,'webauthn.get',challenge);
+ const auth=bioBytes(credential.response.authenticatorData);
+ if(auth.length<37||(auth[32]&0x05)!==0x05)throw new Error('A confirmação do utilizador não foi realizada.');
+ const rpHash=bioBytes(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(location.hostname)));
+ if(!rpHash.every((n,i)=>n===auth[i]))throw new Error('Domínio da credencial inválido.');
+ const clientHash=bioBytes(await crypto.subtle.digest('SHA-256',credential.response.clientDataJSON));
+ const signed=new Uint8Array(auth.length+clientHash.length);signed.set(auth);signed.set(clientHash,auth.length);
+ const key=await crypto.subtle.importKey('spki',bioFrom64(config.key),{name:'ECDSA',namedCurve:'P-256'},false,['verify']);
+ const ok=await crypto.subtle.verify({name:'ECDSA',hash:'SHA-256'},key,bioRawSignature(credential.response.signature),signed);
+ if(!ok)throw new Error('A assinatura biométrica não foi validada.');
+}
+function bioLock(){
+ if(biometricLocked||!session?.user?.id||!bioGet(session.user.id)||passwordRecoveryMode)return;
+ biometricLocked=true;biometricUserId=session.user.id;
+ document.documentElement.classList.add('biometric-locked');
+ document.getElementById('biometric-lock').classList.remove('hidden');
+ document.body.style.overflow='hidden';
+ $('#bio-lock-msg').textContent='';
+ $('#bio-lock-unlock').focus();
+}
+function bioUnlockVisual(){
+ biometricLocked=false;biometricUserId=null;
+ document.documentElement.classList.remove('biometric-locked');
+ document.getElementById('biometric-lock').classList.add('hidden');
+ document.body.style.overflow='';
+}
+function bioShouldLock(userId){
+ const cfg=bioGet(userId);if(!cfg)return false;
+ const last=Number(cfg.awayAt||cfg.verifiedAt||0);
+ return !last||cfg.timeout===0||Date.now()-last>=cfg.timeout||Date.now()<last;
+}
+function bioAfterAuth(userId){
+ if(bioShouldLock(userId))bioLock();
+ else if(bioGet(userId))bioUnlockVisual();
+ bioRefreshSettings();
+}
+function bioMarkAway(){
+ const userId=session?.user?.id;
+ if(!userId||biometricLocked)return;
+ const cfg=bioGet(userId);if(!cfg)return;
+ cfg.awayAt=Date.now();
+ try{bioSave(userId,cfg)}catch(e){}
+ if(cfg.timeout===0)bioLock();
+}
+function bioReturn(){
+ const userId=session?.user?.id;
+ if(!userId||!bioGet(userId)||biometricLocked)return;
+ if(bioShouldLock(userId))bioLock();
+ else {const cfg=bioGet(userId);cfg.verifiedAt=Date.now();cfg.awayAt=0;try{bioSave(userId,cfg)}catch(e){}}
+}
+function bioRefreshSettings(){
+ const id=session?.user?.id,cfg=id?bioGet(id):null;
+ const enable=$('#bio-enable'),disable=$('#bio-disable'),test=$('#bio-test'),select=$('#bio-timeout');
+ if(!enable)return;
+ enable.classList.toggle('hidden',!!cfg);disable.classList.toggle('hidden',!cfg);test.classList.toggle('hidden',!cfg);
+ select.disabled=!cfg;select.value=String(cfg?.timeout??86400000);
+ $('#bio-status').textContent=cfg?'Ativado neste navegador. A sessão mantém-se no Supabase.':bioAvailable()?'Desativado neste dispositivo.':'Este navegador não disponibiliza o desbloqueio WebAuthn seguro.';
+ enable.disabled=!bioAvailable()||!id;
+}
+$('#bio-enable').onclick=async()=>{
+ if(!bioAvailable()||!session?.user?.id){bioRefreshSettings();return}
+ const userId=session.user.id,button=$('#bio-enable');button.disabled=true;
+ try{
+  if(window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable){
+   const platform=await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+   if(!platform)throw new Error('Não foi encontrado um autenticador local compatível neste dispositivo.');
+  }
+  const challenge=bioRandom();
+  const credential=await navigator.credentials.create({publicKey:{
+   challenge,rp:{name:'A Nossa Casa',id:location.hostname},
+   user:{id:new TextEncoder().encode(userId),name:session.user.email||userId,displayName:session.user.email||'A Nossa Casa'},
+   pubKeyCredParams:[{type:'public-key',alg:-7}],timeout:60000,attestation:'none',
+   authenticatorSelection:{authenticatorAttachment:'platform',residentKey:'preferred',userVerification:'required'}
+  }});
+  if(!credential||!credential.response.getPublicKey)throw new Error('Este navegador não permite guardar a chave pública da credencial.');
+  bioClientData(credential.response.clientDataJSON,'webauthn.create',challenge);
+  if(credential.response.getPublicKeyAlgorithm?.()!==-7)throw new Error('O algoritmo da credencial não é suportado.');
+  const publicKey=credential.response.getPublicKey();if(!publicKey)throw new Error('A chave pública não está disponível.');
+  if(session?.user?.id!==userId)throw new Error('A sessão mudou durante a configuração.');
+  bioSave(userId,{id:bio64(credential.rawId),key:bio64(publicKey),timeout:86400000,verifiedAt:Date.now(),awayAt:0});
+  $('#bio-status').textContent='Desbloqueio ativado com sucesso.';
+ }catch(e){$('#bio-status').textContent='Não foi possível ativar: '+(e.message||e)}
+ finally{bioRefreshSettings();button.disabled=false}
+};
+$('#bio-test').onclick=()=>{if(session?.user?.id&&bioGet(session.user.id))bioLock()};
+$('#bio-disable').onclick=()=>{
+ const id=session?.user?.id;if(!id||!confirm('Desativar o desbloqueio neste dispositivo?'))return;
+ try{localStorage.removeItem(bioKey(id));bioUnlockVisual();bioRefreshSettings()}catch(e){$('#bio-status').textContent='Não foi possível desativar: '+(e.message||e)}
+};
+$('#bio-timeout').onchange=event=>{
+ const id=session?.user?.id,cfg=id?bioGet(id):null;if(!cfg)return;
+ cfg.timeout=Number(event.target.value);
+ try{bioSave(id,cfg);$('#bio-status').textContent='Prazo guardado neste dispositivo.'}catch(e){$('#bio-status').textContent='Não foi possível guardar o prazo.'}
+};
+$('#bio-lock-unlock').onclick=async()=>{
+ if(biometricBusy||!biometricLocked)return;
+ const id=biometricUserId,cfg=bioGet(id);
+ if(!cfg||session?.user?.id!==id){$('#bio-lock-msg').textContent='A sessão mudou. Entra novamente.';return}
+ biometricBusy=true;$('#bio-lock-unlock').disabled=true;$('#bio-lock-msg').textContent='A aguardar confirmação no dispositivo…';
+ try{
+  const challenge=bioRandom();
+  const credential=await navigator.credentials.get({publicKey:{challenge,timeout:60000,rpId:location.hostname,userVerification:'required',allowCredentials:[{type:'public-key',id:bioFrom64(cfg.id)}]}});
+  await bioVerify(cfg,challenge,credential);
+  if(session?.user?.id!==id)throw new Error('A sessão mudou durante o desbloqueio.');
+  cfg.verifiedAt=Date.now();cfg.awayAt=0;bioSave(id,cfg);
+  bioUnlockVisual();
+ }catch(e){$('#bio-lock-msg').textContent='Não foi possível desbloquear: '+(e.message||e)}
+ finally{biometricBusy=false;$('#bio-lock-unlock').disabled=false}
+};
+$('#bio-lock-signout').onclick=async()=>{
+ bioUnlockVisual();
+ try{await sbClient.auth.signOut()}catch(e){show('#auth');message('#authmsg','Não foi possível terminar a sessão: '+(e.message||e),true)}
+};
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')bioMarkAway();else bioReturn()});
+window.addEventListener('pagehide',bioMarkAway);
+window.addEventListener('pageshow',bioReturn);
+
 // MFA opcional: uma sessão com TOTP verificado só pode entrar após AAL2.
 async function gateAfterLogin(){
  if(!session||passwordRecoveryMode)return;
@@ -1194,8 +1400,9 @@ async function gateAfterLogin(){
   }
   show('#mfachallenge',false);mfaPendingFactorId=null;
   const key=userId+':'+aal.currentLevel;
-  if(authGrantedKey===key)return;
+  if(authGrantedKey===key){bioReturn();return;}
   authGrantedKey=key;
+  bioAfterAuth(userId);
   try{await afterLogin()}catch(e){authGrantedKey=null;throw e}
  })().catch(e=>{
   authGrantedKey=null;show('#app',false);show('#household',false);show('#auth',false);show('#mfachallenge');
@@ -1227,6 +1434,7 @@ async function connect(){
  else if(!passwordRecoveryMode){show('#auth');show('#household',false);show('#app',false)}
 }
 function resetApp(){
+ bioUnlockVisual();
  if(channel)sbClient.removeChannel(channel);
  channel=null;me=null;householdId=null;items=[];members=[];settlements=[];settlementsReady=false;isHouseholdCreator=false;splitwiseImport=null;backupJsonImport=null;
  recurring=[];recurringReady=false;recurringError='';editingExpenseId=null;editingRecurringId=null;
