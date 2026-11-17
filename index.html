@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-N7QRcXXYx9zGpRBI8r5Da0o/NRRbUTH2K43zzBfH2d4=' 'sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=' 'sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=' 'sha256-yn8jitIWpQEuH0repjjHDNGkOph+4oXTNkE9JOiNbCg=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-N7QRcXXYx9zGpRBI8r5Da0o/NRRbUTH2K43zzBfH2d4=' 'sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=' 'sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=' 'sha256-B27Q/xsXNA2e0Eb+9KtniI36k2z0Sb6g6I+6X1onYb8=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
 <title>A Nossa Casa</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#167552">
@@ -640,6 +640,24 @@ body{max-width:640px;padding:22px 20px max(120px,env(safe-area-inset-bottom,0px)
 .appearance-check input{width:18px;min-height:18px;height:18px;flex:0 0 18px;accent-color:var(--ac);margin:0}
 @media(max-width:380px){#expenseview .dashboard-stat{padding:19px 17px 18px}#expenseview .dashboard-amount{font-size:clamp(34px,10vw,44px)}.dashboard-topline{gap:5px}.dashboard-state{font-size:10px;padding:4px 7px}}
 @media(prefers-reduced-motion:reduce){.dashboard-details>summary svg{transition:none}}
+
+/* Seletor de período no cabeçalho: dropdown nativo, acessível e compacto. */
+.pagehead{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.pagehead .brand-home{flex:1 1 auto;min-width:0;max-width:none}
+.header-period{position:relative;flex:0 0 auto;max-width:59%;display:flex;align-items:center}
+.header-period select{
+  appearance:none;-webkit-appearance:none;min-height:43px;
+  width:clamp(148px,43vw,185px);max-width:100%;min-width:0;
+  padding:9px 29px 9px 34px;border:1px solid var(--bd);border-radius:13px;
+  background:var(--card);color:var(--tx);font:650 13px/1.35 system-ui,-apple-system,"Segoe UI",sans-serif;
+  text-overflow:ellipsis;cursor:pointer;outline-offset:3px;
+}
+.header-period select:focus-visible{outline:2px solid var(--ac);border-color:var(--ac)}
+.header-period svg{position:absolute;pointer-events:none;width:17px;height:17px;fill:none;stroke:var(--ac);stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.header-period .period-icon{left:11px}
+.header-period .period-chevron{right:10px;width:15px;height:15px}
+.sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:360px){.pagehead{gap:7px}.header-period select{width:146px;font-size:12px}.brand-home{gap:6px}}
 </style>
 </head>
 <body>
@@ -647,6 +665,12 @@ body{max-width:640px;padding:22px 20px max(120px,env(safe-area-inset-bottom,0px)
   <div class="brand-home" aria-label="A Nossa Casa">
     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M9 21v-8h6v8"/></svg>
     <span id="brandname">A nossa casa</span>
+  </div>
+  <div class="header-period hidden" id="periodpicker">
+    <svg class="period-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/></svg>
+    <label class="sr-only" for="period-select">Selecionar mês ou ano</label>
+    <select id="period-select" aria-label="Selecionar mês" title="Escolher mês"></select>
+    <svg class="period-chevron" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg>
   </div>
 </header>
 
@@ -691,11 +715,6 @@ body{max-width:640px;padding:22px 20px max(120px,env(safe-area-inset-bottom,0px)
 </section>
 
 <main id="app" class="hidden">
-  <div class="card month-card" id="monthcard">
-    <div class="row sp">
-      <button class="g month-arrow" id="prev" aria-label="Mês anterior">‹</button><strong id="mt"></strong><button class="g month-arrow" id="next" aria-label="Mês seguinte">›</button>
-    </div>
-  </div>
   <nav class="tabnav" aria-label="Secções">
     <button id="tabexpenses" type="button" aria-selected="true" aria-label="Despesas" title="Despesas"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg><span>Despesas</span></button>
     <button id="tabcharts" type="button" aria-selected="false" aria-label="Gráficos" title="Gráficos"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.21 15.89A10 10 0 1 1 8.11 2.99"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg><span>Gráficos</span></button>
@@ -1011,7 +1030,7 @@ let activeTab='expenses', chartPeriod='month', selectedBarMonth=null, editingExp
 let passwordRecoveryMode=false;
 let mfaPendingFactorId=null, mfaEnrollment=null, authFlowPromise=null, authGrantedKey=null;
 
-function show(id,on=true){$(id).classList.toggle('hidden',!on);if(id==='#auth'&&on)setTimeout(initTurnstile,0)}
+function show(id,on=true){$(id).classList.toggle('hidden',!on);if(id==='#app')$('#periodpicker').classList.toggle('hidden',!on||activeTab==='account');if(id==='#auth'&&on)setTimeout(initTurnstile,0)}
 // CAPTCHA: chave publica do Cloudflare Turnstile; a chave secreta fica apenas no Supabase.
 const TURNSTILE_SITE_KEY='0x4AAAAAAGDlpZVVj5D2ihiO';
 let turnstileWidgetId=null,turnstileRetryTimer=null,turnstileRetryAttempts=0;
@@ -1279,10 +1298,7 @@ function subscribe(){
   .subscribe(s=>{if(s==='CHANNEL_ERROR'||s==='TIMED_OUT')status('A ligação em tempo real foi interrompida. A tentar restabelecer…',true)});
 }
 function render(){
- const [y,m]=month.split('-').map(Number);const annualNav=activeTab==='charts'&&chartPeriod==='year';
- $('#mt').textContent=annualNav?String(y):MES[m-1]+' '+y;
- $('#prev').setAttribute('aria-label',annualNav?'Ano anterior':'Mês anterior');
- $('#next').setAttribute('aria-label',annualNav?'Ano seguinte':'Mês seguinte');
+ renderPeriodSelect();
  const cur=items.filter(i=>(i.date||'').slice(0,7)===month);
  const total=cur.reduce((s,i)=>s+Number(i.amount),0);
  $('#tot').textContent=fmt(total);
@@ -1569,7 +1585,7 @@ function fillCategorySelect(selectId,stored){
 }
 function selectTab(which){
  activeTab=which;
- show('#monthcard',which==='expenses'||which==='charts'||which==='history');
+ show('#periodpicker',which!=='account');
  const tabs={expenses:'expenseview',charts:'chartview',history:'historyview',account:'accountview'};
  for(const [name,view] of Object.entries(tabs)){
   show('#'+view,name===which);
@@ -1685,7 +1701,49 @@ async function removeRecurring(id){
 
 $('#closeeditrec').onclick=closeEditRecurring;$('#saveeditrec').onclick=saveEditRecurring;
 $('#editrecurringoverlay').onclick=(e)=>{if(e.target.id==='editrecurringoverlay')closeEditRecurring()};
-async function shift(n){const [y,m]=month.split('-').map(Number),annual=activeTab==='charts'&&chartPeriod==='year';const d=new Date(y+(annual?n:0),m-1+(annual?0:n),1);month=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');selectedBarMonth=null;syncExpenseDate();await loadExpenses({syncRecurring:true})}
+// Os meses são agrupados por ano no seletor do cabeçalho.
+// Em Gráficos > Anual, o mesmo seletor mostra anos, sem alterar a lógica dos gráficos.
+function renderPeriodSelect(){
+ const select=$('#period-select');
+ const annual=activeTab==='charts'&&chartPeriod==='year';
+ const today=periodNow();
+ const chosen=annual?'year:'+month.slice(0,4):month;
+ const current=annual?'year:'+today.slice(0,4):today;
+ const years=[Number(today.slice(0,4)),Number(month.slice(0,4))];
+ for(const e of items){const y=Number(String(e.date||'').slice(0,4));if(y>=1900&&y<=2200)years.push(y)}
+ for(const p of settlements){const y=Number(String(p.period||'').slice(0,4));if(y>=1900&&y<=2200)years.push(y)}
+ for(const r of recurring){const y=Number(String(r.start_month||'').slice(0,4));if(y>=1900&&y<=2200)years.push(y)}
+ const minYear=Math.min(...years,Number(today.slice(0,4))-5);
+ const maxYear=Math.max(...years,Number(today.slice(0,4))+1);
+ const fragment=document.createDocumentFragment();
+ if(chosen!==current){
+  const shortcut=document.createElement('option');shortcut.value='__today__';shortcut.textContent=annual?'↩ Voltar ao ano atual':'↩ Voltar ao mês atual';fragment.append(shortcut);
+ }
+ for(let y=maxYear;y>=minYear;y--){
+  if(annual){const option=document.createElement('option');option.value='year:'+y;option.textContent=String(y);fragment.append(option);continue}
+  const group=document.createElement('optgroup');group.label=String(y);
+  for(let m=12;m>=1;m--){
+   const option=document.createElement('option');option.value=y+'-'+String(m).padStart(2,'0');
+   option.textContent=MES[m-1].charAt(0).toUpperCase()+MES[m-1].slice(1)+' '+y;
+   group.append(option);
+  }
+  fragment.append(group);
+ }
+ select.replaceChildren(fragment);
+ select.value=chosen;
+ select.setAttribute('aria-label',annual?'Selecionar ano':'Selecionar mês');
+ select.title=annual?'Escolher ano':'Escolher mês';
+}
+$('#period-select').addEventListener('change',async event=>{
+ const value=event.target.value;
+ const annual=activeTab==='charts'&&chartPeriod==='year';
+ const today=periodNow();
+ const next=value==='__today__'?today:annual?value.slice(5)+'-'+month.slice(5):value;
+ if(!/^\d{4}-\d{2}$/.test(next))return;
+ if(next===month){renderPeriodSelect();return}
+ month=next;selectedBarMonth=null;syncExpenseDate();renderPeriodSelect();
+ await loadExpenses({syncRecurring:true});
+});
 
 function validMfaCode(code){return /^[0-9]{6}$/.test(code)}
 $('#mfaconfirm').onclick=async()=>{
@@ -1822,7 +1880,7 @@ $('#signup').onclick=async()=>{
 $('#createhome').onclick=async()=>{const {data,error}=await sbClient.rpc('create_household');if(error){message('#homemsg','Erro: '+error.message,true);return}householdId=data;await loadHousehold()};
 $('#joinhome').onclick=async()=>{const code=$('#invite').value.trim().toUpperCase();if(!code)return;const {data,error}=await sbClient.rpc('join_household',{p_code:code});if(error){message('#homemsg','Não foi possível entrar: '+error.message,true);return}householdId=data;await loadHousehold()};
 $('#add').onclick=async()=>{if($('#isrecurring').checked){await addRecurringExpense();return}const description=$('#d').value.trim(),amount=normalizeAmount($('#a').value);if(!description||!(amount>0)){status('Indica uma descrição e um valor válido.',true);return}const date=$('#expense-date').value;if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||Number.isNaN(new Date(date+'T12:00:00').getTime())){status('Escolhe uma data válida para a despesa.',true);return}const selectedPeriod=date.slice(0,7);if(selectedPeriod!==periodNow()){if(!confirm('Atenção: a data escolhida ('+date.split('-').reverse().join('/')+') não pertence ao mês atual.\n\nQueres mesmo adicionar esta despesa?'))return;}const row={household_id:householdId,description,amount,category:categorySelected('#c',description),shared:$('#s').checked,payer:me.id,date};const {error}=await sbClient.from('expenses').insert(row);if(error){status('Não foi possível adicionar: '+error.message,true);return}$('#d').value='';$('#a').value='';$('#c').value='';$('#s').checked=true;$('#d').focus();if(month!==date.slice(0,7)){month=date.slice(0,7);selectedBarMonth=null}syncExpenseDate();await loadExpenses();status('Despesa adicionada com sucesso ✓')};
-$('#prev').onclick=()=>shift(-1);$('#next').onclick=()=>shift(1);
+
 
 // Splitwise CSV: pré-visualização, validação, associação de pessoas e confirmação.
 // Os dados do ficheiro nunca são enviados antes da confirmação do utilizador.
