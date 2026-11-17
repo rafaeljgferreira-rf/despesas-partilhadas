@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-HEJstwhlQtAa2k/Vce75sT1Ipj5Mzr7yJDhLGiKLRic=' 'sha256-fBqeQLojchQzHvchOrJ8IArfY4xKCpWYof5NYI4+etM=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='    ; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-N7QRcXXYx9zGpRBI8r5Da0o/NRRbUTH2K43zzBfH2d4=' 'sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=' 'sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=' 'sha256-IPz/vI4D//Th4LMrZteDv6nDmUfB+RPjej1W1ed63Wc=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
 <title>A Nossa Casa</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#167552">
@@ -11,9 +11,17 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="apple-touch-icon" href="/icons/icon-192.png">
 <script>
-try { if (localStorage.getItem('a_nossa_casa_theme') !== 'light') document.documentElement.dataset.theme = 'dark'; } catch(e) { document.documentElement.dataset.theme = 'dark'; }
-// A barra do sistema acompanha o tema escolhido logo no arranque.
-document.querySelector('meta[name="theme-color"]').setAttribute('content', document.documentElement.dataset.theme === 'dark' ? '#101715' : '#f3f6f4');
+// Aplicar a preferência antes de desenhar a página (sem flash do tema errado).
+try {
+ const saved=localStorage.getItem('a_nossa_casa_theme');
+ const mode=['light','dark','auto'].includes(saved)?saved:'auto';
+ const dark=mode==='dark'||(mode==='auto'&&window.matchMedia('(prefers-color-scheme: dark)').matches);
+ if(dark)document.documentElement.dataset.theme='dark';
+ else delete document.documentElement.dataset.theme;
+} catch(e) {
+ if(window.matchMedia('(prefers-color-scheme: dark)').matches)document.documentElement.dataset.theme='dark';
+}
+document.querySelector('meta[name="theme-color"]').setAttribute('content',document.documentElement.dataset.theme==='dark'?'#101715':'#f3f6f4');
 </script>
 <style>
 :root{--bg:#f6f5f1;--card:#fff;--tx:#1d1d1b;--mut:#6b6b66;--ac:#1f7a5c;--on:#fff;--bd:#e4e2da;--neg:#b3402e;box-sizing:border-box}
@@ -580,20 +588,66 @@ body{max-width:640px;padding:22px 20px max(120px,env(safe-area-inset-bottom,0px)
 #accountview .export-option svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
 #accountview .export-secondary{background:transparent;color:var(--tx);border:1px solid var(--bd)}
 #accountview .export-note{font-size:11px;line-height:1.5}
+
+/* Dashboard 2.0 — dois indicadores de igual destaque e detalhes progressivos. */
+.pagehead{min-height:40px;margin-bottom:21px}
+.brand-home{min-width:0;max-width:100%}
+.brand-home #brandname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#monthcard{padding-bottom:15px!important}
+#monthcard .row{gap:13px}
+#monthcard strong{color:var(--tx);font-size:14px;letter-spacing:0}
+#monthcard .month-arrow{width:36px;height:36px;min-height:36px;border-radius:12px!important}
+.dashboard-summary{display:grid;grid-template-columns:1fr;gap:11px;margin-bottom:12px}
+#expenseview .dashboard-stat{margin:0;min-width:0;padding:22px 22px 20px;border-radius:22px;background:var(--hero-bg);border:1px solid var(--bd)}
+.dashboard-kicker{font-size:11px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;color:var(--mut)}
+#expenseview .dashboard-amount{display:block;font-size:clamp(38px,10vw,54px);font-weight:760;letter-spacing:-1.9px;line-height:1.15;font-variant-numeric:tabular-nums;color:var(--tx);margin:12px 0 9px;overflow-wrap:anywhere}
+#expenseview .dashboard-amount.neg{color:var(--neg)}
+.dashboard-caption{font-size:13px;color:var(--mut);margin:0;line-height:1.4}
+.dashboard-topline{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.dashboard-state{display:inline-flex;align-items:center;border-radius:999px;padding:5px 10px;font-size:11px;font-weight:750;color:var(--mut);background:var(--surface-soft);border:1px solid var(--bd)}
+.dashboard-state.is-pending{background:#fae8e5;color:#a64037;border-color:#f3ccc5}
+.dashboard-state.is-settled{background:#e1f5e9;color:#1a714b;border-color:#c9e9d6}
+:root[data-theme="dark"] .dashboard-state.is-pending{background:#422d29;color:#ffb3a9;border-color:#634039}
+:root[data-theme="dark"] .dashboard-state.is-settled{background:#234532;color:#b3e9c4;border-color:#345d45}
+#expenseview .dashboard-balance #bal{border:0!important;background:none!important;padding:0!important;margin:12px 0 9px!important;border-radius:0!important}
+.dashboard-retro-note{font-size:12px;color:var(--ac);font-weight:650;margin:11px 0 0}
+#expenseview #globalbalance.dashboard-global{margin:14px 0 0;padding:12px 0 0;border:0;border-top:1px solid var(--bd);border-radius:0;font-size:12px;line-height:1.5;color:var(--tx);font-weight:650}
+#expenseview>.balance-actions{margin:0 0 11px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+#expenseview>.balance-actions .balance-action{min-height:54px}
+#expenseview>.balance-actions .balance-action-add{background:var(--ac);border:1px solid var(--ac);color:var(--on)}
+#expenseview>.balance-actions .balance-action-settle{background:var(--card);border:1px solid var(--bd);color:var(--tx)}
+.dashboard-details{border:1px solid var(--bd);border-radius:14px;background:var(--card);margin:0 0 17px;overflow:hidden}
+.dashboard-details>summary{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:46px;padding:10px 15px;cursor:pointer;list-style:none;font-size:13px;font-weight:700;color:var(--mut)}
+.dashboard-details>summary::-webkit-details-marker{display:none}
+.dashboard-details>summary svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform .2s}
+.dashboard-details[open]>summary svg{transform:rotate(90deg)}
+.dashboard-breakdown{padding:3px 15px 12px;border-top:1px solid var(--bd)}
+.dashboard-detail-row{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--bd);font-size:12px;color:var(--mut)}
+.dashboard-detail-row:last-child{border-bottom:0}
+.dashboard-detail-row strong{font-size:12px;color:var(--tx);text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.account-appearance .account-share-content{display:grid;gap:18px}
+.appearance-fieldset{border:0;margin:0;padding:0;min-width:0}
+.appearance-fieldset legend,.appearance-name>label:first-child{display:block;font-size:13px;font-weight:750;margin:0 0 10px;color:var(--tx)}
+.appearance-themes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.appearance-themes label{position:relative;min-width:0;cursor:pointer}
+.appearance-themes input{position:absolute;opacity:0;width:1px;height:1px;min-height:0;pointer-events:none}
+.appearance-themes span{display:flex;align-items:center;justify-content:center;min-height:46px;padding:8px 4px;border:1px solid var(--bd);border-radius:11px;background:var(--card);color:var(--tx);font-size:12px;font-weight:650}
+.appearance-themes input:checked+span{border:2px solid var(--ac);color:var(--ac);background:var(--surface-soft)}
+.appearance-themes input:focus-visible+span{outline:3px solid var(--ac);outline-offset:2px}
+.appearance-help{font-size:11px;margin:8px 0 0;line-height:1.5}
+.appearance-name input[type="text"]{font-size:15px}
+.appearance-check{display:flex;align-items:center;gap:9px;margin-top:12px;font-size:12px;cursor:pointer}
+.appearance-check input{width:18px;min-height:18px;height:18px;flex:0 0 18px;accent-color:var(--ac);margin:0}
+@media(max-width:380px){#expenseview .dashboard-stat{padding:19px 17px 18px}#expenseview .dashboard-amount{font-size:clamp(34px,10vw,44px)}.dashboard-topline{gap:5px}.dashboard-state{font-size:10px;padding:4px 7px}}
+@media(prefers-reduced-motion:reduce){.dashboard-details>summary svg{transition:none}}
 </style>
 </head>
 <body>
-<header class="pagehead" aria-label="A nossa casa">
-  <div class="brand-home">
+<header class="pagehead" aria-label="Cabeçalho da aplicação">
+  <div class="brand-home" aria-label="A Nossa Casa">
     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M9 21v-8h6v8"/></svg>
-    <span>A nossa casa</span>
+    <span id="brandname">A nossa casa</span>
   </div>
-  <button type="button" id="themetoggle" class="theme-toggle" role="switch" aria-label="Modo escuro" aria-checked="false" title="Alternar modo claro/escuro">
-    <span class="theme-knob" aria-hidden="true">
-      <svg class="sun-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg>
-      <svg class="moon-icon" viewBox="0 0 24 24"><path d="M20.9 13A9 9 0 0 1 11 3.1 9 9 0 1 0 20.9 13Z"/></svg>
-    </span>
-  </button>
 </header>
 
 <section id="auth" class="card hidden">
@@ -649,18 +703,28 @@ body{max-width:640px;padding:22px 20px max(120px,env(safe-area-inset-bottom,0px)
     <button id="tabaccount" type="button" aria-selected="false" aria-label="Conta" title="Conta"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M9 21v-8h6v8"/></svg><span>Conta</span></button>
   </nav>
   <section id="expenseview">
-    <div class="card totals-card" aria-label="Resumo do mês">
-      <div class="totals-grid">
-        <div><div class="mut">Total de despesas</div><div class="big" id="tot">0 €</div></div>
-      </div>
-      <div id="bal" class="bal balance-line"></div>
-      <div id="balanceperiod" class="mut" aria-live="polite">Estado atual das dívidas deste mês</div>
-      <div id="globalbalance" class="mut" aria-live="polite"></div>
-      <div class="balance-actions" role="group" aria-label="Ações de despesas e pagamentos">
-        <button id="openexpense" type="button" class="balance-action balance-action-add" aria-controls="newexpensepanel" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h10a2 2 0 0 1 2 2v16l-4-2-3 2-3-2-4 2V5a2 2 0 0 1 2-2z"/><path d="M12 8v7M8.5 11.5h7"/></svg><span>Adicionar despesa</span></button>
-        <button id="opensettlement" type="button" class="balance-action balance-action-settle" aria-controls="settlementpanel" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16m0 0-4-4m4 4-4 4M20 17H4m0 0 4-4m-4 4 4 4"/></svg><span>Acertar contas</span></button>
-      </div>
+    <div class="dashboard-summary" aria-label="Resumo financeiro do mês">
+      <section class="card dashboard-stat dashboard-spend" aria-label="Total de despesas">
+        <div class="dashboard-kicker">Total de despesas</div>
+        <div class="dashboard-amount" id="tot">0 €</div>
+        <p class="dashboard-caption">Despesas registadas neste mês</p>
+      </section>
+      <section class="card dashboard-stat dashboard-balance" aria-label="Estado das dívidas do mês">
+        <div class="dashboard-topline"><span class="dashboard-kicker">Por liquidar</span><span id="balancestate" class="dashboard-state">A verificar</span></div>
+        <div id="bal" class="bal balance-line dashboard-amount" aria-live="polite">—</div>
+        <p id="balancehint" class="dashboard-caption"></p>
+        <p id="balanceperiod" class="dashboard-retro-note" aria-live="polite"></p>
+        <div id="globalbalance" class="dashboard-global hidden" aria-live="polite"></div>
+      </section>
     </div>
+    <div class="balance-actions" role="group" aria-label="Ações de despesas e pagamentos">
+      <button id="openexpense" type="button" class="balance-action balance-action-add" aria-controls="newexpensepanel" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h10a2 2 0 0 1 2 2v16l-4-2-3 2-3-2-4 2V5a2 2 0 0 1 2-2z"/><path d="M12 8v7M8.5 11.5h7"/></svg><span>Adicionar despesa</span></button>
+      <button id="opensettlement" type="button" class="balance-action balance-action-settle" aria-controls="settlementpanel" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16m0 0-4-4m4 4-4 4M20 17H4m0 0 4-4m-4 4 4 4"/></svg><span>Acertar contas</span></button>
+    </div>
+    <details class="dashboard-details" id="dashboarddetails">
+      <summary><span>Ver detalhes do mês</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></summary>
+      <div id="dashboardbreakdown" class="dashboard-breakdown"></div>
+    </details>
     <section id="newexpensepanel" class="add-panel hidden" aria-label="Adicionar despesa">
     <div class="card add-card">
       <div class="add-fields">
@@ -775,6 +839,30 @@ body{max-width:640px;padding:22px 20px max(120px,env(safe-area-inset-bottom,0px)
     <p class="mut">Email com que iniciaste sessão:</p>
     <p id="who" class="account-email">Conta</p>
     <p id="spaceinfo" class="mut">Espaço partilhado</p>
+    <details id="appearancemanage" class="account-share account-appearance">
+      <summary>
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M12 3a9 9 0 0 1 0 18"/></svg>
+        <span class="account-share-label"><strong>Aparência</strong><small>Tema, nome e cabeçalho</small></span>
+        <svg class="account-share-chevron" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 18 6-6-6-6"/></svg>
+      </summary>
+      <div class="account-share-content">
+        <fieldset class="appearance-fieldset">
+          <legend>Tema da aplicação</legend>
+          <div class="appearance-themes" role="group" aria-label="Escolher tema">
+            <label><input type="radio" name="appearance-theme" value="light"><span>Claro</span></label>
+            <label><input type="radio" name="appearance-theme" value="dark"><span>Escuro</span></label>
+            <label><input type="radio" name="appearance-theme" value="auto"><span>Automático</span></label>
+          </div>
+          <p class="mut appearance-help">Automático acompanha o tema claro ou escuro do dispositivo.</p>
+        </fieldset>
+        <div class="appearance-name">
+          <label for="appearance-brandname">Nome no cabeçalho</label>
+          <input id="appearance-brandname" type="text" maxlength="32" autocomplete="off" placeholder="A nossa casa">
+          <label class="appearance-check"><input id="appearance-showname" type="checkbox" checked><span>Mostrar nome ao lado do ícone da casa</span></label>
+          <p class="mut appearance-help">Estas preferências ficam guardadas apenas neste dispositivo.</p>
+        </div>
+      </div>
+    </details>
     <details id="shareview" class="account-share">
       <summary>
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.7 10.6l6.6-4.2M8.7 13.4l6.6 4.2"/></svg>
@@ -1206,17 +1294,47 @@ function render(){
  const globalCents=balanceThroughMonth(items,settlements,people,me.id,asOfPeriod);
  const otherCount=Math.max(0,people.length-1);
  const hasMonthMovements=items.some(e=>e.shared&&(e.date||'').slice(0,7)===month);
- const b=$('#bal');b.className='bal balance-line';
- $('#balanceperiod').textContent='Estado atual das dívidas de '+monthName(month)+' · inclui acertos posteriores';
- if(!otherCount){b.textContent='À espera da outra pessoa entrar no espaço.';b.className='mut balance-line'}
- else if(!hasMonthMovements){b.textContent='Sem despesas partilhadas neste mês.';b.className='mut balance-line'}
- else if(monthCents===0)b.textContent='Estão quites.';
- else if(monthCents>0)b.textContent='Por liquidar deste mês: a outra pessoa deve-te '+fmt(monthCents/100)+'.';
- else{b.textContent='Por liquidar deste mês: deves '+fmt(-monthCents/100)+' à outra pessoa.';b.className='bal balance-line neg'}
+ const b=$('#bal'),hint=$('#balancehint'),badge=$('#balancestate'),note=$('#balanceperiod');
+ b.className='bal balance-line dashboard-amount';
+ const originalMonth=monthlyOpenBalances(items,settlements,people,me.id,month).get(month)||0;
+ const settledLater=hasMonthMovements&&month<asOfPeriod&&originalMonth!==0&&monthCents===0;
+ if(!otherCount){
+  b.textContent='—';hint.textContent='À espera da outra pessoa entrar na casa.';badge.textContent='Por configurar';badge.className='dashboard-state';
+ }else if(!hasMonthMovements){
+  b.textContent=fmt(0);hint.textContent='Sem despesas partilhadas neste mês.';badge.textContent='Sem pendentes';badge.className='dashboard-state is-settled';
+ }else if(monthCents===0){
+  b.textContent=fmt(0);hint.textContent='Tudo em dia neste mês.';badge.textContent='Quitado';badge.className='dashboard-state is-settled';
+ }else{
+  b.textContent=fmt(Math.abs(monthCents)/100);
+  hint.textContent=monthCents<0?'Deves à outra pessoa.':'A outra pessoa deve-te.';
+  badge.textContent='Pendente';badge.className='dashboard-state is-pending';
+  if(monthCents<0)b.classList.add('neg');
+ }
+ note.textContent=settledLater?'✓ Liquidado posteriormente':hasMonthMovements&&month<asOfPeriod?'Estado atual · inclui acertos posteriores':'';
+ note.classList.toggle('hidden',!note.textContent);
  const global=$('#globalbalance');
+ global.classList.toggle('hidden',!otherCount||globalCents===monthCents);
  if(!otherCount)global.textContent='';
- else if(globalCents===0)global.textContent='Saldo global '+(asOfPeriod===periodNow()?'atual':'até '+monthName(asOfPeriod))+': estão quites.';
+ else if(globalCents===0)global.textContent='Saldo global atual: estão quites.';
  else global.textContent='Saldo global '+(asOfPeriod===periodNow()?'atual':'até '+monthName(asOfPeriod))+': '+(globalCents<0?'deves ':'a outra pessoa deve-te ')+fmt(Math.abs(globalCents)/100)+'.';
+ const paidByMe=cur.reduce((sum,e)=>sum+(e.payer===me.id?toCents(e.amount):0),0);
+ const sharedTotal=cur.reduce((sum,e)=>sum+(e.shared?toCents(e.amount):0),0);
+ const paymentTotal=curPayments.reduce((sum,p)=>sum+toCents(p.amount),0);
+ const historicalGlobal=balanceThroughMonth(items,settlements,people,me.id,month);
+ const details=$('#dashboardbreakdown');details.replaceChildren();
+ const detailRows=[
+  ['Pagas por ti',fmt(paidByMe/100)],
+  ['Pagas pela outra pessoa',fmt((toCents(total)-paidByMe)/100)],
+  ['Despesas partilhadas',fmt(sharedTotal/100)],
+  ['Pagamentos registados no mês',fmt(paymentTotal/100)],
+  ['Saldo global no fim do mês',historicalGlobal===0?'Estavam quites':(historicalGlobal<0?'Devias ':'Deviam-te ')+fmt(Math.abs(historicalGlobal)/100)]
+ ];
+ for(const [label,value] of detailRows){
+  const row=document.createElement('div');row.className='dashboard-detail-row';
+  const name=document.createElement('span');name.textContent=label;
+  const amount=document.createElement('strong');amount.textContent=value;
+  row.append(name,amount);details.append(row);
+ }
  const currentDebt=balanceThroughMonth(items,settlements,people,me.id,periodNow())/100;
  renderSettlements(currentDebt,curPayments,otherCount);
  const L=$('#list');L.textContent='';
@@ -2088,10 +2206,44 @@ $('#export-csv').onclick=()=>exportHousehold('csv');
 
 $('#logout').onclick=()=>sbClient.auth.signOut();
 $('#copycode').onclick=async()=>{try{await navigator.clipboard.writeText(inviteCode);status('Código copiado.')}catch(e){status('Código de convite: '+inviteCode)}};
-const themeButton=document.querySelector('#themetoggle');
-function updateThemeButton(){const dark=document.documentElement.dataset.theme==='dark';document.querySelector('meta[name="theme-color"]').setAttribute('content',dark?'#101715':'#f3f6f4');themeButton.setAttribute('aria-label',dark?'Ativar modo claro':'Ativar modo escuro');themeButton.setAttribute('aria-checked',String(dark));themeButton.title=dark?'Ativar modo claro':'Ativar modo escuro'}
-themeButton.addEventListener('click',()=>{const dark=document.documentElement.dataset.theme==='dark';if(dark)delete document.documentElement.dataset.theme;else document.documentElement.dataset.theme='dark';try{localStorage.setItem('a_nossa_casa_theme',dark?'light':'dark')}catch(e){}updateThemeButton()});
-updateThemeButton();
+// Preferências locais: tema com seguimento do sistema, e nome opcional no cabeçalho.
+const themeMedia=window.matchMedia('(prefers-color-scheme: dark)');
+const preferenceGet=(key,fallback)=>{try{return localStorage.getItem(key)??fallback}catch(e){return fallback}};
+const preferenceSet=(key,value)=>{try{localStorage.setItem(key,value)}catch(e){}};
+function chosenTheme(){const value=preferenceGet('a_nossa_casa_theme','auto');return ['light','dark','auto'].includes(value)?value:'auto'}
+function applyTheme(){
+ const mode=chosenTheme(),dark=mode==='dark'||(mode==='auto'&&themeMedia.matches);
+ if(dark)document.documentElement.dataset.theme='dark';else delete document.documentElement.dataset.theme;
+ document.querySelector('meta[name="theme-color"]').setAttribute('content',dark?'#101715':'#f3f6f4');
+ document.querySelectorAll('input[name="appearance-theme"]').forEach(input=>{input.checked=input.value===mode});
+}
+function applyBrand(){
+ const name=(preferenceGet('a_nossa_casa_brand','A nossa casa').trim().slice(0,32)||'A nossa casa');
+ const visible=preferenceGet('a_nossa_casa_show_brand','true')!=='false';
+ const brand=$('#brandname');brand.textContent=name;brand.classList.toggle('hidden',!visible);
+ $('.brand-home').setAttribute('aria-label',visible?name:'A Nossa Casa');
+ $('#appearance-brandname').value=name;
+ $('#appearance-showname').checked=visible;
+}
+document.querySelectorAll('input[name="appearance-theme"]').forEach(input=>input.addEventListener('change',()=>{
+ if(input.checked){preferenceSet('a_nossa_casa_theme',input.value);applyTheme()}
+}));
+$('#appearance-brandname').addEventListener('input',event=>{
+ const value=event.target.value.trim().slice(0,32);
+ preferenceSet('a_nossa_casa_brand',value||'A nossa casa');
+ const brand=$('#brandname');brand.textContent=value||'A nossa casa';
+ $('.brand-home').setAttribute('aria-label',brand.textContent);
+});
+$('#appearance-showname').addEventListener('change',event=>{
+ preferenceSet('a_nossa_casa_show_brand',String(event.target.checked));applyBrand();
+});
+if(themeMedia.addEventListener)themeMedia.addEventListener('change',()=>{if(chosenTheme()==='auto')applyTheme()});
+else if(themeMedia.addListener)themeMedia.addListener(()=>{if(chosenTheme()==='auto')applyTheme()});
+window.addEventListener('storage',event=>{
+ if(event.key==='a_nossa_casa_theme')applyTheme();
+ if(event.key==='a_nossa_casa_brand'||event.key==='a_nossa_casa_show_brand')applyBrand();
+});
+applyTheme();applyBrand();
 connect().catch(e=>{show('#auth');message('#authmsg','Erro ao ligar ao Supabase: '+(e.message||e),true)});
 </script>
 <script>
