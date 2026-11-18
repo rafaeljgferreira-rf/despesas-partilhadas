@@ -1,4 +1,3 @@
-
 // A Nossa Casa — Service Worker v2
 // Apenas ficheiros da interface.
 // Nunca guardar respostas do Supabase nem dados privados.
