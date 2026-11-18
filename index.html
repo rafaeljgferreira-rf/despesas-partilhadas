@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-dJzaJwprXSvvTuuFT9tV+an26x+hAT6ML//m7moiQbs=' 'sha256-V+zKWP15mFMXlToJ0Ns8izRuMWro3SsWG86Gy80kJBg=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-dJzaJwprXSvvTuuFT9tV+an26x+hAT6ML//m7moiQbs=' 'sha256-vVluMjhFjUvJbLBtjboXr7lYoGBJ4PIQQLk2KcmZ8S0=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
 <title>A Nossa Casa</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#F4F6F9">
@@ -675,7 +675,7 @@ body{max-width:640px;padding:22px 20px max(120px,env(safe-area-inset-bottom,0px)
 #biometric-lock p{margin:0 0 16px;}
 #biometric-lock button{display:block;width:100%;min-height:47px;margin-top:10px;}
 #biometric-lock #bio-lock-signout{background:transparent;color:var(--tx);border:1px solid var(--bd);}
-html.biometric-locked #app,html.biometric-locked #household,html.biometric-locked #auth,html.biometric-locked #mfachallenge,html.biometric-locked #passwordreset,html.biometric-locked .pagehead{visibility:hidden!important;}
+html.biometric-locked #startup,html.biometric-locked #app,html.biometric-locked #household,html.biometric-locked #auth,html.biometric-locked #mfachallenge,html.biometric-locked #passwordreset,html.biometric-locked .pagehead{visibility:hidden!important;}
 
 /* Dashboard 3 — componentes e cores semânticas */
 
@@ -822,6 +822,11 @@ html,html[data-theme="dark"]{background-color:var(--bg);}
   </div>
 </header>
 
+<section id="startup" class="card" aria-live="polite">
+  <strong id="startup-title">A carregar a tua casa…</strong>
+  <p class="mut" id="startup-message">A preparar a ligação segura.</p>
+  <button type="button" id="startup-retry" class="hidden">Tentar novamente</button>
+</section>
 <section id="auth" class="card hidden">
   <strong>Aceder à aplicação</strong>
   <p class="mut">Cada pessoa deve usar a sua própria conta. Assim, a aplicação identifica quem registou cada despesa.</p>
@@ -1217,7 +1222,7 @@ let activeTab='expenses', chartPeriod='month', selectedBarMonth=null, editingExp
 let passwordRecoveryMode=false;
 let mfaPendingFactorId=null, mfaEnrollment=null, authFlowPromise=null, authGrantedKey=null;
 
-function show(id,on=true){$(id).classList.toggle('hidden',!on);if(id==='#app')$('#periodpicker').classList.toggle('hidden',!on||activeTab==='account');if(id==='#auth'&&on)setTimeout(initTurnstile,0)}
+function show(id,on=true){$(id).classList.toggle('hidden',!on);if(on&&['#auth','#household','#app','#mfachallenge','#passwordreset'].includes(id))$('#startup').classList.add('hidden');if(id==='#app')$('#periodpicker').classList.toggle('hidden',!on||activeTab==='account');if(id==='#auth'&&on)setTimeout(initTurnstile,0)}
 // CAPTCHA: chave publica do Cloudflare Turnstile; a chave secreta fica apenas no Supabase.
 const TURNSTILE_SITE_KEY='0x4AAAAAAGDlpZVVj5D2ihiO';
 let turnstileWidgetId=null,turnstileRetryTimer=null,turnstileRetryAttempts=0;
@@ -1568,6 +1573,12 @@ function resetApp(){
  mfaPendingFactorId=null;mfaEnrollment=null;authGrantedKey=null;
  closeEditExpense();closeEditRecurring();show('#mfasetup',false);
 }
+// Tempos locais de arranque: sem dados pessoais, sem envio para o servidor.
+const startupStarted=performance.now();
+$('#startup-retry').onclick=()=>location.reload();
+function startupMessage(text){$('#startup-title').textContent='A carregar a tua casa…';$('#startup-message').textContent=text;show('#startup-retry',false);show('#startup');}
+function startupError(text){$('#startup-title').textContent='Não foi possível carregar os dados';$('#startup-message').textContent=text;show('#startup-retry');show('#startup');}
+function startupTiming(times){console.info('[A Nossa Casa] Arranque (ms)',Object.fromEntries(Object.entries(times).map(([k,v])=>[k,Math.round(v)])));}
 async function afterLogin(){
  me=session.user;$('#who').textContent=me.email||'Utilizador';show('#auth',false);
  const {data:membership,error}=await sbClient.from('household_members').select('household_id').eq('user_id',me.id).limit(1).maybeSingle();
@@ -1576,17 +1587,38 @@ async function afterLogin(){
  householdId=membership.household_id;await loadHousehold();
 }
 async function loadHousehold(){
- const {data:h,error}=await sbClient.from('households').select('invite_code,created_by').eq('id',householdId).single();
- if(error){status('Não foi possível carregar o espaço: '+error.message,true);return}
- inviteCode=h.invite_code;isHouseholdCreator=h.created_by===me.id;$('#code').textContent=inviteCode;$('#spaceinfo').textContent='Espaço partilhado · sincronização ativa';
- const {data:m,error:meErr}=await sbClient.from('household_members').select('user_id').eq('household_id',householdId);
- if(meErr){status('Erro ao carregar membros: '+meErr.message,true);return}
- members=(m||[]).map(x=>x.user_id);
- refreshMemberNames();
- show('#household',false);show('#app');
- await loadRecurring();
- await loadExpenses({syncRecurring:true});
- subscribe();
+ const started=performance.now(),userId=me.id,homeId=householdId;
+ const current=()=>session?.user?.id===userId&&me?.id===userId&&householdId===homeId&&!passwordRecoveryMode;
+ show('#household',false);show('#app',false);startupMessage('A consultar os movimentos e pagamentos.');
+ try{
+  const paymentStart=performance.now();
+  const payments=loadHouseholdTable('settlements','created_at',homeId).then(data=>({data,ms:performance.now()-paymentStart}),error=>({error}));
+  const [house,memberRows,fixed]=await Promise.all([
+   sbClient.from('households').select('invite_code,created_by').eq('id',homeId).single(),
+   sbClient.from('household_members').select('user_id').eq('household_id',homeId),
+   sbClient.from('recurring_expenses').select('*').eq('household_id',homeId).order('created_at',{ascending:false})
+  ]);
+  if(!current())return;
+  if(house.error)throw house.error;
+  if(memberRows.error)throw memberRows.error;
+  inviteCode=house.data.invite_code;isHouseholdCreator=house.data.created_by===userId;$('#code').textContent=inviteCode;$('#spaceinfo').textContent='Espaço partilhado · sincronização ativa';
+  members=(memberRows.data||[]).map(x=>x.user_id);refreshMemberNames();
+  recurringReady=!fixed.error;recurring=recurringReady?(fixed.data||[]):[];recurringError=fixed.error?.message||'';
+  const metadataMs=performance.now()-started;
+  const recurringStart=performance.now();
+  await ensureRecurringForMonth(month);
+  if(!current())return;
+  const recurringMs=performance.now()-recurringStart,expenseStart=performance.now();
+  const [data,paid]=await Promise.all([loadHouseholdTable('expenses','date',homeId),payments]);
+  if(!current())return;
+  if(paid.error)throw new Error('Não foi possível consultar os pagamentos. Tenta novamente.');
+  items=data;settlements=paid.data;settlementsReady=true;
+  const renderStart=performance.now();
+  render();show('#app');subscribe();
+  if(!recurringReady)status('Despesas carregadas, mas não foi possível consultar as despesas fixas.',true);
+  else status('Ligado · as alterações são sincronizadas automaticamente.');
+  startupTiming({desdeScript:performance.now()-startupStarted,casaEMembrosEDespesasFixas:metadataMs,verificarFixas:recurringMs,despesasEPagamentos:renderStart-expenseStart,pagamentos:paid.ms,render:performance.now()-renderStart,totalCasa:performance.now()-started});
+ }catch(error){if(current()){show('#app',false);startupError(error.message||'Tenta novamente.');}}
 }
 async function loadRecurring(){
  recurringError='';
@@ -1596,13 +1628,16 @@ async function loadRecurring(){
 }
 async function ensureRecurringForMonth(period){
  if(!recurringReady||!householdId||!recurring.length||period<periodNow())return;
+ const eligible=recurring.filter(rec=>rec.active!==false&&inRecurringRange(rec,period));
+ if(!eligible.length)return;
+ const homeId=householdId;
  const periodKey=firstDayOfMonth(period);
- const {data:existing,error:getError}=await sbClient.from('expenses').select('recurring_expense_id').eq('household_id',householdId).eq('recurring_period',periodKey).not('recurring_expense_id','is',null);
- if(getError)return;
+ const {data:existing,error:getError}=await sbClient.from('expenses').select('recurring_expense_id').eq('household_id',homeId).eq('recurring_period',periodKey).not('recurring_expense_id','is',null);
+ if(getError||householdId!==homeId)return;
  const have=new Set((existing||[]).map(r=>r.recurring_expense_id));
  const rows=[];
- for(const rec of recurring){
-  if(rec.active===false||have.has(rec.id)||!inRecurringRange(rec,period))continue;
+ for(const rec of eligible){
+  if(have.has(rec.id))continue;
   rows.push({household_id:householdId,description:rec.description,amount:Number(rec.amount),category:rec.category,shared:!!rec.shared,payer:rec.payer,date:buildDate(period, rec.day_of_month),recurring_expense_id:rec.id,recurring_period:periodKey});
  }
  if(!rows.length)return;
@@ -1610,10 +1645,10 @@ async function ensureRecurringForMonth(period){
  if(error && error.code!=='23505')status('Não foi possível gerar as despesas fixas: '+error.message,true);
 }
 // O Supabase limita cada resposta a 1000 registos; percorrer todas as páginas.
-async function loadHouseholdTable(table,sortField){
+async function loadHouseholdTable(table,sortField,homeId=householdId){
  const all=[];
  for(let offset=0;offset<20000;offset+=1000){
-  const {data,error}=await sbClient.from(table).select('*').eq('household_id',householdId).order(sortField,{ascending:false}).range(offset,offset+999);
+  const {data,error}=await sbClient.from(table).select('*').eq('household_id',homeId).order(sortField,{ascending:false}).range(offset,offset+999);
   if(error)throw error;
   all.push(...(data||[]));
   if(!data||data.length<1000)return all;
@@ -1622,11 +1657,12 @@ async function loadHouseholdTable(table,sortField){
 }
 async function loadExpenses({syncRecurring=false}={}){
  if(syncRecurring)await ensureRecurringForMonth(month);
+ const payments=loadHouseholdTable('settlements','created_at').then(data=>({data}),error=>({error}));
  let data,paidRows;
  try{data=await loadHouseholdTable('expenses','date')}
  catch(error){status('Erro ao carregar despesas: '+error.message,true);return}
  items=data;
- try{paidRows=await loadHouseholdTable('settlements','created_at');settlementsReady=true}
+ try{const result=await payments;if(result.error)throw result.error;paidRows=result.data;settlementsReady=true}
  catch(error){paidRows=[];settlementsReady=false}
  settlements=paidRows;
  render();
@@ -1742,7 +1778,7 @@ function render(){
  let lastDay=''; const now=new Date();const today=periodNow()+'-'+String(now.getDate()).padStart(2,'0');const yesterdayDate=new Date(now.getFullYear(),now.getMonth(),now.getDate()-1);const yesterday=yesterdayDate.getFullYear()+'-'+String(yesterdayDate.getMonth()+1).padStart(2,'0')+'-'+String(yesterdayDate.getDate()).padStart(2,'0');
  cur.sort((a,b)=>(b.date||'').localeCompare(a.date||'')).forEach(i=>{if(i.date!==lastDay){lastDay=i.date;const heading=document.createElement('h3');heading.className='movement-day';heading.textContent=i.date===today?'Hoje':i.date===yesterday?'Ontem':new Date(i.date+'T12:00:00').toLocaleDateString('pt-PT',{day:'numeric',month:'long'});L.append(heading)}const r=document.createElement('div');r.className='it row sp';const l=document.createElement('div');l.className='expense-info';const t=document.createElement('div');t.textContent=i.description;t.className='expense-title';const s=document.createElement('div');s.className='mut';s.textContent=categoryForExpense(i)+' · '+(i.payer===me.id?'pago por ti':'pago pela outra pessoa')+(i.shared?' · partilhada':'');l.append(t,s);if(i.recurring_expense_id){const tag=document.createElement('div');tag.className='tag-fixed';tag.textContent='Despesa fixa';l.append(tag)}const rt=document.createElement('div');rt.className='expense-actions';const v=document.createElement('strong');v.textContent=fmt(i.amount);if(i.payer===me.id){const controls=document.createElement('div');controls.className='expense-controls';controls.append(createExpenseIconButton('edit','Editar '+i.description,()=>openEditExpense(i.id)),createExpenseIconButton('remove','Remover '+i.description,()=>deleteExpense(i.id)));rt.append(controls)}rt.append(v);const avatar=document.createElement('span');avatar.className='payer-avatar'+(memberColorIndex(i.payer)===1?' payer-avatar--alt':'');const payerName=memberDisplayName(i.payer,displayNames);avatar.textContent=memberInitials(payerName,i.payer===me.id?'T':'O');avatar.title=payerName||(i.payer===me.id?'Tu':'Outra pessoa');avatar.setAttribute('aria-hidden','true');if(payerName)s.textContent=categoryForExpense(i)+' · pago por '+payerName+(i.shared?' · partilhada':'');r.append(avatar,l,rt);L.append(r)});
  if(!cur.length){const p=document.createElement('p');p.className='mut';p.textContent='Ainda não existem despesas neste mês.';L.append(p)}
- renderCharts();renderRecurring();
+ if(activeTab==='charts')renderCharts();renderRecurring();
 }
 function renderRecurring(){
  const active=recurring.filter(r=>r.active!==false&&(!monthFromDate(r.end_month)||monthFromDate(r.end_month)>=month));
