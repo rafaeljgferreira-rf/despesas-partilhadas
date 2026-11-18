@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-dJzaJwprXSvvTuuFT9tV+an26x+hAT6ML//m7moiQbs=' 'sha256-vVluMjhFjUvJbLBtjboXr7lYoGBJ4PIQQLk2KcmZ8S0=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-dJzaJwprXSvvTuuFT9tV+an26x+hAT6ML//m7moiQbs=' 'sha256-zMaav5f5D9Kbig/XiKa6W19jpMl6mw4Lz+jOkDX/JYI=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
 <title>A Nossa Casa</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#F4F6F9">
@@ -1155,7 +1155,8 @@ html,html[data-theme="dark"]{background-color:var(--bg);}
         <p id="export-msg" class="mut import-msg" role="status" aria-live="polite"></p>
       </div>
     </details>
-    <button class="g" id="logout" type="button" aria-label="Terminar sessão" title="Terminar sessão"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M10 17l5-5-5-5M15 12H3"/><path d="M12 3h6a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3h-6"/></svg><span>Terminar sessão</span></button>
+    <details class="account-share"><summary>Consulta sem Internet</summary><p class="mut">Guarda uma cópia cifrada neste dispositivo. A palavra-passe offline é independente da conta e terá de ser introduzida novamente após fechar a aplicação.</p><label for="offline-setup-password">Palavra-passe offline (mínimo 12 caracteres)</label><input id="offline-setup-password" type="password" autocomplete="new-password" minlength="12"><button id="offline-save" type="button">Guardar / atualizar cópia offline</button><button id="offline-remove" class="g" type="button">Apagar cópia offline</button><p id="offline-setting-status" role="status"></p></details>
+<button class="g" id="logout" type="button" aria-label="Terminar sessão" title="Terminar sessão"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M10 17l5-5-5-5M15 12H3"/><path d="M12 3h6a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3h-6"/></svg><span>Terminar sessão</span></button>
   </div></section>
   <div id="editrecurringoverlay" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="er-title">
     <div class="card modal-card">
@@ -1210,6 +1211,12 @@ html,html[data-theme="dark"]{background-color:var(--bg);}
     </div>
   </div>
 </main>
+<section id="offline-view" class="card hidden" aria-live="polite">
+<h2>Consulta offline</h2><p id="offline-note" class="mut">Dados guardados neste dispositivo. Podem estar desatualizados.</p>
+<div id="offline-unlock-panel"><label for="offline-password">Palavra-passe da cópia offline</label><input id="offline-password" type="password" autocomplete="off"><button id="offline-unlock" type="button">Desbloquear consulta</button></div>
+<p id="offline-error" role="status"></p><div id="offline-content" class="hidden"><label for="offline-month">Mês</label><select id="offline-month"></select><div id="offline-summary"></div><div id="offline-rows"></div></div>
+<button id="offline-reconnect" type="button" class="g">Voltar à ligação online</button><button id="offline-erase" type="button" class="g">Apagar cópia offline</button>
+</section>
 <script src="/supabase.js"></script>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&amp;onload=onTurnstileApiReady" defer></script>
 <script>
@@ -1503,7 +1510,7 @@ $('#bio-lock-unlock').onclick=async()=>{
 };
 $('#bio-lock-signout').onclick=async()=>{
  bioUnlockVisual();
- try{await sbClient.auth.signOut()}catch(e){show('#auth');message('#authmsg','Não foi possível terminar a sessão: '+(e.message||e),true)}
+ try{await offlineForget();await sbClient.auth.signOut()}catch(e){show('#auth');message('#authmsg','Não foi possível terminar a sessão: '+(e.message||e),true)}
 };
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')bioMarkAway();else bioReturn()});
 window.addEventListener('pagehide',bioMarkAway);
@@ -1548,6 +1555,7 @@ async function connect(){
  }
  sbClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
  sbClient.auth.onAuthStateChange((event,s)=>{setTimeout(async()=>{
+    if(event==='SIGNED_OUT'||(session?.user?.id&&s?.user?.id&&session.user.id!==s.user.id))await offlineForget().catch(()=>{});
     session=s;
     if(event==='PASSWORD_RECOVERY'){
       passwordRecoveryMode=true;
@@ -1580,7 +1588,7 @@ function startupMessage(text){$('#startup-title').textContent='A carregar a tua 
 function startupError(text){$('#startup-title').textContent='Não foi possível carregar os dados';$('#startup-message').textContent=text;show('#startup-retry');show('#startup');}
 function startupTiming(times){console.info('[A Nossa Casa] Arranque (ms)',Object.fromEntries(Object.entries(times).map(([k,v])=>[k,Math.round(v)])));}
 async function afterLogin(){
- me=session.user;$('#who').textContent=me.email||'Utilizador';show('#auth',false);
+ me=session.user;offlineStore('readonly').then(saved=>{if(saved&&saved.user!==session?.user?.id)return offlineForget()}).catch(()=>{});$('#who').textContent=me.email||'Utilizador';show('#auth',false);
  const {data:membership,error}=await sbClient.from('household_members').select('household_id').eq('user_id',me.id).limit(1).maybeSingle();
  if(error){show('#household');message('#homemsg','Erro ao verificar o espaço: '+error.message,true);return}
  if(!membership){show('#household');show('#app',false);return}
@@ -1614,7 +1622,7 @@ async function loadHousehold(){
   if(paid.error)throw new Error('Não foi possível consultar os pagamentos. Tenta novamente.');
   items=data;settlements=paid.data;settlementsReady=true;
   const renderStart=performance.now();
-  render();show('#app');subscribe();
+  render();show('#app');subscribe();offlineCapture();
   if(!recurringReady)status('Despesas carregadas, mas não foi possível consultar as despesas fixas.',true);
   else status('Ligado · as alterações são sincronizadas automaticamente.');
   startupTiming({desdeScript:performance.now()-startupStarted,casaEMembrosEDespesasFixas:metadataMs,verificarFixas:recurringMs,despesasEPagamentos:renderStart-expenseStart,pagamentos:paid.ms,render:performance.now()-renderStart,totalCasa:performance.now()-started});
@@ -1665,7 +1673,7 @@ async function loadExpenses({syncRecurring=false}={}){
  try{const result=await payments;if(result.error)throw result.error;paidRows=result.data;settlementsReady=true}
  catch(error){paidRows=[];settlementsReady=false}
  settlements=paidRows;
- render();
+ render();if(settlementsReady&&recurringReady)offlineCapture();
  if(!settlementsReady)status('Despesas carregadas, mas não foi possível consultar os pagamentos.',true);
  else if(!recurringReady)status('Despesas carregadas. Para ativar as despesas fixas e a edição completa, executa o novo ficheiro SQL no Supabase.',true);
  else status('Ligado · as alterações são sincronizadas automaticamente.');
@@ -2228,7 +2236,7 @@ $('#mfaconfirm').onclick=async()=>{
  }catch(e){message('#mfamsg','Código não confirmado: '+(e.message||e),true)}
  finally{button.disabled=false}
 };
-$('#mfasignout').onclick=()=>sbClient.auth.signOut();
+$('#mfasignout').onclick=async()=>{await offlineForget();await sbClient.auth.signOut()};
 async function refreshMfaAccount(){
  if(!session)return;
  try{
@@ -2729,7 +2737,7 @@ async function exportHousehold(format){
 $('#export-json').onclick=()=>exportHousehold('json');
 $('#export-csv').onclick=()=>exportHousehold('csv');
 
-$('#logout').onclick=()=>sbClient.auth.signOut();
+$('#logout').onclick=async()=>{try{await offlineForget();await sbClient.auth.signOut()}catch(e){status('Não foi possível terminar sessão em segurança.',true)}};
 $('#copycode').onclick=async()=>{try{await navigator.clipboard.writeText(inviteCode);status('Código copiado.')}catch(e){status('Código de convite: '+inviteCode)}};
 // Preferências locais: tema com seguimento do sistema, e nome opcional no cabeçalho.
 const themeMedia=window.matchMedia('(prefers-color-scheme: dark)');
@@ -2768,8 +2776,31 @@ window.addEventListener('storage',event=>{
  if(event.key==='a_nossa_casa_theme')applyTheme();
  if(event.key==='a_nossa_casa_brand'||event.key==='a_nossa_casa_show_brand')applyBrand();
 });
+
+// Consulta offline isolada: não cria sessão nem utiliza operações de escrita.
+let offlineSnapshot=null, offlineKey=null, offlineSalt=null, offlineOwner=null, offlineData=null, offlineEpoch=0, offlineQueue=Promise.resolve();
+const offlineDb=()=>new Promise((resolve,reject)=>{const r=indexedDB.open('a-nossa-casa-offline',1);r.onupgradeneeded=()=>r.result.createObjectStore('snapshot');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});
+async function offlineStore(mode,value){const db=await offlineDb();try{return await new Promise((resolve,reject)=>{const tx=db.transaction('snapshot',mode),st=tx.objectStore('snapshot');const r=mode==='readonly'?st.get('current'):value?st.put(value,'current'):st.delete('current');tx.oncomplete=()=>resolve(r.result);tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error)})}finally{db.close()}}
+async function offlineDerive(password,salt){const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(password),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:600000,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt'])}
+function offlineClearVisual(){offlineData=null;$('#offline-content').classList.add('hidden');$('#offline-summary').replaceChildren();$('#offline-rows').replaceChildren();$('#offline-month').replaceChildren();$('#offline-unlock-panel').classList.remove('hidden');$('#offline-password').value='';$('#offline-note').textContent='Dados guardados neste dispositivo. Podem estar desatualizados.'}
+function offlineForget(){offlineEpoch++;offlineKey=null;offlineSalt=null;offlineOwner=null;offlineSnapshot=null;offlineClearVisual();offlineQueue=offlineQueue.catch(()=>{}).then(()=>offlineStore('readwrite',null));return offlineQueue}
+function offlineCapture(){if(!me||!householdId||!settlementsReady||!recurringReady||!navigator.onLine)return;offlineSnapshot={user:me.id,home:householdId,at:new Date().toISOString(),items:structuredClone(items),payments:structuredClone(settlements),fixed:structuredClone(recurring),members:[...members]};if(offlineKey&&offlineOwner===me.id)offlinePersist().catch(()=>{$('#offline-setting-status').textContent='Não foi possível atualizar a cópia offline.'})}
+function offlinePersist(){const snapshot=offlineSnapshot,key=offlineKey,salt=offlineSalt,epoch=offlineEpoch;if(!snapshot||!key||snapshot.user!==offlineOwner)return Promise.reject(new Error('Ainda não existem dados completos sincronizados.'));offlineQueue=offlineQueue.catch(()=>{}).then(async()=>{const iv=crypto.getRandomValues(new Uint8Array(12));const encrypted=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,new TextEncoder().encode(JSON.stringify(snapshot)));if(epoch!==offlineEpoch)return;await offlineStore('readwrite',{version:1,salt,iv,encrypted,user:snapshot.user});});return offlineQueue}
+$('#offline-save').onclick=async()=>{const password=$('#offline-setup-password').value;$('#offline-setup-password').value='';const msg=$('#offline-setting-status');if(password.length<12){msg.textContent='Escolhe uma palavra-passe com pelo menos 12 caracteres.';return}if(!offlineSnapshot||offlineSnapshot.user!==session?.user?.id||!navigator.onLine){msg.textContent='Sincroniza primeiro todos os dados.';return}const owner=session.user.id,epoch=++offlineEpoch;try{const salt=crypto.getRandomValues(new Uint8Array(16)),key=await offlineDerive(password,salt);if(epoch!==offlineEpoch||session?.user?.id!==owner)return;offlineSalt=salt;offlineKey=key;offlineOwner=owner;await offlinePersist();msg.textContent='Cópia cifrada guardada. Para a atualizar após fechar a app, volta a introduzir a palavra-passe nesta secção.'}catch(e){msg.textContent='Não foi possível guardar a cópia: '+e.message}};
+$('#offline-remove').onclick=async()=>{try{await offlineForget();$('#offline-setting-status').textContent='Cópia apagada.'}catch(e){$('#offline-setting-status').textContent='Não foi possível apagar a cópia.'}};
+function offlineLine(parent,label,value){const row=document.createElement('p'),strong=document.createElement('strong');strong.textContent=label+' — ';row.append(strong,document.createTextNode(value));parent.append(row)}
+function offlineRender(){if(!offlineData)return;const d=offlineData,m=$('#offline-month').value,summary=$('#offline-summary'),rows=$('#offline-rows');summary.replaceChildren();rows.replaceChildren();const cur=d.items.filter(i=>String(i.date).slice(0,7)===m),asOf=m>d.at.slice(0,7)?m:d.at.slice(0,7);const net=balanceThroughMonth(d.items,d.payments,d.members,d.user,asOf),monthly=monthlyOpenBalances(d.items,d.payments,d.members,d.user,asOf).get(m)||0;const bal=n=>d.members.length<2?'Por configurar':n===0?'Quites':(n<0?'Deves ':'Devem-te ')+fmt(Math.abs(n)/100);offlineLine(summary,'Total do mês',fmt(cur.reduce((a,i)=>a+Number(i.amount),0)));offlineLine(summary,'Por liquidar no mês',bal(monthly));offlineLine(summary,'Saldo acumulado à data da cópia',bal(net));for(const [title,records,format] of [['Despesas',cur,i=>i.date+' · '+i.description+' · '+fmt(i.amount)+' · '+(i.payer===d.user?'Tu':'Outra pessoa')],['Acertos',d.payments.filter(i=>String(i.period).slice(0,7)===m),i=>fmt(i.amount)+' · '+(i.sender===d.user?'Enviado':'Recebido')],['Despesas fixas',d.fixed,i=>i.description+' · '+fmt(i.amount)+(i.active===false?' · Inativa':'')]]){const h=document.createElement('h3');h.textContent=title;rows.append(h);if(!records.length)offlineLine(rows,'Sem registos','—');for(const i of records){const p=document.createElement('p');p.textContent=format(i);rows.append(p)}}}
+$('#offline-month').onchange=offlineRender;
+async function offlineEnter(){show('#startup',false);show('#auth',false);show('#app',false);show('#household',false);show('#mfachallenge',false);show('#periodpicker',false);offlineClearVisual();show('#offline-view');try{if(!await offlineStore('readonly'))$('#offline-error').textContent='Ainda não existe uma cópia offline. Liga-te à Internet para criar uma.'}catch(e){$('#offline-error').textContent='Armazenamento offline indisponível.'}}
+$('#offline-unlock').onclick=async()=>{const button=$('#offline-unlock'),password=$('#offline-password').value,epoch=offlineEpoch;$('#offline-password').value='';button.disabled=true;try{const r=await offlineStore('readonly');if(!r||r.version!==1)throw new Error('Não existe uma cópia offline.');const key=await offlineDerive(password,r.salt),plain=await crypto.subtle.decrypt({name:'AES-GCM',iv:r.iv},key,r.encrypted),d=JSON.parse(new TextDecoder().decode(plain));if(d.user!==r.user)throw new Error('Cópia inválida.');const cfg=bioGet(d.user);if(cfg){const challenge=bioRandom(),credential=await navigator.credentials.get({publicKey:{challenge,timeout:60000,rpId:location.hostname,userVerification:'required',allowCredentials:[{type:'public-key',id:bioFrom64(cfg.id)}]}});await bioVerify(cfg,challenge,credential)}if(epoch!==offlineEpoch||navigator.onLine)return;offlineData=d;const months=[...new Set([d.at.slice(0,7),...d.items.map(i=>String(i.date).slice(0,7)),...d.payments.map(i=>String(i.period).slice(0,7))])].filter(m=>/^\d{4}-\d{2}$/.test(m)).sort().reverse();for(const m of months){const o=document.createElement('option');o.value=m;o.textContent=monthName(m);$('#offline-month').append(o)}$('#offline-month').value=d.at.slice(0,7);$('#offline-note').textContent='Última cópia completa: '+new Date(d.at).toLocaleString('pt-PT')+' · Dados podem estar desatualizados.';$('#offline-error').textContent='';show('#offline-unlock-panel',false);show('#offline-content');offlineRender()}catch(e){$('#offline-error').textContent='Não foi possível desbloquear a cópia. Verifica a palavra-passe e a biometria.'}finally{button.disabled=false}};
+$('#offline-reconnect').onclick=()=>{if(navigator.onLine)location.reload();else $('#offline-error').textContent='Ainda estás sem ligação à Internet.'};
+$('#offline-erase').onclick=async()=>{try{await offlineForget();$('#offline-error').textContent='Cópia apagada.'}catch(e){$('#offline-error').textContent='Não foi possível apagar a cópia.'}};
+window.addEventListener('online',()=>{if(!$('#offline-view').classList.contains('hidden'))location.reload()});
+window.addEventListener('offline',()=>{if(!$('#app').classList.contains('hidden')){cancelPendingDelete(false);location.reload()}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&!$('#offline-view').classList.contains('hidden')){offlineEpoch++;offlineClearVisual()}});
+
 applyTheme();applyBrand();
-connect().catch(e=>{show('#auth');message('#authmsg','Erro ao ligar ao Supabase: '+(e.message||e),true)});
+if(!navigator.onLine)offlineEnter();else connect().catch(e=>{show('#auth');message('#authmsg','Erro ao ligar ao Supabase: '+(e.message||e),true)});
 </script>
 <script>
 if ("serviceWorker" in navigator) { window.addEventListener("load", () => { navigator.serviceWorker.register("/sw.js").catch(err => console.warn("PWA:",err)); }); }
