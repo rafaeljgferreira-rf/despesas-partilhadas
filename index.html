@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-N7QRcXXYx9zGpRBI8r5Da0o/NRRbUTH2K43zzBfH2d4=' 'sha256-hvK7bFvWIi4v8UeRpS//Q6/GHp+HqVCNpiOX68GoQi0=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-N7QRcXXYx9zGpRBI8r5Da0o/NRRbUTH2K43zzBfH2d4=' 'sha256-Tbu51ZDhtpQfE499wqRJH0W4WaXqfzm0PGYKMDby/BE=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
 <title>A Nossa Casa</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#167552">
@@ -727,6 +727,15 @@ html.biometric-locked #status{visibility:hidden}
 html.biometric-locked #undo-delete{visibility:hidden}
 :where(button,summary,select,a):focus-visible{outline:2px solid var(--ac);outline-offset:3px}
 @media(max-width:360px){#expenseview>.balance-actions .balance-action,.dashboard-details>summary{font-size:12px}#expenseview>.balance-actions .balance-action svg{width:16px;height:16px;flex-basis:16px}}
+
+/* Identificação visual dos membros */
+:root{--avatar-alt-bg:#e5eaf8;--avatar-alt-text:#344b87}
+:root[data-theme="dark"]{--avatar-alt-bg:#293751;--avatar-alt-text:#c0d2ff}
+#list .payer-avatar--alt{background:var(--avatar-alt-bg);color:var(--avatar-alt-text)}
+.member-names{border-top:1px solid var(--bd);margin-top:16px;padding-top:14px;display:grid;gap:8px}
+.member-names label{font-size:13px;color:var(--tx);font-weight:650}
+.member-names input{min-height:44px}
+.member-names p{margin:0}
 </style>
 </head>
 <body>
@@ -968,6 +977,16 @@ html.biometric-locked #undo-delete{visibility:hidden}
         <strong>Convite para a outra pessoa</strong>
         <p class="mut">Partilha este código apenas com a pessoa que queres adicionar.</p>
         <div class="invite-code-row"><strong id="code"></strong><button type="button" class="g" id="copycode" aria-label="Copiar código de convite" title="Copiar código de convite"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg></button></div>
+        <div class="member-names">
+          <strong>Nomes dos membros</strong>
+          <p class="mut">Personaliza as iniciais dos movimentos neste dispositivo.</p>
+          <label for="member-name-self">O teu nome</label>
+          <input id="member-name-self" type="text" maxlength="48" autocomplete="off" placeholder="O teu nome">
+          <label for="member-name-other">Nome da outra pessoa</label>
+          <input id="member-name-other" type="text" maxlength="48" autocomplete="off" placeholder="Nome da outra pessoa">
+          <button id="member-names-save" type="button" class="g">Guardar nomes</button>
+          <p id="member-names-status" class="mut" role="status" aria-live="polite"></p>
+        </div>
       </div>
     </details>
     <details class="account-share account-biometric" id="biometricmanage">
@@ -1493,6 +1512,7 @@ async function loadHousehold(){
  const {data:m,error:meErr}=await sbClient.from('household_members').select('user_id').eq('household_id',householdId);
  if(meErr){status('Erro ao carregar membros: '+meErr.message,true);return}
  members=(m||[]).map(x=>x.user_id);
+ refreshMemberNames();
  show('#household',false);show('#app');
  await loadRecurring();
  await loadExpenses({syncRecurring:true});
@@ -1557,7 +1577,38 @@ function subscribe(){
   .on('postgres_changes',{event:'*',schema:'public',table:'recurring_expenses',filter:'household_id=eq.'+householdId},async()=>{await loadRecurring();await loadExpenses({syncRecurring:true})})
   .subscribe(s=>{if(s==='CHANNEL_ERROR'||s==='TIMED_OUT')status('A ligação em tempo real foi interrompida. A tentar restabelecer…',true)});
 }
+function memberNamesKey(){return 'a_nossa_casa_member_names:'+me.id+':'+householdId}
+function readMemberNames(){
+ if(!me||!householdId)return {};
+ try{const saved=JSON.parse(localStorage.getItem(memberNamesKey())||'{}');return saved&&typeof saved==='object'?saved:{}}catch(e){return {}}
+}
+function memberDisplayName(id,names){
+ const n=Object.prototype.hasOwnProperty.call(names,id)?names[id]:'';
+ return typeof n==='string'?n.trim().slice(0,48):'';
+}
+function memberInitials(name,fallback){
+ const parts=name.match(/[\p{L}\p{N}]+/gu)||[];
+ if(!parts.length)return fallback;
+ return (Array.from(parts[0])[0]+(parts.length>1?Array.from(parts[parts.length-1])[0]:'')).toLocaleUpperCase('pt-PT').slice(0,4);
+}
+function memberColorIndex(id){return [...new Set(members)].sort().indexOf(id)%2}
+function refreshMemberNames(){
+ const names=readMemberNames(),other=members.find(id=>id!==me.id);
+ $('#member-name-self').value=memberDisplayName(me.id,names);
+ $('#member-name-other').value=other?memberDisplayName(other,names):'';
+ $('#member-name-other').disabled=!other;
+ $('#member-names-status').textContent=other?'':'O segundo nome fica disponível quando a outra pessoa entrar.';
+}
+$('#member-names-save').addEventListener('click',()=>{
+ if(!me||!householdId)return;
+ const names=readMemberNames(),other=members.find(id=>id!==me.id);
+ names[me.id]=$('#member-name-self').value.trim().slice(0,48);
+ if(other)names[other]=$('#member-name-other').value.trim().slice(0,48);
+ try{localStorage.setItem(memberNamesKey(),JSON.stringify(names));render();$('#member-names-status').textContent='Nomes guardados neste dispositivo.'}
+ catch(e){$('#member-names-status').textContent='Não foi possível guardar os nomes neste dispositivo.'}
+});
 function render(){
+ const displayNames=readMemberNames();
  renderPeriodSelect();
  const cur=items.filter(i=>(i.date||'').slice(0,7)===month);
  const total=cur.reduce((s,i)=>s+Number(i.amount),0);
@@ -1618,7 +1669,7 @@ function render(){
  renderSettlements(currentDebt,curPayments,otherCount);
  const L=$('#list');L.textContent='';
  let lastDay=''; const now=new Date();const today=periodNow()+'-'+String(now.getDate()).padStart(2,'0');const yesterdayDate=new Date(now.getFullYear(),now.getMonth(),now.getDate()-1);const yesterday=yesterdayDate.getFullYear()+'-'+String(yesterdayDate.getMonth()+1).padStart(2,'0')+'-'+String(yesterdayDate.getDate()).padStart(2,'0');
- cur.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).forEach(i=>{if(i.date!==lastDay){lastDay=i.date;const heading=document.createElement('h3');heading.className='movement-day';heading.textContent=i.date===today?'Hoje':i.date===yesterday?'Ontem':new Date(i.date+'T12:00:00').toLocaleDateString('pt-PT',{day:'numeric',month:'long'});L.append(heading)}const r=document.createElement('div');r.className='it row sp';const l=document.createElement('div');l.className='expense-info';const t=document.createElement('div');t.textContent=i.description;t.className='expense-title';const s=document.createElement('div');s.className='mut';s.textContent=categoryForExpense(i)+' · '+(i.payer===me.id?'pago por ti':'pago pela outra pessoa')+(i.shared?' · partilhada':'');l.append(t,s);if(i.recurring_expense_id){const tag=document.createElement('div');tag.className='tag-fixed';tag.textContent='Despesa fixa';l.append(tag)}const rt=document.createElement('div');rt.className='expense-actions';const v=document.createElement('strong');v.textContent=fmt(i.amount);if(i.payer===me.id){const controls=document.createElement('div');controls.className='expense-controls';controls.append(createExpenseIconButton('edit','Editar '+i.description,()=>openEditExpense(i.id)),createExpenseIconButton('remove','Remover '+i.description,()=>deleteExpense(i.id)));rt.append(controls)}rt.append(v);const avatar=document.createElement('span');avatar.className='payer-avatar';avatar.textContent=i.payer===me.id?'T':'O';avatar.setAttribute('aria-hidden','true');r.append(avatar,l,rt);L.append(r)});
+ cur.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).forEach(i=>{if(i.date!==lastDay){lastDay=i.date;const heading=document.createElement('h3');heading.className='movement-day';heading.textContent=i.date===today?'Hoje':i.date===yesterday?'Ontem':new Date(i.date+'T12:00:00').toLocaleDateString('pt-PT',{day:'numeric',month:'long'});L.append(heading)}const r=document.createElement('div');r.className='it row sp';const l=document.createElement('div');l.className='expense-info';const t=document.createElement('div');t.textContent=i.description;t.className='expense-title';const s=document.createElement('div');s.className='mut';s.textContent=categoryForExpense(i)+' · '+(i.payer===me.id?'pago por ti':'pago pela outra pessoa')+(i.shared?' · partilhada':'');l.append(t,s);if(i.recurring_expense_id){const tag=document.createElement('div');tag.className='tag-fixed';tag.textContent='Despesa fixa';l.append(tag)}const rt=document.createElement('div');rt.className='expense-actions';const v=document.createElement('strong');v.textContent=fmt(i.amount);if(i.payer===me.id){const controls=document.createElement('div');controls.className='expense-controls';controls.append(createExpenseIconButton('edit','Editar '+i.description,()=>openEditExpense(i.id)),createExpenseIconButton('remove','Remover '+i.description,()=>deleteExpense(i.id)));rt.append(controls)}rt.append(v);const avatar=document.createElement('span');avatar.className='payer-avatar'+(memberColorIndex(i.payer)===1?' payer-avatar--alt':'');const payerName=memberDisplayName(i.payer,displayNames);avatar.textContent=memberInitials(payerName,i.payer===me.id?'T':'O');avatar.title=payerName||(i.payer===me.id?'Tu':'Outra pessoa');avatar.setAttribute('aria-hidden','true');if(payerName)s.textContent=categoryForExpense(i)+' · pago por '+payerName+(i.shared?' · partilhada':'');r.append(avatar,l,rt);L.append(r)});
  if(!cur.length){const p=document.createElement('p');p.className='mut';p.textContent='Ainda não existem despesas neste mês.';L.append(p)}
  renderCharts();renderRecurring();
 }
