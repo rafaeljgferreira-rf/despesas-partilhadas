@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-N7QRcXXYx9zGpRBI8r5Da0o/NRRbUTH2K43zzBfH2d4=' 'sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=' 'sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=' 'sha256-fPwaDUWHGXc80xJ+8U3rx+gZIZbUaKs9lSvfQDXZIVk=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-N7QRcXXYx9zGpRBI8r5Da0o/NRRbUTH2K43zzBfH2d4=' 'sha256-IL3buN7/SNCF/vkf/p87uQAeB4P2DSOucK6z2ntvJLM=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
 <title>A Nossa Casa</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#167552">
@@ -689,6 +689,46 @@ body{max-width:640px;padding:22px 20px max(120px,env(safe-area-inset-bottom,0px)
 #biometric-lock button{display:block;width:100%;min-height:47px;margin-top:10px}
 #biometric-lock #bio-lock-signout{background:transparent;color:var(--tx);border:1px solid var(--bd)}
 html.biometric-locked #app,html.biometric-locked #household,html.biometric-locked #auth,html.biometric-locked #mfachallenge,html.biometric-locked #passwordreset,html.biometric-locked .pagehead{visibility:hidden!important}
+
+/* Dashboard 3 — componentes e cores semânticas */
+:root{--mut:#53665b;--ok-bg:#e1f1e7;--ok-text:#167552;--danger-bg:#fae8e5;--danger-text:#a64037;--avatar-bg:#e1f1e7;--sheet-shadow:0 -12px 40px #0002}
+:root[data-theme="dark"]{--mut:#a7b7ad;--ok-bg:#234532;--ok-text:#a0e4b9;--danger-bg:#422d29;--danger-text:#ffb3a9;--avatar-bg:#263d30;--sheet-shadow:0 -12px 40px #0005}
+#expenseview .dashboard-summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:10px}
+#expenseview .dashboard-stat{padding:15px 12px;border-radius:17px;background:var(--card)}
+#expenseview .dashboard-balance{background:var(--surface-soft)}
+#expenseview .dashboard-kicker{font-size:12px;letter-spacing:0;text-transform:none;font-weight:650}
+#expenseview .dashboard-amount{font-size:clamp(20px,5.7vw,36px);letter-spacing:-.7px;margin:7px 0 0;line-height:1.2;overflow-wrap:anywhere}
+#expenseview .dashboard-balance #bal{margin:7px 0 0!important}
+#expenseview .dashboard-amount.positive{color:var(--ok-text)}
+#expenseview .dashboard-caption{font-size:11px;margin-top:5px}
+.dashboard-state{display:none}.dashboard-retro-note{font-size:11px;margin:5px 0 0}
+#expenseview .balance-actions{display:flex;justify-content:flex-end;margin:0 0 8px}
+#expenseview>.balance-actions .balance-action{min-height:44px;width:auto;padding:8px 14px;font-size:13px}
+.dashboard-details{background:transparent;border:0;margin:0 0 12px}.dashboard-details>summary{color:var(--ac);padding:5px 2px;justify-content:flex-start;gap:4px}
+#expenseview #globalbalance.dashboard-global{margin:5px 0;padding:8px 10px;background:var(--surface-soft);border:0;border-radius:9px}
+#app .tabnav{grid-template-columns:repeat(5,minmax(0,1fr));align-items:center}
+#app .tabnav #openexpense{width:52px;height:52px;min-height:52px;justify-self:center;border-radius:50%;background:var(--ac)!important;color:var(--on)!important;padding:0}
+#app .tabnav #openexpense svg{width:27px;height:27px;stroke-width:2.2}
+#app .tabnav button{min-height:48px}
+#expenseview #newexpensepanel{margin:0;padding:0;z-index:80}
+#expenseview #newexpensepanel>.add-card{width:min(100%,620px);max-height:90dvh;overflow:auto;padding:12px 20px max(22px,env(safe-area-inset-bottom));border-radius:25px 25px 0 0;box-shadow:var(--sheet-shadow);animation:sheet-in .2s ease-out}
+.sheet-handle{height:4px;width:38px;border-radius:5px;background:var(--bd);margin:0 auto 12px}
+#newexpense-title{margin:0;font-size:20px}#closeexpense{min-width:44px;min-height:44px;font-size:23px;padding:0;border:0}
+.amount-entry{display:flex;align-items:center;border-bottom:2px solid var(--ac);gap:8px}.amount-entry #a{font-size:40px;font-weight:750;background:transparent;border:0;padding:0 0 8px;min-width:0;letter-spacing:-1px}.amount-entry span{font-size:26px;color:var(--mut);font-weight:700}
+#c{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}#category-chips{display:flex;gap:7px;flex-wrap:wrap}
+#category-chips .category-chip{border:1px solid var(--bd);background:var(--card);color:var(--tx);min-height:44px;border-radius:24px;padding:8px 12px;font-size:13px;margin:0;display:flex;align-items:center;gap:6px}
+.category-chip:before{content:'';background:var(--mut);width:8px;height:8px;border-radius:50%}.category-chip[data-category="Casa"]:before{background:#6989bc}.category-chip[data-category="Comida"]:before{background:#229b74}.category-chip[data-category="Transportes"]:before{background:#288b91}.category-chip[data-category="Lazer"]:before{background:#9064b8}.category-chip[data-category="Saúde"]:before{background:#c65067}
+#category-chips .category-chip[aria-pressed="true"]{background:var(--ac);color:var(--on);border-color:var(--ac)}.category-chip[aria-pressed="true"]:before{background:var(--on)}
+#expense-more{border-top:1px solid var(--bd);padding:13px 0;color:var(--ac);font-size:13px}#expense-more summary{cursor:pointer;min-height:32px;font-weight:650}
+body.expense-sheet-open:has(#newexpensepanel:not(.hidden)) {overflow:hidden}
+.movements-title{margin:16px 2px 5px;font-size:17px}#expenseview #list{background:transparent;border:0;padding:0 2px}.movement-day{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut);margin:17px 0 3px}.payer-avatar{background:var(--avatar-bg);color:var(--ok-text);width:32px;height:32px;flex:0 0 32px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:12px}
+#list .expense-actions{flex-direction:column;align-items:flex-end;gap:1px}#list .expense-actions strong{order:0}#list .expense-controls{order:1}#list .expense-icon-btn,#settlelist .expense-icon-btn{width:44px;min-width:44px;height:44px;min-height:44px;flex-basis:44px}
+#monthcompare .compare-grid,#monthcompare .compare-desc{display:none}#monthcompare .compare-result{font-size:19px}.yearbarbtn .bar-label{font-size:11px}
+#status{position:fixed;z-index:100;bottom:calc(85px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);width:min(90%,560px);margin:0;padding:12px 14px;border:1px solid var(--bd);border-radius:12px;background:var(--card)!important;color:var(--tx)!important;box-shadow:0 6px 20px #0002;font-size:13px}#status.error{background:var(--danger-bg)!important;color:var(--danger-text)!important}
+html.biometric-locked #status{visibility:hidden}
+@keyframes sheet-in{from{transform:translateY(30px);opacity:.7}to{transform:translateY(0);opacity:1}}@media(prefers-reduced-motion:reduce){#expenseview #newexpensepanel>.add-card{animation:none}}
+@media(max-width:360px){#expenseview .dashboard-stat{padding:12px 9px}#expenseview .dashboard-amount{font-size:20px}#list .it{gap:5px}.payer-avatar{width:26px;height:26px;flex-basis:26px}#list .expense-controls{gap:1px}}
+
 </style>
 </head>
 <body>
@@ -759,42 +799,39 @@ html.biometric-locked #app,html.biometric-locked #household,html.biometric-locke
   <nav class="tabnav" aria-label="Secções">
     <button id="tabexpenses" type="button" aria-selected="true" aria-label="Despesas" title="Despesas"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg><span>Despesas</span></button>
     <button id="tabcharts" type="button" aria-selected="false" aria-label="Gráficos" title="Gráficos"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.21 15.89A10 10 0 1 1 8.11 2.99"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg><span>Gráficos</span></button>
-    <button id="tabhistory" type="button" aria-selected="false" aria-label="Histórico de pagamentos" title="Histórico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 3v5h5"/><path d="M12 7v5l3.5 2"/></svg><span>Histórico</span></button>
-    <button id="tabaccount" type="button" aria-selected="false" aria-label="Conta" title="Conta"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M9 21v-8h6v8"/></svg><span>Conta</span></button>
+    <button id="openexpense" type="button" aria-label="Adicionar despesa" title="Adicionar despesa" aria-controls="newexpensepanel" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+    <button id="tabhistory" type="button" aria-selected="false" aria-label="Acertos" title="Acertos"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16l-4-4m4 4-4 4M20 17H4l4-4m-4 4 4 4"/></svg><span>Acertos</span></button>
+    <button id="tabaccount" type="button" aria-selected="false" aria-label="Conta" title="Conta"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg><span>Conta</span></button>
   </nav>
   <section id="expenseview">
     <div class="dashboard-summary" aria-label="Resumo financeiro do mês">
       <section class="card dashboard-stat dashboard-spend" aria-label="Total de despesas">
         <div class="dashboard-kicker">Total de despesas</div>
         <div class="dashboard-amount" id="tot">0 €</div>
-        <p class="dashboard-caption">Despesas registadas neste mês</p>
+        
       </section>
       <section class="card dashboard-stat dashboard-balance" aria-label="Estado das dívidas do mês">
-        <div class="dashboard-topline"><span class="dashboard-kicker">Por liquidar</span><span id="balancestate" class="dashboard-state">A verificar</span></div>
+        <div class="dashboard-topline"><span id="balancekicker" class="dashboard-kicker">Por liquidar</span><span id="balancestate" class="dashboard-state">A verificar</span></div>
         <div id="bal" class="bal balance-line dashboard-amount" aria-live="polite">—</div>
         <p id="balancehint" class="dashboard-caption"></p>
         <p id="balanceperiod" class="dashboard-retro-note" aria-live="polite"></p>
-        <div id="globalbalance" class="dashboard-global hidden" aria-live="polite"></div>
+        
       </section>
     </div>
     <div class="balance-actions" role="group" aria-label="Ações de despesas e pagamentos">
-      <button id="openexpense" type="button" class="balance-action balance-action-add" aria-controls="newexpensepanel" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h10a2 2 0 0 1 2 2v16l-4-2-3 2-3-2-4 2V5a2 2 0 0 1 2-2z"/><path d="M12 8v7M8.5 11.5h7"/></svg><span>Adicionar despesa</span></button>
+
       <button id="opensettlement" type="button" class="balance-action balance-action-settle" aria-controls="settlementpanel" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16m0 0-4-4m4 4-4 4M20 17H4m0 0 4-4m-4 4 4 4"/></svg><span>Acertar contas</span></button>
     </div>
     <details class="dashboard-details" id="dashboarddetails">
       <summary><span>Ver detalhes do mês</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></summary>
-      <div id="dashboardbreakdown" class="dashboard-breakdown"></div>
+      <div id="globalbalance" class="dashboard-global hidden" aria-live="polite"></div><div id="dashboardbreakdown" class="dashboard-breakdown"></div>
     </details>
-    <section id="newexpensepanel" class="add-panel hidden" aria-label="Adicionar despesa">
-    <div class="card add-card">
+    <section id="newexpensepanel" class="add-panel modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="newexpense-title">
+    <div class="card add-card modal-card"><div class="sheet-handle" aria-hidden="true"></div><div class="row sp"><h2 id="newexpense-title">Nova despesa</h2><button id="closeexpense" class="g" type="button" aria-label="Fechar">×</button></div>
       <div class="add-fields">
-        <label for="d">Descrição</label>
-        <input id="d" placeholder="Ex.: Compras no supermercado" maxlength="60" autocomplete="off">
-        <label for="expense-date">Data da despesa</label>
-        <input id="expense-date" type="date" required>
-        <div class="amount-category-row">
-          <div><label for="a">Valor (€)</label><input id="a" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0,00"></div>
-          <div><label for="c">Categoria</label><select id="c" aria-label="Categoria da despesa">
+        <label for="a">Valor</label><div class="amount-entry"><input id="a" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0,00"><span>€</span></div>
+        <label for="d">Descrição</label><input id="d" placeholder="Ex.: Compras no supermercado" maxlength="60" autocomplete="off">
+        <label id="category-label" for="c">Categoria</label><select id="c" tabindex="-1" aria-hidden="true" aria-label="Categoria da despesa">
             <option value="">Automática</option>
                           <option value="Casa">Casa</option>
                           <option value="Comida">Comida</option>
@@ -802,10 +839,9 @@ html.biometric-locked #app,html.biometric-locked #household,html.biometric-locke
                           <option value="Lazer">Lazer</option>
                           <option value="Saúde">Saúde</option>
                           <option value="Outros">Outros</option>
-          </select></div>
-        </div>
+          </select><div id="category-chips" role="group" aria-labelledby="category-label"></div>
         <label class="share-check" for="s"><input type="checkbox" id="s" checked><span>Despesa partilhada</span></label>
-        <label class="share-check" for="isrecurring"><input type="checkbox" id="isrecurring" aria-controls="recurringoptions" aria-expanded="false"><span>Repetir mensalmente (despesa fixa)</span></label>
+        <label for="expense-date">Data da despesa</label><input id="expense-date" type="date" required><details id="expense-more"><summary>Mais opções · despesa fixa</summary><label class="share-check" for="isrecurring"><input type="checkbox" id="isrecurring" aria-controls="recurringoptions" aria-expanded="false"><span>Repetir mensalmente (despesa fixa)</span></label>
         <div id="recurringoptions" class="recurring-options hidden">
           <div class="recurring-grid">
             <div><label for="rday">Dia do mês</label><input id="rday" type="number" inputmode="numeric" min="1" max="28" step="1" value="1"></div>
@@ -816,6 +852,7 @@ html.biometric-locked #app,html.biometric-locked #household,html.biometric-locke
           </div>
           <p class="mut helper">Sem mês de fim, repete-se todos os meses. Podes editar ou excluir meses mais tarde.</p>
         </div>
+        </details>
         <button id="add" type="button"><span aria-hidden="true">＋</span> <span id="addlabel">Adicionar despesa</span></button>
       </div>
       <p class="mut helper">Com o visto «Despesa partilhada» ativo, o valor é dividido igualmente.</p>
@@ -832,7 +869,7 @@ html.biometric-locked #app,html.biometric-locked #household,html.biometric-locke
       </div>
     </section>
     <div class="section-heading"><h2>Movimentos do mês</h2></div>
-    <div class="card" id="list"></div>
+    <h2 class="movements-title">Movimentos</h2><div class="card" id="list"></div>
     <div class="recurring-section">
       <details id="recurringmanage" class="recurring-manage">
         <summary><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06-2.91 2.91-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 1.52V21h-4v-.08A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06-2.91-2.91.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.52-1H3v-4h.08A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06 2.91-2.91.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.52V3h4v.08A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06 2.91 2.91-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.52 1H21v4h-.08A1.65 1.65 0 0 0 19.4 15z"/></svg><span>Gerir despesas fixas</span> <span id="recurringcount"></span></summary>
@@ -877,10 +914,10 @@ html.biometric-locked #app,html.biometric-locked #household,html.biometric-locke
       <div class="bar-detail" id="bardetail" aria-live="polite"></div>
     </div>
   </section>
-  <div class="notice" id="status">A ligar à sincronização…</div>
+  <div class="notice hidden" id="status" role="status" aria-live="polite"></div>
   <section id="historyview" class="hidden" aria-labelledby="historytitle">
     <div class="card">
-      <h2 id="historytitle">Histórico de pagamentos</h2>
+      <h2 id="historytitle">Acertos</h2>
       <p class="mut">Pagamentos registados no mês selecionado. Os pagamentos posteriores podem liquidar retroativamente dívidas antigas; o saldo global mantém-se atualizado.</p>
       <div id="settlehistory"><div id="settlelist"></div></div>
       <p id="settleempty" class="mut hidden" role="status">Ainda não existem pagamentos registados neste mês.</p>
@@ -1134,7 +1171,7 @@ function resetCaptcha(){
  if(turnstileWidgetId!==null&&typeof window.turnstile?.reset==='function')window.turnstile.reset(turnstileWidgetId);
 }
 function message(id,msg,isError=false){$(id).textContent=msg;$(id).classList.toggle('error',isError)}
-function status(msg,error=false){message('#status',msg,error)}
+let statusTimer;function status(msg,error=false){clearTimeout(statusTimer);message('#status',msg,error);const quiet=!error&&/^(Ligado ·|Atualizado agora ·)/.test(msg);show('#status',!quiet);if(!quiet&&!error)statusTimer=setTimeout(()=>show('#status',false),4500);}
 // Dados publicos do projeto. Nunca incluir service_role ou sb_secret_ aqui.
 const SUPABASE_URL='https://yinwpwywuvpborlfswzt.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY='sb_publishable_RnM64gagKaYaIHX5Zoj0ug_OtMl9DGN';
@@ -1434,6 +1471,7 @@ async function connect(){
  else if(!passwordRecoveryMode){show('#auth');show('#household',false);show('#app',false)}
 }
 function resetApp(){
+ closeNewExpense();
  bioUnlockVisual();
  if(channel)sbClient.removeChannel(channel);
  channel=null;me=null;householdId=null;items=[];members=[];settlements=[];settlementsReady=false;isHouseholdCreator=false;splitwiseImport=null;backupJsonImport=null;
@@ -1549,7 +1587,10 @@ function render(){
   if(monthCents<0)b.classList.add('neg');
  }
  note.textContent=settledLater?'✓ Liquidado posteriormente':hasMonthMovements&&month<asOfPeriod?'Estado atual · inclui acertos posteriores':'';
- note.classList.toggle('hidden',!note.textContent);
+ note.classList.toggle('hidden',!settledLater);
+ $('#balancekicker').textContent=monthCents<0?'Deves':monthCents>0?'Devem-te':'Por liquidar';
+ b.classList.toggle('positive',monthCents>0);
+ if(monthCents!==0&&otherCount)hint.textContent='Por liquidar neste mês';
  const global=$('#globalbalance');
  global.classList.toggle('hidden',!otherCount||globalCents===monthCents);
  if(!otherCount)global.textContent='';
@@ -1576,7 +1617,8 @@ function render(){
  const currentDebt=balanceThroughMonth(items,settlements,people,me.id,periodNow())/100;
  renderSettlements(currentDebt,curPayments,otherCount);
  const L=$('#list');L.textContent='';
- cur.forEach(i=>{const r=document.createElement('div');r.className='it row sp';const l=document.createElement('div');l.className='expense-info';const t=document.createElement('div');t.textContent=i.description;t.className='expense-title';const s=document.createElement('div');s.className='mut';s.textContent=(i.date||'').slice(8,10)+'/'+(i.date||'').slice(5,7)+' · '+categoryForExpense(i)+' · '+(i.payer===me.id?'pago por ti':'pago pela outra pessoa')+(i.shared?' · partilhada':'');l.append(t,s);if(i.recurring_expense_id){const tag=document.createElement('div');tag.className='tag-fixed';tag.textContent='Despesa fixa';l.append(tag)}const rt=document.createElement('div');rt.className='expense-actions';const v=document.createElement('strong');v.textContent=fmt(i.amount);if(i.payer===me.id){const controls=document.createElement('div');controls.className='expense-controls';controls.append(createExpenseIconButton('edit','Editar '+i.description,()=>openEditExpense(i.id)),createExpenseIconButton('remove','Remover '+i.description,()=>deleteExpense(i.id)));rt.append(controls)}rt.append(v);r.append(l,rt);L.append(r)});
+ let lastDay=''; const now=new Date();const today=periodNow()+'-'+String(now.getDate()).padStart(2,'0');const yesterdayDate=new Date(now.getFullYear(),now.getMonth(),now.getDate()-1);const yesterday=yesterdayDate.getFullYear()+'-'+String(yesterdayDate.getMonth()+1).padStart(2,'0')+'-'+String(yesterdayDate.getDate()).padStart(2,'0');
+ cur.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).forEach(i=>{if(i.date!==lastDay){lastDay=i.date;const heading=document.createElement('h3');heading.className='movement-day';heading.textContent=i.date===today?'Hoje':i.date===yesterday?'Ontem':new Date(i.date+'T12:00:00').toLocaleDateString('pt-PT',{day:'numeric',month:'long'});L.append(heading)}const r=document.createElement('div');r.className='it row sp';const l=document.createElement('div');l.className='expense-info';const t=document.createElement('div');t.textContent=i.description;t.className='expense-title';const s=document.createElement('div');s.className='mut';s.textContent=categoryForExpense(i)+' · '+(i.payer===me.id?'pago por ti':'pago pela outra pessoa')+(i.shared?' · partilhada':'');l.append(t,s);if(i.recurring_expense_id){const tag=document.createElement('div');tag.className='tag-fixed';tag.textContent='Despesa fixa';l.append(tag)}const rt=document.createElement('div');rt.className='expense-actions';const v=document.createElement('strong');v.textContent=fmt(i.amount);if(i.payer===me.id){const controls=document.createElement('div');controls.className='expense-controls';controls.append(createExpenseIconButton('edit','Editar '+i.description,()=>openEditExpense(i.id)),createExpenseIconButton('remove','Remover '+i.description,()=>deleteExpense(i.id)));rt.append(controls)}rt.append(v);const avatar=document.createElement('span');avatar.className='payer-avatar';avatar.textContent=i.payer===me.id?'T':'O';avatar.setAttribute('aria-hidden','true');r.append(avatar,l,rt);L.append(r)});
  if(!cur.length){const p=document.createElement('p');p.className='mut';p.textContent='Ainda não existem despesas neste mês.';L.append(p)}
  renderCharts();renderRecurring();
 }
@@ -1698,8 +1740,15 @@ function toggleBalanceAction(panelId){
   $(button).setAttribute('aria-expanded',String(isOpen));
  }
 }
-$('#openexpense').onclick=()=>toggleBalanceAction('#newexpensepanel');
-$('#opensettlement').onclick=()=>toggleBalanceAction('#settlementpanel');
+function closeNewExpense(){show('#newexpensepanel',false);$('#openexpense').setAttribute('aria-expanded','false');document.body.classList.remove('expense-sheet-open');}
+function syncCategoryChips(){for(const chip of $('#category-chips').children)chip.setAttribute('aria-pressed',String(chip.dataset.category===$('#c').value));}
+for(const option of $('#c').options){const chip=document.createElement('button');chip.type='button';chip.className='category-chip';chip.dataset.category=option.value;chip.textContent=option.textContent.trim();chip.onclick=()=>{$('#c').value=option.value;syncCategoryChips()};$('#category-chips').append(chip)}
+syncCategoryChips();
+$('#openexpense').onclick=()=>{if(!$('#newexpensepanel').classList.contains('hidden')){closeNewExpense();return}if(activeTab!=='expenses')selectTab('expenses');const d=new Date();$('#expense-date').value=periodNow()+'-'+String(d.getDate()).padStart(2,'0');syncCategoryChips();toggleBalanceAction('#newexpensepanel');document.body.classList.add('expense-sheet-open');};
+$('#closeexpense').onclick=closeNewExpense;
+$('#newexpensepanel').addEventListener('click',e=>{if(e.target===$('#newexpensepanel'))closeNewExpense()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#newexpensepanel').classList.contains('hidden'))closeNewExpense()});
+$('#opensettlement').onclick=()=>{closeNewExpense();toggleBalanceAction('#settlementpanel')};
 
 function renderCharts(){
  const isAnnual=chartPeriod==='year',year=month.slice(0,4);
@@ -1806,6 +1855,7 @@ function fillCategorySelect(selectId,stored){
  select.value=[...select.options].some(o=>o.value===String(stored||''))?String(stored||''):'';
 }
 function selectTab(which){
+ closeNewExpense();
  activeTab=which;
  show('#periodpicker',which!=='account');
  const tabs={expenses:'expenseview',charts:'chartview',history:'historyview',account:'accountview'};
@@ -1857,7 +1907,7 @@ async function addRecurringExpense(){
   const {error}=await sbClient.from('recurring_expenses').insert(row);
   if(error)throw error;
   $('#d').value='';$('#a').value='';$('#c').value='';$('#rday').value='1';$('#s').checked=true;$('#rstart').value=periodNow();$('#rend').value='';$('#isrecurring').checked=false;setRecurringMode();
-  await loadRecurring();await loadExpenses({syncRecurring:true});status('Despesa fixa guardada para os meses escolhidos.');
+  closeNewExpense();syncCategoryChips();await loadRecurring();await loadExpenses({syncRecurring:true});status('Despesa fixa guardada para os meses escolhidos.');
  }catch(error){status('Não foi possível guardar a despesa fixa: '+error.message,true)}finally{btn.disabled=false}
 }
 function openEditRecurring(id){
@@ -2101,7 +2151,7 @@ $('#signup').onclick=async()=>{
 };
 $('#createhome').onclick=async()=>{const {data,error}=await sbClient.rpc('create_household');if(error){message('#homemsg','Erro: '+error.message,true);return}householdId=data;await loadHousehold()};
 $('#joinhome').onclick=async()=>{const code=$('#invite').value.trim().toUpperCase();if(!code)return;const {data,error}=await sbClient.rpc('join_household',{p_code:code});if(error){message('#homemsg','Não foi possível entrar: '+error.message,true);return}householdId=data;await loadHousehold()};
-$('#add').onclick=async()=>{if($('#isrecurring').checked){await addRecurringExpense();return}const description=$('#d').value.trim(),amount=normalizeAmount($('#a').value);if(!description||!(amount>0)){status('Indica uma descrição e um valor válido.',true);return}const date=$('#expense-date').value;if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||Number.isNaN(new Date(date+'T12:00:00').getTime())){status('Escolhe uma data válida para a despesa.',true);return}const selectedPeriod=date.slice(0,7);if(selectedPeriod!==periodNow()){if(!confirm('Atenção: a data escolhida ('+date.split('-').reverse().join('/')+') não pertence ao mês atual.\n\nQueres mesmo adicionar esta despesa?'))return;}const row={household_id:householdId,description,amount,category:categorySelected('#c',description),shared:$('#s').checked,payer:me.id,date};const {error}=await sbClient.from('expenses').insert(row);if(error){status('Não foi possível adicionar: '+error.message,true);return}$('#d').value='';$('#a').value='';$('#c').value='';$('#s').checked=true;$('#d').focus();if(month!==date.slice(0,7)){month=date.slice(0,7);selectedBarMonth=null}syncExpenseDate();await loadExpenses();status('Despesa adicionada com sucesso ✓')};
+$('#add').onclick=async()=>{if($('#isrecurring').checked){await addRecurringExpense();return}const description=$('#d').value.trim(),amount=normalizeAmount($('#a').value);if(!description||!(amount>0)){status('Indica uma descrição e um valor válido.',true);return}const date=$('#expense-date').value;if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||Number.isNaN(new Date(date+'T12:00:00').getTime())){status('Escolhe uma data válida para a despesa.',true);return}const selectedPeriod=date.slice(0,7);if(selectedPeriod!==periodNow()){if(!confirm('Atenção: a data escolhida ('+date.split('-').reverse().join('/')+') não pertence ao mês atual.\n\nQueres mesmo adicionar esta despesa?'))return;}const row={household_id:householdId,description,amount,category:categorySelected('#c',description),shared:$('#s').checked,payer:me.id,date};const {error}=await sbClient.from('expenses').insert(row);if(error){status('Não foi possível adicionar: '+error.message,true);return}$('#d').value='';$('#a').value='';$('#c').value='';$('#s').checked=true;closeNewExpense();syncCategoryChips();if(month!==date.slice(0,7)){month=date.slice(0,7);selectedBarMonth=null}syncExpenseDate();await loadExpenses();status('Despesa adicionada com sucesso ✓')};
 
 
 // Splitwise CSV: pré-visualização, validação, associação de pessoas e confirmação.
