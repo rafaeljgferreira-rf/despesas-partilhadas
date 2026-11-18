@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-dJzaJwprXSvvTuuFT9tV+an26x+hAT6ML//m7moiQbs=' 'sha256-zMaav5f5D9Kbig/XiKa6W19jpMl6mw4Lz+jOkDX/JYI=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-dJzaJwprXSvvTuuFT9tV+an26x+hAT6ML//m7moiQbs=' 'sha256-Rm/LjuXL+QosD8T6bfz2CnQzWZqjbyDk7fdw07EYu2c=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
 <title>A Nossa Casa</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#F4F6F9">
@@ -806,6 +806,10 @@ html,html[data-theme="dark"]{background-color:var(--bg);}
     html { --nav-gap: 8px; --page-top: 17px; }
   }
 }
+
+html.offline-readonly #openexpense,html.offline-readonly #tabaccount{opacity:.45;pointer-events:none}
+html.offline-readonly #opensettlement,html.offline-readonly #settleaction,html.offline-readonly .expense-controls,html.offline-readonly .inline-actions,html.offline-readonly .recurring-main button,html.offline-readonly .settle-history-actions button{display:none!important}
+#offline-banner,#offline-setup{margin-bottom:12px;padding:12px 16px;font-size:.88rem}
 </style>
 </head>
 <body>
@@ -878,6 +882,8 @@ html,html[data-theme="dark"]{background-color:var(--bg);}
   </div>
 </section>
 <main id="app" class="hidden">
+<div id="offline-banner" class="card hidden" role="status"></div>
+<div id="offline-setup" class="card hidden"><p id="offline-setup-msg" class="mut">Confirma a biometria uma vez para proteger a consulta sem Internet.</p><button id="offline-setup-button" type="button">Confirmar biometria</button></div>
   <nav class="tabnav" aria-label="Secções">
     <button id="tabexpenses" type="button" aria-selected="true" aria-label="Despesas" title="Despesas"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg><span>Despesas</span></button>
     <button id="tabcharts" type="button" aria-selected="false" aria-label="Gráficos" title="Gráficos"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.21 15.89A10 10 0 1 1 8.11 2.99"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg><span>Gráficos</span></button>
@@ -1155,7 +1161,7 @@ html,html[data-theme="dark"]{background-color:var(--bg);}
         <p id="export-msg" class="mut import-msg" role="status" aria-live="polite"></p>
       </div>
     </details>
-    <details class="account-share"><summary>Consulta sem Internet</summary><p class="mut">Guarda uma cópia cifrada neste dispositivo. A palavra-passe offline é independente da conta e terá de ser introduzida novamente após fechar a aplicação.</p><label for="offline-setup-password">Palavra-passe offline (mínimo 12 caracteres)</label><input id="offline-setup-password" type="password" autocomplete="new-password" minlength="12"><button id="offline-save" type="button">Guardar / atualizar cópia offline</button><button id="offline-remove" class="g" type="button">Apagar cópia offline</button><p id="offline-setting-status" role="status"></p></details>
+
 <button class="g" id="logout" type="button" aria-label="Terminar sessão" title="Terminar sessão"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M10 17l5-5-5-5M15 12H3"/><path d="M12 3h6a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3h-6"/></svg><span>Terminar sessão</span></button>
   </div></section>
   <div id="editrecurringoverlay" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="er-title">
@@ -1211,12 +1217,7 @@ html,html[data-theme="dark"]{background-color:var(--bg);}
     </div>
   </div>
 </main>
-<section id="offline-view" class="card hidden" aria-live="polite">
-<h2>Consulta offline</h2><p id="offline-note" class="mut">Dados guardados neste dispositivo. Podem estar desatualizados.</p>
-<div id="offline-unlock-panel"><label for="offline-password">Palavra-passe da cópia offline</label><input id="offline-password" type="password" autocomplete="off"><button id="offline-unlock" type="button">Desbloquear consulta</button></div>
-<p id="offline-error" role="status"></p><div id="offline-content" class="hidden"><label for="offline-month">Mês</label><select id="offline-month"></select><div id="offline-summary"></div><div id="offline-rows"></div></div>
-<button id="offline-reconnect" type="button" class="g">Voltar à ligação online</button><button id="offline-erase" type="button" class="g">Apagar cópia offline</button>
-</section>
+<section id="offline-view" class="card hidden"><h2>Consulta sem Internet</h2><p class="mut">Desbloqueia os últimos dados sincronizados com a proteção do dispositivo.</p><button id="offline-unlock" type="button">Desbloquear</button><p id="offline-error" role="status"></p><button id="offline-reconnect" class="g" type="button">Voltar a ligar</button></section>
 <script src="/supabase.js"></script>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&amp;onload=onTurnstileApiReady" defer></script>
 <script>
@@ -1480,13 +1481,14 @@ $('#bio-enable').onclick=async()=>{
   if(session?.user?.id!==userId)throw new Error('A sessão mudou durante a configuração.');
   bioSave(userId,{id:bio64(credential.rawId),key:bio64(publicKey),timeout:86400000,verifiedAt:Date.now(),awayAt:0});
   $('#bio-status').textContent='Desbloqueio ativado com sucesso.';
+  offlineCapture();
  }catch(e){$('#bio-status').textContent='Não foi possível ativar: '+(e.message||e)}
  finally{bioRefreshSettings();button.disabled=false}
 };
 $('#bio-test').onclick=()=>{if(session?.user?.id&&bioGet(session.user.id))bioLock()};
-$('#bio-disable').onclick=()=>{
+$('#bio-disable').onclick=async()=>{
  const id=session?.user?.id;if(!id||!confirm('Desativar o desbloqueio neste dispositivo?'))return;
- try{localStorage.removeItem(bioKey(id));bioUnlockVisual();bioRefreshSettings()}catch(e){$('#bio-status').textContent='Não foi possível desativar: '+(e.message||e)}
+ try{await offlineForget();localStorage.removeItem(bioKey(id));bioUnlockVisual();bioRefreshSettings()}catch(e){$('#bio-status').textContent='Não foi possível desativar: '+(e.message||e)}
 };
 $('#bio-timeout').onchange=event=>{
  const id=session?.user?.id,cfg=id?bioGet(id):null;if(!cfg)return;
@@ -1588,7 +1590,7 @@ function startupMessage(text){$('#startup-title').textContent='A carregar a tua 
 function startupError(text){$('#startup-title').textContent='Não foi possível carregar os dados';$('#startup-message').textContent=text;show('#startup-retry');show('#startup');}
 function startupTiming(times){console.info('[A Nossa Casa] Arranque (ms)',Object.fromEntries(Object.entries(times).map(([k,v])=>[k,Math.round(v)])));}
 async function afterLogin(){
- me=session.user;offlineStore('readonly').then(saved=>{if(saved&&saved.user!==session?.user?.id)return offlineForget()}).catch(()=>{});$('#who').textContent=me.email||'Utilizador';show('#auth',false);
+ me=session.user;const savedOffline=await offlineStore('readonly').catch(()=>null);if(savedOffline&&savedOffline.user!==me.id)await offlineForget();$('#who').textContent=me.email||'Utilizador';show('#auth',false);
  const {data:membership,error}=await sbClient.from('household_members').select('household_id').eq('user_id',me.id).limit(1).maybeSingle();
  if(error){show('#household');message('#homemsg','Erro ao verificar o espaço: '+error.message,true);return}
  if(!membership){show('#household');show('#app',false);return}
@@ -1784,7 +1786,7 @@ function render(){
  renderSettlements(currentDebt,curPayments,otherCount);
  const L=$('#list');L.textContent='';
  let lastDay=''; const now=new Date();const today=periodNow()+'-'+String(now.getDate()).padStart(2,'0');const yesterdayDate=new Date(now.getFullYear(),now.getMonth(),now.getDate()-1);const yesterday=yesterdayDate.getFullYear()+'-'+String(yesterdayDate.getMonth()+1).padStart(2,'0')+'-'+String(yesterdayDate.getDate()).padStart(2,'0');
- cur.sort((a,b)=>(b.date||'').localeCompare(a.date||'')).forEach(i=>{if(i.date!==lastDay){lastDay=i.date;const heading=document.createElement('h3');heading.className='movement-day';heading.textContent=i.date===today?'Hoje':i.date===yesterday?'Ontem':new Date(i.date+'T12:00:00').toLocaleDateString('pt-PT',{day:'numeric',month:'long'});L.append(heading)}const r=document.createElement('div');r.className='it row sp';const l=document.createElement('div');l.className='expense-info';const t=document.createElement('div');t.textContent=i.description;t.className='expense-title';const s=document.createElement('div');s.className='mut';s.textContent=categoryForExpense(i)+' · '+(i.payer===me.id?'pago por ti':'pago pela outra pessoa')+(i.shared?' · partilhada':'');l.append(t,s);if(i.recurring_expense_id){const tag=document.createElement('div');tag.className='tag-fixed';tag.textContent='Despesa fixa';l.append(tag)}const rt=document.createElement('div');rt.className='expense-actions';const v=document.createElement('strong');v.textContent=fmt(i.amount);if(i.payer===me.id){const controls=document.createElement('div');controls.className='expense-controls';controls.append(createExpenseIconButton('edit','Editar '+i.description,()=>openEditExpense(i.id)),createExpenseIconButton('remove','Remover '+i.description,()=>deleteExpense(i.id)));rt.append(controls)}rt.append(v);const avatar=document.createElement('span');avatar.className='payer-avatar'+(memberColorIndex(i.payer)===1?' payer-avatar--alt':'');const payerName=memberDisplayName(i.payer,displayNames);avatar.textContent=memberInitials(payerName,i.payer===me.id?'T':'O');avatar.title=payerName||(i.payer===me.id?'Tu':'Outra pessoa');avatar.setAttribute('aria-hidden','true');if(payerName)s.textContent=categoryForExpense(i)+' · pago por '+payerName+(i.shared?' · partilhada':'');r.append(avatar,l,rt);L.append(r)});
+ cur.sort((a,b)=>(b.date||'').localeCompare(a.date||'')).forEach(i=>{if(i.date!==lastDay){lastDay=i.date;const heading=document.createElement('h3');heading.className='movement-day';heading.textContent=i.date===today?'Hoje':i.date===yesterday?'Ontem':new Date(i.date+'T12:00:00').toLocaleDateString('pt-PT',{day:'numeric',month:'long'});L.append(heading)}const r=document.createElement('div');r.className='it row sp';const l=document.createElement('div');l.className='expense-info';const t=document.createElement('div');t.textContent=i.description;t.className='expense-title';const s=document.createElement('div');s.className='mut';s.textContent=categoryForExpense(i)+' · '+(i.payer===me.id?'pago por ti':'pago pela outra pessoa')+(i.shared?' · partilhada':'');l.append(t,s);if(i.recurring_expense_id){const tag=document.createElement('div');tag.className='tag-fixed';tag.textContent='Despesa fixa';l.append(tag)}const rt=document.createElement('div');rt.className='expense-actions';const v=document.createElement('strong');v.textContent=fmt(i.amount);if(!offlineMode&&i.payer===me.id){const controls=document.createElement('div');controls.className='expense-controls';controls.append(createExpenseIconButton('edit','Editar '+i.description,()=>openEditExpense(i.id)),createExpenseIconButton('remove','Remover '+i.description,()=>deleteExpense(i.id)));rt.append(controls)}rt.append(v);const avatar=document.createElement('span');avatar.className='payer-avatar'+(memberColorIndex(i.payer)===1?' payer-avatar--alt':'');const payerName=memberDisplayName(i.payer,displayNames);avatar.textContent=memberInitials(payerName,i.payer===me.id?'T':'O');avatar.title=payerName||(i.payer===me.id?'Tu':'Outra pessoa');avatar.setAttribute('aria-hidden','true');if(payerName)s.textContent=categoryForExpense(i)+' · pago por '+payerName+(i.shared?' · partilhada':'');r.append(avatar,l,rt);L.append(r)});
  if(!cur.length){const p=document.createElement('p');p.className='mut';p.textContent='Ainda não existem despesas neste mês.';L.append(p)}
  if(activeTab==='charts')renderCharts();renderRecurring();
 }
@@ -1827,7 +1829,7 @@ function renderRecurringList(listSelector,emptySelector,records,isEnded){
   left.append(title,meta);
   if(excludedMonths(r).length){const skipped=document.createElement('div');skipped.className='mut';skipped.textContent='Meses excluídos: '+excludedMonths(r).map(monthName).join(', ');left.append(skipped)}
   const right=document.createElement('div');right.className='inline-actions';
-  if(r.payer===me.id){
+  if(!offlineMode&&r.payer===me.id){
     right.append(createExpenseIconButton('edit',(isEnded?'Editar ou reativar ':'Editar ')+r.description,()=>openEditRecurring(r.id)));
     right.append(createExpenseIconButton('remove','Remover '+r.description,()=>removeRecurring(r.id)));
     if(!isEnded&&month>=from&&(!end||month<=end)){
@@ -1845,7 +1847,7 @@ function renderRecurringList(listSelector,emptySelector,records,isEnded){
 
 function renderSettlements(net,curPayments,otherCount){
  const hint=$('#settlehint'), input=$('#settleamount'), list=$('#settlelist');
- show('#settleaction',settlementsReady&&otherCount>0&&net<-.005);
+ show('#settleaction',!offlineMode&&settlementsReady&&otherCount>0&&net<-.005);
  show('#settlehistory',settlementsReady&&curPayments.length>0);
  show('#settleempty',settlementsReady&&curPayments.length===0);
  if(!settlementsReady){hint.textContent='Os pagamentos ainda não estão configurados no Supabase.';return}
@@ -1863,7 +1865,7 @@ function renderSettlements(net,curPayments,otherCount){
   const date=document.createElement('span');date.className='mut';date.textContent=new Date(p.created_at).toLocaleDateString('pt-PT');
   left.append(title,detail,date);
   const right=document.createElement('div');right.className='settle-history-actions';
-  if(p.sender===me.id)right.append(createExpenseIconButton('remove','Anular pagamento de '+fmt(p.amount),()=>undoSettlement(p.id)));
+  if(!offlineMode&&p.sender===me.id)right.append(createExpenseIconButton('remove','Anular pagamento de '+fmt(p.amount),()=>undoSettlement(p.id)));
   const amount=document.createElement('strong');amount.textContent=fmt(p.amount);right.append(amount);
   item.append(left,right);list.append(item);
  }
@@ -2030,6 +2032,7 @@ function fillCategorySelect(selectId,stored){
  select.value=[...select.options].some(o=>o.value===String(stored||''))?String(stored||''):'';
 }
 function selectTab(which){
+ if(offlineMode&&which==='account')return;
  closeNewExpense();
  activeTab=which;
  show('#periodpicker',which!=='account');
@@ -2038,7 +2041,7 @@ function selectTab(which){
   show('#'+view,name===which);
   $('#tab'+name).setAttribute('aria-selected',String(name===which));
  }
- if(which==='account')refreshMfaAccount();
+ if(which==='account'&&!offlineMode)refreshMfaAccount();
  render();
 }
 for(const name of ['expenses','charts','history','account'])$('#tab'+name).onclick=()=>selectTab(name);
@@ -2217,6 +2220,7 @@ $('#period-select').addEventListener('change',async event=>{
  if(!/^\d{4}-\d{2}$/.test(next))return;
  if(next===month){renderPeriodSelect();return}
  month=next;selectedBarMonth=null;syncExpenseDate();renderPeriodSelect();
+ if(offlineMode){render();return}
  await loadExpenses({syncRecurring:true});
 });
 
@@ -2777,28 +2781,25 @@ window.addEventListener('storage',event=>{
  if(event.key==='a_nossa_casa_brand'||event.key==='a_nossa_casa_show_brand')applyBrand();
 });
 
-// Consulta offline isolada: não cria sessão nem utiliza operações de escrita.
-let offlineSnapshot=null, offlineKey=null, offlineSalt=null, offlineOwner=null, offlineData=null, offlineEpoch=0, offlineQueue=Promise.resolve();
+// Offline: public-key envelope permits automatic updates without retaining a decryption key.
+let offlineMode=false,offlineSnapshot=null,offlineEpoch=0,offlineQueue=Promise.resolve(),offlineBusy=false;
 const offlineDb=()=>new Promise((resolve,reject)=>{const r=indexedDB.open('a-nossa-casa-offline',1);r.onupgradeneeded=()=>r.result.createObjectStore('snapshot');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});
 async function offlineStore(mode,value){const db=await offlineDb();try{return await new Promise((resolve,reject)=>{const tx=db.transaction('snapshot',mode),st=tx.objectStore('snapshot');const r=mode==='readonly'?st.get('current'):value?st.put(value,'current'):st.delete('current');tx.oncomplete=()=>resolve(r.result);tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error)})}finally{db.close()}}
-async function offlineDerive(password,salt){const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(password),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:600000,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt'])}
-function offlineClearVisual(){offlineData=null;$('#offline-content').classList.add('hidden');$('#offline-summary').replaceChildren();$('#offline-rows').replaceChildren();$('#offline-month').replaceChildren();$('#offline-unlock-panel').classList.remove('hidden');$('#offline-password').value='';$('#offline-note').textContent='Dados guardados neste dispositivo. Podem estar desatualizados.'}
-function offlineForget(){offlineEpoch++;offlineKey=null;offlineSalt=null;offlineOwner=null;offlineSnapshot=null;offlineClearVisual();offlineQueue=offlineQueue.catch(()=>{}).then(()=>offlineStore('readwrite',null));return offlineQueue}
-function offlineCapture(){if(!me||!householdId||!settlementsReady||!recurringReady||!navigator.onLine)return;offlineSnapshot={user:me.id,home:householdId,at:new Date().toISOString(),items:structuredClone(items),payments:structuredClone(settlements),fixed:structuredClone(recurring),members:[...members]};if(offlineKey&&offlineOwner===me.id)offlinePersist().catch(()=>{$('#offline-setting-status').textContent='Não foi possível atualizar a cópia offline.'})}
-function offlinePersist(){const snapshot=offlineSnapshot,key=offlineKey,salt=offlineSalt,epoch=offlineEpoch;if(!snapshot||!key||snapshot.user!==offlineOwner)return Promise.reject(new Error('Ainda não existem dados completos sincronizados.'));offlineQueue=offlineQueue.catch(()=>{}).then(async()=>{const iv=crypto.getRandomValues(new Uint8Array(12));const encrypted=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,new TextEncoder().encode(JSON.stringify(snapshot)));if(epoch!==offlineEpoch)return;await offlineStore('readwrite',{version:1,salt,iv,encrypted,user:snapshot.user});});return offlineQueue}
-$('#offline-save').onclick=async()=>{const password=$('#offline-setup-password').value;$('#offline-setup-password').value='';const msg=$('#offline-setting-status');if(password.length<12){msg.textContent='Escolhe uma palavra-passe com pelo menos 12 caracteres.';return}if(!offlineSnapshot||offlineSnapshot.user!==session?.user?.id||!navigator.onLine){msg.textContent='Sincroniza primeiro todos os dados.';return}const owner=session.user.id,epoch=++offlineEpoch;try{const salt=crypto.getRandomValues(new Uint8Array(16)),key=await offlineDerive(password,salt);if(epoch!==offlineEpoch||session?.user?.id!==owner)return;offlineSalt=salt;offlineKey=key;offlineOwner=owner;await offlinePersist();msg.textContent='Cópia cifrada guardada. Para a atualizar após fechar a app, volta a introduzir a palavra-passe nesta secção.'}catch(e){msg.textContent='Não foi possível guardar a cópia: '+e.message}};
-$('#offline-remove').onclick=async()=>{try{await offlineForget();$('#offline-setting-status').textContent='Cópia apagada.'}catch(e){$('#offline-setting-status').textContent='Não foi possível apagar a cópia.'}};
-function offlineLine(parent,label,value){const row=document.createElement('p'),strong=document.createElement('strong');strong.textContent=label+' — ';row.append(strong,document.createTextNode(value));parent.append(row)}
-function offlineRender(){if(!offlineData)return;const d=offlineData,m=$('#offline-month').value,summary=$('#offline-summary'),rows=$('#offline-rows');summary.replaceChildren();rows.replaceChildren();const cur=d.items.filter(i=>String(i.date).slice(0,7)===m),asOf=m>d.at.slice(0,7)?m:d.at.slice(0,7);const net=balanceThroughMonth(d.items,d.payments,d.members,d.user,asOf),monthly=monthlyOpenBalances(d.items,d.payments,d.members,d.user,asOf).get(m)||0;const bal=n=>d.members.length<2?'Por configurar':n===0?'Quites':(n<0?'Deves ':'Devem-te ')+fmt(Math.abs(n)/100);offlineLine(summary,'Total do mês',fmt(cur.reduce((a,i)=>a+Number(i.amount),0)));offlineLine(summary,'Por liquidar no mês',bal(monthly));offlineLine(summary,'Saldo acumulado à data da cópia',bal(net));for(const [title,records,format] of [['Despesas',cur,i=>i.date+' · '+i.description+' · '+fmt(i.amount)+' · '+(i.payer===d.user?'Tu':'Outra pessoa')],['Acertos',d.payments.filter(i=>String(i.period).slice(0,7)===m),i=>fmt(i.amount)+' · '+(i.sender===d.user?'Enviado':'Recebido')],['Despesas fixas',d.fixed,i=>i.description+' · '+fmt(i.amount)+(i.active===false?' · Inativa':'')]]){const h=document.createElement('h3');h.textContent=title;rows.append(h);if(!records.length)offlineLine(rows,'Sem registos','—');for(const i of records){const p=document.createElement('p');p.textContent=format(i);rows.append(p)}}}
-$('#offline-month').onchange=offlineRender;
-async function offlineEnter(){show('#startup',false);show('#auth',false);show('#app',false);show('#household',false);show('#mfachallenge',false);show('#periodpicker',false);offlineClearVisual();show('#offline-view');try{if(!await offlineStore('readonly'))$('#offline-error').textContent='Ainda não existe uma cópia offline. Liga-te à Internet para criar uma.'}catch(e){$('#offline-error').textContent='Armazenamento offline indisponível.'}}
-$('#offline-unlock').onclick=async()=>{const button=$('#offline-unlock'),password=$('#offline-password').value,epoch=offlineEpoch;$('#offline-password').value='';button.disabled=true;try{const r=await offlineStore('readonly');if(!r||r.version!==1)throw new Error('Não existe uma cópia offline.');const key=await offlineDerive(password,r.salt),plain=await crypto.subtle.decrypt({name:'AES-GCM',iv:r.iv},key,r.encrypted),d=JSON.parse(new TextDecoder().decode(plain));if(d.user!==r.user)throw new Error('Cópia inválida.');const cfg=bioGet(d.user);if(cfg){const challenge=bioRandom(),credential=await navigator.credentials.get({publicKey:{challenge,timeout:60000,rpId:location.hostname,userVerification:'required',allowCredentials:[{type:'public-key',id:bioFrom64(cfg.id)}]}});await bioVerify(cfg,challenge,credential)}if(epoch!==offlineEpoch||navigator.onLine)return;offlineData=d;const months=[...new Set([d.at.slice(0,7),...d.items.map(i=>String(i.date).slice(0,7)),...d.payments.map(i=>String(i.period).slice(0,7))])].filter(m=>/^\d{4}-\d{2}$/.test(m)).sort().reverse();for(const m of months){const o=document.createElement('option');o.value=m;o.textContent=monthName(m);$('#offline-month').append(o)}$('#offline-month').value=d.at.slice(0,7);$('#offline-note').textContent='Última cópia completa: '+new Date(d.at).toLocaleString('pt-PT')+' · Dados podem estar desatualizados.';$('#offline-error').textContent='';show('#offline-unlock-panel',false);show('#offline-content');offlineRender()}catch(e){$('#offline-error').textContent='Não foi possível desbloquear a cópia. Verifica a palavra-passe e a biometria.'}finally{button.disabled=false}};
+function offlineForget(){offlineEpoch++;offlineSnapshot=null;offlineQueue=offlineQueue.catch(()=>{}).then(()=>offlineStore('readwrite',null));return offlineQueue}
+const offlineRandom=n=>crypto.getRandomValues(new Uint8Array(n));
+const offlineRSA={name:'RSA-OAEP',hash:'SHA-256'};
+async function offlinePrf(cfg,salt){const challenge=bioRandom(),credential=await navigator.credentials.get({publicKey:{challenge,timeout:60000,rpId:location.hostname,userVerification:'required',allowCredentials:[{type:'public-key',id:bioFrom64(cfg.id)}],extensions:{prf:{eval:{first:salt}}}}});await bioVerify(cfg,challenge,credential);const result=credential.getClientExtensionResults()?.prf?.results?.first;if(!result)throw new Error('A credencial atual não disponibiliza a proteção PRF. A consulta offline não foi ativada.');return crypto.subtle.importKey('raw',result,{name:'AES-GCM'},false,['wrapKey','unwrapKey'])}
+async function offlineEnvelope(record,snapshot){const key=await crypto.subtle.generateKey({name:'AES-GCM',length:256},true,['encrypt','decrypt']),iv=offlineRandom(12);const pub=await crypto.subtle.importKey('spki',record.publicKey,offlineRSA,false,['wrapKey']);const wrapped=await crypto.subtle.wrapKey('raw',key,pub,offlineRSA);const encrypted=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,new TextEncoder().encode(JSON.stringify(snapshot)));return {...record,iv,wrapped,encrypted}}
+function offlineCapture(){if(offlineMode||!me||!householdId||!settlementsReady||!recurringReady||!navigator.onLine||session?.user?.id!==me.id)return;const snapshot={user:me.id,home:householdId,at:new Date().toISOString(),items:structuredClone(items),payments:structuredClone(settlements),fixed:structuredClone(recurring),members:[...members]};offlineSnapshot=snapshot;const epoch=offlineEpoch;offlineQueue=offlineQueue.catch(()=>{}).then(async()=>{if(epoch!==offlineEpoch||session?.user?.id!==snapshot.user)return;const cfg=bioGet(snapshot.user),r=await offlineStore('readonly');if(!cfg){show('#offline-setup',false);if(r)await offlineStore('readwrite',null);return}if(r?.version!==2||r.user!==snapshot.user||r.credential!==cfg.id){show('#offline-setup');return}const next=await offlineEnvelope(r,snapshot);if(epoch===offlineEpoch&&session?.user?.id===snapshot.user&&householdId===snapshot.home)await offlineStore('readwrite',next);}).catch(e=>{console.warn('Offline snapshot:',e);});}
+$('#offline-setup-button').onclick=async()=>{if(offlineBusy||biometricLocked)return;const snapshot=offlineSnapshot,cfg=snapshot&&bioGet(snapshot.user),epoch=offlineEpoch;if(!cfg||!navigator.onLine||session?.user?.id!==snapshot.user)return;offlineBusy=true;$('#offline-setup-button').disabled=true;try{const salt=offlineRandom(32),protection=await offlinePrf(cfg,salt),pair=await crypto.subtle.generateKey({...offlineRSA,modulusLength:2048,publicExponent:new Uint8Array([1,0,1])},true,['wrapKey','unwrapKey']),privateIv=offlineRandom(12);const privateWrapped=await crypto.subtle.wrapKey('pkcs8',pair.privateKey,protection,{name:'AES-GCM',iv:privateIv});const record={version:2,user:snapshot.user,credential:cfg.id,salt,privateIv,privateWrapped,publicKey:await crypto.subtle.exportKey('spki',pair.publicKey)};offlineQueue=offlineQueue.catch(()=>{}).then(async()=>{const latest=offlineSnapshot;if(epoch!==offlineEpoch||!latest||latest.user!==record.user||session?.user?.id!==record.user)return;const next=await offlineEnvelope(record,latest);if(epoch!==offlineEpoch||session?.user?.id!==record.user)return;await offlineStore('readwrite',next);show('#offline-setup',false)});await offlineQueue}catch(e){$('#offline-setup-msg').textContent=e.message||'Não foi possível proteger a cópia offline.'}finally{offlineBusy=false;$('#offline-setup-button').disabled=false}};
+async function offlineEnter(){offlineMode=true;document.documentElement.classList.add('offline-readonly');for(const id of ['#startup','#auth','#app','#household','#mfachallenge','#periodpicker','#passwordreset','#offline-setup'])show(id,false);show('#offline-view');try{const r=await offlineStore('readonly');if(r?.version!==2)$('#offline-error').textContent='Liga-te à Internet e confirma a biometria para preparar a nova cópia offline.'}catch(e){$('#offline-error').textContent='Armazenamento offline indisponível.'}}
+$('#offline-unlock').onclick=async()=>{if(offlineBusy)return;offlineBusy=true;const button=$('#offline-unlock'),epoch=offlineEpoch;button.disabled=true;try{const r=await offlineStore('readonly');if(r?.version!==2)throw new Error('Ainda não existe uma cópia protegida pela biometria.');const cfg=bioGet(r.user);if(!cfg||cfg.id!==r.credential)throw new Error('A credencial de proteção mudou. Liga-te à Internet.');const protection=await offlinePrf(cfg,r.salt),priv=await crypto.subtle.unwrapKey('pkcs8',r.privateWrapped,protection,{name:'AES-GCM',iv:r.privateIv},offlineRSA,false,['unwrapKey']);const key=await crypto.subtle.unwrapKey('raw',r.wrapped,priv,offlineRSA,{name:'AES-GCM',length:256},false,['decrypt']);const plain=await crypto.subtle.decrypt({name:'AES-GCM',iv:r.iv},key,r.encrypted),d=JSON.parse(new TextDecoder().decode(plain));if(d.user!==r.user||!d.home||!Array.isArray(d.items)||!Array.isArray(d.payments)||!Array.isArray(d.fixed)||!Array.isArray(d.members))throw new Error('Cópia inválida.');if(epoch!==offlineEpoch||navigator.onLine||document.hidden)return;me={id:d.user};householdId=d.home;items=d.items;settlements=d.payments;recurring=d.fixed;members=d.members;settlementsReady=recurringReady=true;$('#offline-banner').textContent='Sem Internet · Só consulta · Última sincronização: '+new Date(d.at).toLocaleString('pt-PT');show('#offline-banner');show('#offline-view',false);$('#tabaccount').disabled=true;$('#openexpense').disabled=true;selectTab('expenses');show('#app');}catch(e){$('#offline-error').textContent=e.message||'Não foi possível desbloquear.'}finally{offlineBusy=false;button.disabled=false}};
+// Read-only allowlist, in addition to no Supabase client being initialized offline.
+for(const type of ['click','change','submit'])document.addEventListener(type,e=>{if(!offlineMode||!e.target.closest('#app'))return;const target=e.target.closest('button,input,select,textarea,a,summary,form');if(!target)return;if(type!=='submit'&&target.matches('#tabexpenses,#tabcharts,#tabhistory,#chartmonthly,#chartannual,.yearbarbtn,summary'))return;e.preventDefault();e.stopImmediatePropagation();},true);
 $('#offline-reconnect').onclick=()=>{if(navigator.onLine)location.reload();else $('#offline-error').textContent='Ainda estás sem ligação à Internet.'};
-$('#offline-erase').onclick=async()=>{try{await offlineForget();$('#offline-error').textContent='Cópia apagada.'}catch(e){$('#offline-error').textContent='Não foi possível apagar a cópia.'}};
-window.addEventListener('online',()=>{if(!$('#offline-view').classList.contains('hidden'))location.reload()});
-window.addEventListener('offline',()=>{if(!$('#app').classList.contains('hidden')){cancelPendingDelete(false);location.reload()}});
-document.addEventListener('visibilitychange',()=>{if(document.hidden&&!$('#offline-view').classList.contains('hidden')){offlineEpoch++;offlineClearVisual()}});
-
+window.addEventListener('online',()=>{if(offlineMode)location.reload()});
+window.addEventListener('offline',()=>{if(!offlineMode){cancelPendingDelete(false);location.reload()}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&offlineMode&&me){offlineEpoch++;location.reload()}});
 applyTheme();applyBrand();
 if(!navigator.onLine)offlineEnter();else connect().catch(e=>{show('#auth');message('#authmsg','Erro ao ligar ao Supabase: '+(e.message||e),true)});
 </script>
