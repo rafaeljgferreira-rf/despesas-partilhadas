@@ -2,8 +2,9 @@
 <html lang="pt-PT">
 <head>
 <meta charset="utf-8">
+<link rel="preconnect" href="https://yinwpwywuvpborlfswzt.supabase.co" crossorigin>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-dJzaJwprXSvvTuuFT9tV+an26x+hAT6ML//m7moiQbs=' 'sha256-76CPq6ZfSChPhf8a/smoeI/eYPwQMvPZEXHhYRVOGPA=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-dJzaJwprXSvvTuuFT9tV+an26x+hAT6ML//m7moiQbs=' 'sha256-zreaJI7TLJhs531u5WY2jb0A+oNd4wPhvug64EX1j8Q=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
 <title>A Nossa Casa</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#F4F6F9">
@@ -810,6 +811,14 @@ html,html[data-theme="dark"]{background-color:var(--bg);}
 html.offline-readonly #openexpense,html.offline-readonly #tabaccount{opacity:.45;pointer-events:none}
 html.offline-readonly #opensettlement,html.offline-readonly #settleaction,html.offline-readonly .expense-controls,html.offline-readonly .inline-actions,html.offline-readonly .recurring-main button,html.offline-readonly .settle-history-actions button{display:none!important}
 #offline-banner,#offline-setup{margin-bottom:12px;padding:12px 16px;font-size:.88rem}
+
+/* 3.6.3 — legibilidade e alvos de toque (apenas CSS) */
+#app .tabnav button,#expenseview .totals-card .mut,#list .tag-fixed,#list .expense-actions .smallbtn,.dashboard-state{font-size:11px}
+.yearbarbtn{font-size:11px;letter-spacing:-.2px}
+.expense-icon-btn{position:relative}
+.expense-icon-btn::after{content:"";position:absolute;inset:-3px}
+.smallbtn,.inline-actions button,.recurring-month-controls button,.period-toggle button{min-height:44px}
+#expense-more>summary{min-height:44px;display:flex;align-items:center}
 </style>
 </head>
 <body>
@@ -1219,7 +1228,6 @@ html.offline-readonly #opensettlement,html.offline-readonly #settleaction,html.o
 </main>
 <section id="offline-view" class="card hidden"><h2>Consulta sem Internet</h2><p class="mut">Desbloqueia os últimos dados sincronizados com a proteção do dispositivo.</p><button id="offline-unlock" type="button">Desbloquear</button><p id="offline-error" role="status"></p><button id="offline-reconnect" class="g" type="button">Voltar a ligar</button></section>
 <script src="/supabase.js"></script>
-<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&amp;onload=onTurnstileApiReady" defer></script>
 <script>
 const $=s=>document.querySelector(s), fmt=n=>Number(n||0).toLocaleString('pt-PT',{style:'currency',currency:'EUR'});
 const MES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
@@ -1234,8 +1242,10 @@ function show(id,on=true){$(id).classList.toggle('hidden',!on);if(on&&['#auth','
 // CAPTCHA: chave publica do Cloudflare Turnstile; a chave secreta fica apenas no Supabase.
 const TURNSTILE_SITE_KEY='0x4AAAAAAGDlpZVVj5D2ihiO';
 let turnstileWidgetId=null,turnstileRetryTimer=null,turnstileRetryAttempts=0;
+function loadTurnstileApi(){if(window.turnstile||document.getElementById('turnstile-api'))return;const t=document.createElement('script');t.id='turnstile-api';t.src='https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onTurnstileApiReady';t.async=true;document.head.appendChild(t)}
 function initTurnstile(){
  if(turnstileWidgetId!==null||$('#auth').classList.contains('hidden'))return;
+ loadTurnstileApi();
  // A API pode criar window.turnstile antes de disponibilizar render().
  // Nao tratar essa fase de carregamento como um erro de CAPTCHA.
  if(typeof window.turnstile?.render!=='function'){
@@ -1557,7 +1567,7 @@ async function connect(){
  }
  sbClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
  sbClient.auth.onAuthStateChange((event,s)=>{setTimeout(async()=>{
-    if(event==='SIGNED_OUT'||(session?.user?.id&&s?.user?.id&&session.user.id!==s.user.id))await offlineForget().catch(()=>{});
+    if(event==='SIGNED_OUT'||(session?.user?.id&&s?.user?.id&&session.user.id!==s.user.id)){homeHintClear();await offlineForget().catch(()=>{})}
     session=s;
     if(event==='PASSWORD_RECOVERY'){
       passwordRecoveryMode=true;
@@ -1589,25 +1599,41 @@ $('#startup-retry').onclick=()=>location.reload();
 function startupMessage(text){$('#startup-title').textContent='A carregar a tua casa…';$('#startup-message').textContent=text;show('#startup-retry',false);show('#startup');}
 function startupError(text){$('#startup-title').textContent='Não foi possível carregar os dados';$('#startup-message').textContent=text;show('#startup-retry');show('#startup');}
 function startupTiming(times){console.info('[A Nossa Casa] Arranque (ms)',Object.fromEntries(Object.entries(times).map(([k,v])=>[k,Math.round(v)])));}
+const HOME_HINT_KEY='a_nossa_casa_home_hint';
+function homeHintGet(userId){try{const [u,h]=String(localStorage.getItem(HOME_HINT_KEY)||'').split(':');return u===userId&&h?h:null}catch(e){return null}}
+function homeHintSet(userId,homeId){try{localStorage.setItem(HOME_HINT_KEY,userId+':'+homeId)}catch(e){}}
+function homeHintClear(){try{localStorage.removeItem(HOME_HINT_KEY)}catch(e){}}
 async function afterLogin(){
- me=session.user;const savedOffline=await offlineStore('readonly').catch(()=>null);if(savedOffline&&savedOffline.user!==me.id)await offlineForget();$('#who').textContent=me.email||'Utilizador';show('#auth',false);
+ me=session.user;$('#who').textContent=me.email||'Utilizador';show('#auth',false);
+ const savedOffline=offlineStore('readonly').catch(()=>null);
+ // A pista da casa só adianta os pedidos; os dados vêm sempre do servidor e só são usados se a pertença for confirmada.
+ const hint=homeHintGet(me.id),prefetch=hint?startHouseholdFetch(hint):null;
  const {data:membership,error}=await sbClient.from('household_members').select('household_id').eq('user_id',me.id).limit(1).maybeSingle();
+ const saved=await savedOffline;if(saved&&saved.user!==me.id)await offlineForget();
  if(error){show('#household');message('#homemsg','Erro ao verificar o espaço: '+error.message,true);return}
- if(!membership){show('#household');show('#app',false);return}
- householdId=membership.household_id;await loadHousehold();
+ if(!membership){homeHintClear();show('#household');show('#app',false);return}
+ householdId=membership.household_id;homeHintSet(me.id,householdId);
+ await loadHousehold(prefetch&&prefetch.homeId===householdId?prefetch:null);
 }
-async function loadHousehold(){
+function startHouseholdFetch(homeId){
+ const t0=performance.now();
+ const payments=loadHouseholdTable('settlements','created_at',homeId).then(data=>({data,ms:performance.now()-t0}),error=>({error}));
+ const expenses=loadHouseholdTable('expenses','date',homeId).then(data=>({data}),error=>({error}));
+ const meta=Promise.all([
+  sbClient.from('households').select('invite_code,created_by').eq('id',homeId).single(),
+  sbClient.from('household_members').select('user_id').eq('household_id',homeId),
+  sbClient.from('recurring_expenses').select('*').eq('household_id',homeId).order('created_at',{ascending:false})
+ ]);
+ meta.catch(()=>{});
+ return {homeId,payments,expenses,meta};
+}
+async function loadHousehold(prefetch=null){
  const started=performance.now(),userId=me.id,homeId=householdId;
  const current=()=>session?.user?.id===userId&&me?.id===userId&&householdId===homeId&&!passwordRecoveryMode;
  show('#household',false);show('#app',false);startupMessage('A consultar os movimentos e pagamentos.');
  try{
-  const paymentStart=performance.now();
-  const payments=loadHouseholdTable('settlements','created_at',homeId).then(data=>({data,ms:performance.now()-paymentStart}),error=>({error}));
-  const [house,memberRows,fixed]=await Promise.all([
-   sbClient.from('households').select('invite_code,created_by').eq('id',homeId).single(),
-   sbClient.from('household_members').select('user_id').eq('household_id',homeId),
-   sbClient.from('recurring_expenses').select('*').eq('household_id',homeId).order('created_at',{ascending:false})
-  ]);
+  const fetches=prefetch||startHouseholdFetch(homeId);
+  const [house,memberRows,fixed]=await fetches.meta;
   if(!current())return;
   if(house.error)throw house.error;
   if(memberRows.error)throw memberRows.error;
@@ -1616,10 +1642,14 @@ async function loadHousehold(){
   recurringReady=!fixed.error;recurring=recurringReady?(fixed.data||[]):[];recurringError=fixed.error?.message||'';
   const metadataMs=performance.now()-started;
   const recurringStart=performance.now();
-  await ensureRecurringForMonth(month);
+  const generated=await ensureRecurringForMonth(month);
   if(!current())return;
   const recurringMs=performance.now()-recurringStart,expenseStart=performance.now();
-  const [data,paid]=await Promise.all([loadHouseholdTable('expenses','date',homeId),payments]);
+  const [first,paid]=await Promise.all([fetches.expenses,fetches.payments]);
+  if(!current())return;
+  if(first.error)throw first.error;
+  // Se foram geradas despesas fixas agora, volta a ler as despesas para refletir o estado final.
+  const data=generated?await loadHouseholdTable('expenses','date',homeId):first.data;
   if(!current())return;
   if(paid.error)throw new Error('Não foi possível consultar os pagamentos. Tenta novamente.');
   items=data;settlements=paid.data;settlementsReady=true;
@@ -1627,7 +1657,7 @@ async function loadHousehold(){
   render();show('#app');subscribe();offlineCapture();
   if(!recurringReady)status('Despesas carregadas, mas não foi possível consultar as despesas fixas.',true);
   else status('Ligado · as alterações são sincronizadas automaticamente.');
-  startupTiming({desdeScript:performance.now()-startupStarted,casaEMembrosEDespesasFixas:metadataMs,verificarFixas:recurringMs,despesasEPagamentos:renderStart-expenseStart,pagamentos:paid.ms,render:performance.now()-renderStart,totalCasa:performance.now()-started});
+  startupTiming({desdeScript:performance.now()-startupStarted,casaEMembrosEDespesasFixas:metadataMs,verificarFixas:recurringMs,despesasEPagamentos:renderStart-expenseStart,pagamentos:paid.ms,render:performance.now()-renderStart,totalCasa:performance.now()-started,prefetchDaCasa:prefetch?1:0});
  }catch(error){if(current()){show('#app',false);startupError(error.message||'Tenta novamente.');}}
 }
 async function loadRecurring(){
@@ -1653,6 +1683,7 @@ async function ensureRecurringForMonth(period){
  if(!rows.length)return;
  const {error}=await sbClient.from('expenses').insert(rows);
  if(error && error.code!=='23505')status('Não foi possível gerar as despesas fixas: '+error.message,true);
+ return true;
 }
 // O Supabase limita cada resposta a 1000 registos; percorrer todas as páginas.
 async function loadHouseholdTable(table,sortField,homeId=householdId){
