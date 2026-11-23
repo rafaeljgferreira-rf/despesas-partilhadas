@@ -798,6 +798,51 @@ html.offline-readonly #opensettlement,html.offline-readonly #settleaction,html.o
 .expense-icon-btn::after{content:"";position:absolute;inset:-3px}
 .smallbtn, .inline-actions button, .period-toggle button{min-height:44px}
 #expense-more>summary{min-height:44px;display:flex;align-items:center}
+/* 3.6.4 — detalhes do mês mais claros, com botão compacto e resumo legível. */
+#expenseview .dashboard-details>summary{
+  box-sizing:border-box;
+  min-width:0;
+  height:48px;
+  padding:8px 10px;
+  justify-content:center;
+  gap:5px;
+  border:1px solid var(--bd);
+  border-radius:var(--radius-control);
+  background:var(--surface-soft);
+  color:var(--ac);
+  font-size:var(--fs-md);
+  font-weight:700;
+  white-space:nowrap;
+}
+#expenseview .dashboard-details>summary svg{width:16px;height:16px;flex:0 0 16px}
+#expenseview .dashboard-details[open]>summary{margin-bottom:0}
+#expenseview .dashboard-details-content{
+  margin-top:10px;
+  padding:5px 13px;
+  background:var(--card);
+  border:1px solid var(--bd);
+  border-radius:var(--radius-medium);
+}
+#expenseview .dashboard-details-content .dashboard-breakdown{padding:0;border:0}
+#expenseview .dashboard-details-content .dashboard-detail-row{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  gap:10px;
+  padding:12px 0;
+  line-height:1.4;
+}
+#expenseview .dashboard-details-content .dashboard-detail-row>span{min-width:0}
+#expenseview .dashboard-details-content .dashboard-detail-row:last-child{
+  grid-template-columns:minmax(0,1fr);
+  gap:5px;
+}
+#expenseview .dashboard-details-content .dashboard-detail-row:last-child strong{text-align:left;color:var(--ac)}
+#expenseview .dashboard-details-content #globalbalance{margin:8px 0;padding:10px 12px}
+@media(max-width:360px){
+  #expenseview .dashboard-details>summary{font-size:12px;padding:8px 5px;gap:3px}
+  #expenseview .dashboard-details>summary svg{width:14px;height:14px;flex-basis:14px}
+}
 </style>
 </head>
 <body>
@@ -898,8 +943,11 @@ html.offline-readonly #opensettlement,html.offline-readonly #settleaction,html.o
 
       <button id="opensettlement" type="button" class="balance-action balance-action-settle" aria-controls="settlementpanel" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16m0 0-4-4m4 4-4 4M20 17H4m0 0 4-4m-4 4 4 4"/></svg><span>Acertar contas</span></button>
     <details class="dashboard-details" id="dashboarddetails">
-      <summary><span>Ver detalhes do mês</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></summary>
-      <div id="globalbalance" class="dashboard-global hidden" aria-live="polite"></div><div id="dashboardbreakdown" class="dashboard-breakdown"></div>
+      <summary aria-label="Ver detalhes do mês"><span>Detalhes do mês</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></summary>
+      <div class="dashboard-details-content">
+        <div id="globalbalance" class="dashboard-global hidden" aria-live="polite"></div>
+        <div id="dashboardbreakdown" class="dashboard-breakdown"></div>
+      </div>
     </details>
     </div>
     <section id="newexpensepanel" class="add-panel modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="newexpense-title">
@@ -1000,8 +1048,8 @@ html.offline-readonly #opensettlement,html.offline-readonly #settleaction,html.o
     </div>
     <div class="recurring-section history-recurring-section">
       <details id="endedrecurringmanage" class="recurring-manage">
-        <summary><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06-2.91 2.91-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 1.52V21h-4v-.08A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06-2.91-2.91.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.52-1H3v-4h.08A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06 2.91-2.91.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.52V3h4v.08A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06 2.91 2.91-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.52 1H21v4h-.08A1.65 1.65 0 0 0 19.4 15z"/></svg><span>Gerir despesas fixas</span> <span id="endedrecurringcount"></span></summary>
-        <p class="mut helper">Despesas cujo último mês já passou relativamente ao mês selecionado. Podes consultar, editar ou reativar alterando o mês de fim.</p>
+        <summary><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06-2.91 2.91-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 1.52V21h-4v-.08A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06-2.91-2.91.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.52-1H3v-4h.08A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06 2.91-2.91.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.52V3h4v.08A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06 2.91 2.91-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.52 1H21v4h-.08A1.65 1.65 0 0 0 19.4 15z"/></svg><span>Despesas fixas terminadas</span> <span id="endedrecurringcount"></span></summary>
+        <p class="mut helper">Despesas fixas que já terminaram até ao mês selecionado. Podes consultar, editar ou reativar alterando o mês de fim.</p>
         <div id="endedrecurringlist" class="recurring-list"></div>
         <p id="endedrecurringempty" class="mut hidden">Não existem despesas fixas terminadas até este mês.</p>
       </details>
