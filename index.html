@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <link rel="preconnect" href="https://yinwpwywuvpborlfswzt.supabase.co" crossorigin>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-dJzaJwprXSvvTuuFT9tV+an26x+hAT6ML//m7moiQbs=' 'sha256-zreaJI7TLJhs531u5WY2jb0A+oNd4wPhvug64EX1j8Q=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-dJzaJwprXSvvTuuFT9tV+an26x+hAT6ML//m7moiQbs=' 'sha256-LGwbHs7tqD16eW0lJpYBEj3JmoAbSn9IkvmwFgttw7E=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
 <title>A Nossa Casa</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#F4F6F9">
@@ -1106,6 +1106,19 @@ html.offline-readonly #opensettlement,html.offline-readonly #settleaction,html.o
         </div>
       </div>
     </details>
+    <details class="account-share account-biometric" id="pushmanage">
+      <summary>
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg>
+        <span class="account-share-label"><strong>Notificações</strong><small>Despesas partilhadas e acertos de contas</small></span>
+        <svg class="account-share-chevron" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 18 6-6-6-6"/></svg>
+      </summary>
+      <div class="account-share-content">
+        <p class="mut helper">Recebe avisos das ações da outra pessoa, mesmo com a aplicação fechada. Os avisos não mostram valores nem descrições das despesas.</p>
+        <p id="push-status" class="mut" role="status" aria-live="polite">A verificar disponibilidade…</p>
+        <div class="bio-actions"><button id="push-enable" type="button" disabled>Ativar neste dispositivo</button><button id="push-disable" type="button" class="g hidden" disabled>Desativar</button></div>
+        <p class="mut helper">A configuração é individual por dispositivo. Ao terminares sessão, as notificações deste dispositivo são desativadas.</p>
+      </div>
+    </details>
     <details class="account-share account-biometric" id="biometricmanage">
       <summary>
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 11a3 3 0 0 0-3 3v2m6-2v3M7 11V9a5 5 0 0 1 10 0v3M4 12V9a8 8 0 0 1 16 0v3M8 19c1 1 3 2 4 2s3-1 4-2"/></svg>
@@ -1548,8 +1561,7 @@ $('#bio-lock-unlock').onclick=async()=>{
  finally{biometricBusy=false;$('#bio-lock-unlock').disabled=false}
 };
 $('#bio-lock-signout').onclick=async()=>{
- bioUnlockVisual();
- try{await offlineForget();await sbClient.auth.signOut()}catch(e){show('#auth');message('#authmsg','Não foi possível terminar a sessão: '+(e.message||e),true)}
+ try{await signOutWithPush();bioUnlockVisual()}catch(e){$('#bio-lock-msg').textContent='Não foi possível terminar a sessão: '+(e.message||e)}
 };
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')bioMarkAway();else bioReturn()});
 window.addEventListener('pagehide',bioMarkAway);
@@ -1594,7 +1606,7 @@ async function connect(){
  }
  sbClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
  sbClient.auth.onAuthStateChange((event,s)=>{setTimeout(async()=>{
-    if(event==='SIGNED_OUT'||(session?.user?.id&&s?.user?.id&&session.user.id!==s.user.id)){homeHintClear();await offlineForget().catch(()=>{})}
+    if(event==='SIGNED_OUT'||(session?.user?.id&&s?.user?.id&&session.user.id!==s.user.id)){homeHintClear();await offlineForget().catch(()=>{});if(pushOwner()&&pushOwner()!==s?.user?.id)await disableDevicePush().catch(()=>{})}
     session=s;
     if(event==='PASSWORD_RECOVERY'){
       passwordRecoveryMode=true;
@@ -1631,7 +1643,7 @@ function homeHintGet(userId){try{const [u,h]=String(localStorage.getItem(HOME_HI
 function homeHintSet(userId,homeId){try{localStorage.setItem(HOME_HINT_KEY,userId+':'+homeId)}catch(e){}}
 function homeHintClear(){try{localStorage.removeItem(HOME_HINT_KEY)}catch(e){}}
 async function afterLogin(){
- me=session.user;$('#who').textContent=me.email||'Utilizador';show('#auth',false);
+ me=session.user;$('#who').textContent=me.email||'Utilizador';show('#auth',false);if(pushOwner()&&pushOwner()!==me.id)await disableDevicePush().catch(()=>{});
  const savedOffline=offlineStore('readonly').catch(()=>null);
  // A pista da casa só adianta os pedidos; os dados vêm sempre do servidor e só são usados se a pertença for confirmada.
  const hint=homeHintGet(me.id),prefetch=hint?startHouseholdFetch(hint):null;
@@ -1943,7 +1955,7 @@ async function registerSettlement(){
   const recipient=members.find(id=>id!==me.id);
   if(!recipient||!confirm('Confirmas que pagaste '+fmt(amount/100)+' à outra pessoa? Este botão regista o pagamento, não transfere dinheiro.'))return;
   const paymentPeriod=periodNow();
-  const {error}=await sbClient.from('settlements').insert({household_id:householdId,period:paymentPeriod+'-01',sender:me.id,recipient,amount:amount/100});
+  const {error}=await sbClient.rpc('anc_manual_operation',{p_action:'settlement_created',p_data:{household_id:householdId,period:paymentPeriod+'-01',recipient,amount:amount/100}});
   if(error)throw error;
   if(month!==paymentPeriod){month=paymentPeriod;selectedBarMonth=null;syncExpenseDate()}
   await loadExpenses();status('Pagamento registado no mês atual. As dívidas anteriores foram atualizadas.');
@@ -2099,7 +2111,7 @@ function selectTab(which){
   show('#'+view,name===which);
   $('#tab'+name).setAttribute('aria-selected',String(name===which));
  }
- if(which==='account'&&!offlineMode)refreshMfaAccount();
+ if(which==='account'&&!offlineMode){refreshMfaAccount();refreshPushAccount();}
  render();
 }
 for(const name of ['expenses','charts','history','account'])$('#tab'+name).onclick=()=>selectTab(name);
@@ -2141,7 +2153,7 @@ async function commitPendingDelete(pending){
    if(e){status('Não foi possível excluir este mês da despesa fixa: '+e.message,true);return}
   }
  }
- const {error}=await sbClient.from('expenses').delete().eq('id',id).eq('payer',pending.user).eq('household_id',pending.house);
+ const {error}=await sbClient.rpc('anc_manual_operation',{p_action:'expense_deleted',p_data:{household_id:pending.house,id}});
  if(error){status('Não foi possível apagar: '+error.message,true);return}
  if(editingExpenseId===id)closeEditExpense();await loadRecurring();await loadExpenses();status('Despesa apagada.');
  }catch(error){status('Não foi possível concluir a eliminação: '+error.message,true);}
@@ -2153,7 +2165,7 @@ async function saveEditExpense(){
  if(!editingExpenseId)return;
  const description=$('#ed').value.trim(),amount=normalizeAmount($('#ea').value),shared=$('#es').checked;
  if(!description||!(amount>0)){status('Indica uma descrição e um valor válido.',true);return}
- const {error}=await sbClient.from('expenses').update({description,amount,category:categorySelected('#ec',description),shared,splitwise_net_cents:null}).eq('id',editingExpenseId).eq('payer',me.id);
+ const {error}=await sbClient.rpc('anc_manual_operation',{p_action:'expense_updated',p_data:{household_id:householdId,id:editingExpenseId,description,amount,category:categorySelected('#ec',description),shared}});
  if(error){status('Não foi possível editar a despesa: '+error.message,true);return}
  closeEditExpense();await loadExpenses();status('Despesa atualizada com sucesso.');
 }
@@ -2298,7 +2310,7 @@ $('#mfaconfirm').onclick=async()=>{
  }catch(e){message('#mfamsg','Código não confirmado: '+(e.message||e),true)}
  finally{button.disabled=false}
 };
-$('#mfasignout').onclick=async()=>{await offlineForget();await sbClient.auth.signOut()};
+$('#mfasignout').onclick=async()=>{try{await signOutWithPush()}catch(e){message('#mfamsg','Não foi possível terminar sessão: '+(e.message||e),true)}};
 async function refreshMfaAccount(){
  if(!session)return;
  try{
@@ -2416,7 +2428,7 @@ $('#signup').onclick=async()=>{
 };
 $('#createhome').onclick=async()=>{const {data,error}=await sbClient.rpc('create_household');if(error){message('#homemsg','Erro: '+error.message,true);return}householdId=data;await loadHousehold()};
 $('#joinhome').onclick=async()=>{const code=$('#invite').value.trim().toUpperCase();if(!code)return;const {data,error}=await sbClient.rpc('join_household',{p_code:code});if(error){message('#homemsg','Não foi possível entrar: '+error.message,true);return}householdId=data;await loadHousehold()};
-$('#add').onclick=async()=>{if($('#isrecurring').checked){await addRecurringExpense();return}const description=$('#d').value.trim(),amount=normalizeAmount($('#a').value);if(!description||!(amount>0)){status('Indica uma descrição e um valor válido.',true);return}const date=$('#expense-date').value;if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||Number.isNaN(new Date(date+'T12:00:00').getTime())){status('Escolhe uma data válida para a despesa.',true);return}const selectedPeriod=date.slice(0,7);if(selectedPeriod!==periodNow()){if(!confirm('Atenção: a data escolhida ('+date.split('-').reverse().join('/')+') não pertence ao mês atual.\n\nQueres mesmo adicionar esta despesa?'))return;}const row={household_id:householdId,description,amount,category:categorySelected('#c',description),shared:$('#s').checked,payer:me.id,date};const {error}=await sbClient.from('expenses').insert(row);if(error){status('Não foi possível adicionar: '+error.message,true);return}$('#d').value='';$('#a').value='';$('#c').value='';$('#s').checked=true;closeNewExpense();syncCategoryChips();if(month!==date.slice(0,7)){month=date.slice(0,7);selectedBarMonth=null}syncExpenseDate();await loadExpenses();status('Despesa adicionada com sucesso ✓')};
+$('#add').onclick=async()=>{if($('#isrecurring').checked){await addRecurringExpense();return}const description=$('#d').value.trim(),amount=normalizeAmount($('#a').value);if(!description||!(amount>0)){status('Indica uma descrição e um valor válido.',true);return}const date=$('#expense-date').value;if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||Number.isNaN(new Date(date+'T12:00:00').getTime())){status('Escolhe uma data válida para a despesa.',true);return}const selectedPeriod=date.slice(0,7);if(selectedPeriod!==periodNow()){if(!confirm('Atenção: a data escolhida ('+date.split('-').reverse().join('/')+') não pertence ao mês atual.\n\nQueres mesmo adicionar esta despesa?'))return;}const row={household_id:householdId,description,amount,category:categorySelected('#c',description),shared:$('#s').checked,payer:me.id,date};const {error}=await sbClient.rpc('anc_manual_operation',{p_action:'expense_created',p_data:row});if(error){status('Não foi possível adicionar: '+error.message,true);return}$('#d').value='';$('#a').value='';$('#c').value='';$('#s').checked=true;closeNewExpense();syncCategoryChips();if(month!==date.slice(0,7)){month=date.slice(0,7);selectedBarMonth=null}syncExpenseDate();await loadExpenses();status('Despesa adicionada com sucesso ✓')};
 
 
 // Splitwise CSV: pré-visualização, validação, associação de pessoas e confirmação.
@@ -2799,7 +2811,85 @@ async function exportHousehold(format){
 $('#export-json').onclick=()=>exportHousehold('json');
 $('#export-csv').onclick=()=>exportHousehold('csv');
 
-$('#logout').onclick=async()=>{try{await offlineForget();await sbClient.auth.signOut()}catch(e){status('Não foi possível terminar sessão em segurança.',true)}};
+// 3.7 — Web Push, ativação explícita por dispositivo.
+const PUSH_OWNER='anc_push_owner_v1';
+let pushBusy=false;
+const pushSupported=()=>window.isSecureContext&&'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
+function pushOwner(){try{return localStorage.getItem(PUSH_OWNER)}catch(_){return null}}
+function pushOwnerSet(id){if(id)localStorage.setItem(PUSH_OWNER,id);else localStorage.removeItem(PUSH_OWNER)}
+async function pushRegistration(){
+ const reg=await navigator.serviceWorker.getRegistration('/');
+ if(!reg?.active)throw new Error('Atualiza a aplicação e tenta novamente.');
+ return reg;
+}
+async function pushCall(body){
+ const {data,error}=await sbClient.functions.invoke('push-subscriptions',{body});
+ if(error){let detail='';try{detail=(await error.context.json()).error}catch(_){}throw new Error(detail||error.message||'Não foi possível contactar o servidor.');}
+ return data;
+}
+function pushUi(text,enable=false,disable=false){
+ $('#push-status').textContent=text;
+ $('#push-enable').disabled=!enable||pushBusy;
+ $('#push-disable').disabled=!disable||pushBusy;
+ show('#push-enable',!disable||enable);show('#push-disable',disable);
+}
+async function refreshPushAccount(){
+ if(pushBusy)return;
+ if(!pushSupported()){pushUi('Este navegador não suporta notificações push. No iPhone, abre a aplicação instalada no ecrã principal.');return;}
+ try{
+  const reg=await pushRegistration(),sub=await reg.pushManager.getSubscription();
+  if(pushBusy)return;
+  if(Notification.permission==='denied'){pushUi('Notificações bloqueadas. Autoriza-as nas definições do navegador ou do dispositivo.',false,!!sub);return;}
+  if(sub&&pushOwner()===me?.id){pushUi('Notificações ativas neste dispositivo.',false,true);return;}
+  pushUi(sub?'Confirma a ativação para esta conta.':'Notificações desativadas neste dispositivo.',true,!!sub);
+ }catch(e){if(!pushBusy)pushUi(e.message||'Não foi possível verificar as notificações.');}
+}
+$('#push-enable').onclick=async()=>{
+ if(pushBusy||offlineMode||!me||!pushSupported())return;
+ const user=me.id;pushBusy=true;pushUi('A ativar notificações…');
+ let sub=null,created=false;
+ try{
+  if(await Notification.requestPermission()!=='granted')throw new Error('A autorização de notificações não foi concedida.');
+  const reg=await pushRegistration();
+  if(session?.user?.id!==user)throw new Error('A sessão mudou.');
+  const {publicKey}=await pushCall({action:'public-key'});
+  if(typeof publicKey!=='string'||!/^[A-Za-z0-9_-]{87}$/.test(publicKey))throw new Error('Chave pública de notificações inválida.');
+  const key=Uint8Array.from(atob(publicKey.replace(/-/g,'+').replace(/_/g,'/')+'='),c=>c.charCodeAt(0));
+  sub=await reg.pushManager.getSubscription();
+  if(sub&&(pushOwner()!==user||!sub.options.applicationServerKey||!key.every((v,i)=>v===new Uint8Array(sub.options.applicationServerKey)[i]))){await sub.unsubscribe();sub=null;}
+  if(!sub){sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:key});created=true;}
+  if(session?.user?.id!==user)throw new Error('A sessão mudou.');
+  await pushCall({action:'subscribe',subscription:sub.toJSON()});
+  if(session?.user?.id!==user)throw new Error('A sessão mudou.');
+  pushOwnerSet(user);pushBusy=false;pushUi('Notificações ativas neste dispositivo.',false,true);
+ }catch(e){if(created&&sub)await sub.unsubscribe().catch(()=>{});pushBusy=false;pushUi('Não foi possível ativar: '+(e.message||e),true,!!sub&&!created);}
+};
+async function disableDevicePush(){
+ if(!pushSupported())return;
+ const reg=await navigator.serviceWorker.getRegistration('/');
+ const sub=await reg?.pushManager.getSubscription();
+ if(sub){
+  // Cancelar primeiro no navegador: mesmo se a limpeza remota falhar, o endpoint deixa de receber avisos.
+  await sub.unsubscribe();
+  if(await reg.pushManager.getSubscription())throw new Error('Não foi possível desativar neste dispositivo.');
+  if(session?.user)await pushCall({action:'unsubscribe',endpoint:sub.endpoint}).catch(()=>{});
+ }
+ try{pushOwnerSet(null)}catch(_){}
+}
+$('#push-disable').onclick=async()=>{
+ if(pushBusy||offlineMode)return;pushBusy=true;pushUi('A desativar notificações…');
+ try{await disableDevicePush();pushBusy=false;await refreshPushAccount();}
+ catch(e){pushBusy=false;pushUi('Não foi possível desativar: '+(e.message||e),false,true);}
+};
+async function signOutWithPush(){
+ if(pushBusy)throw new Error('Aguarda a conclusão da configuração de notificações.');
+ pushBusy=true;
+ try{await disableDevicePush();await offlineForget();const {error}=await sbClient.auth.signOut();if(error)throw error;}
+ finally{pushBusy=false;}
+}
+$('#pushmanage').addEventListener('toggle',()=>{if($('#pushmanage').open&&!offlineMode)refreshPushAccount()});
+
+$('#logout').onclick=async()=>{try{await signOutWithPush()}catch(e){status('Não foi possível terminar sessão: '+(e.message||e),true)}};
 $('#copycode').onclick=async()=>{try{await navigator.clipboard.writeText(inviteCode);status('Código copiado.')}catch(e){status('Código de convite: '+inviteCode)}};
 // Preferências locais: tema com seguimento do sistema, e nome opcional no cabeçalho.
 const themeMedia=window.matchMedia('(prefers-color-scheme: dark)');
