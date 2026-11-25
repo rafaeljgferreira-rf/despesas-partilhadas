@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <link rel="preconnect" href="https://yinwpwywuvpborlfswzt.supabase.co" crossorigin>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-dJzaJwprXSvvTuuFT9tV+an26x+hAT6ML//m7moiQbs=' 'sha256-LGwbHs7tqD16eW0lJpYBEj3JmoAbSn9IkvmwFgttw7E=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-dJzaJwprXSvvTuuFT9tV+an26x+hAT6ML//m7moiQbs=' 'sha256-fCYRTTn3EcQEOw0c5I0MyGoPvGaZgB89ywcMZbhlALU=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
 <title>A Nossa Casa</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#F4F6F9">
@@ -844,7 +844,7 @@ html.offline-readonly #opensettlement,html.offline-readonly #settleaction,html.o
   #expenseview .dashboard-details>summary svg{width:14px;height:14px;flex-basis:14px}
 }
 
-/* 4.0 — linguagem visual verde; estrutura e lógica 3.7 preservadas. */
+/* 4.0.1 — resumo financeiro simplificado; estrutura e lógica financeira preservadas. */
 :root{--bg:#F3F6F4;--tx:#20352A;--mut:#52675B;--ac:#35694F;--focus:#35694F;--bd:#DCE5DF;--surface-soft:#E5EFE8;--control-border:#879D90;--avatar-bg:#E1EFE5;--avatar-text:#35694F;--chart-bar:#60967A;--radius-card:22px;--radius-control:14px;--hero-green:#35694F;--hero-ink:#FFFFFF;--hero-muted:#DCECE2;--soft-shadow:0 5px 18px #254D3710}
 :root[data-theme="dark"]{--bg:#101C17;--card:#1B2B23;--tx:#E7F0EA;--mut:#B0C4B7;--ac:#91CBA6;--on:#102419;--focus:#91CBA6;--bd:#344A3D;--surface-soft:#293D31;--nav-bg:#1B2B23;--input-bg:#17271E;--control-border:#718B7A;--avatar-bg:#304C3A;--avatar-text:#B0DCC0;--hero-green:#28543D;--hero-ink:#FFFFFF;--hero-muted:#D6E9DC;--soft-shadow:0 5px 18px #0002}
 .pagehead{background:var(--hero-green);color:var(--hero-ink);border-radius:22px;padding:16px 14px;margin-bottom:12px;min-height:66px}
@@ -1864,7 +1864,8 @@ function render(){
  $('#balancekicker').textContent=monthCents<0?'Deves':monthCents>0?'Devem-te':'Por liquidar';
  b.classList.toggle('positive',monthCents>0);
  b.classList.toggle('settled',otherCount>0&&hasMonthMovements&&monthCents===0);
- if(monthCents!==0&&otherCount)hint.textContent='Por liquidar neste mês';
+ // O estado do cartão já indica se existe saldo por pagar, a receber ou pago.
+ hint.classList.toggle('hidden',otherCount>0&&hasMonthMovements);
  const global=$('#globalbalance');
  global.classList.toggle('hidden',!otherCount||globalCents===monthCents);
  if(!otherCount)global.textContent='';
