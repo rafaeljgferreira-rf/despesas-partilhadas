@@ -844,7 +844,7 @@ html.offline-readonly #opensettlement,html.offline-readonly #settleaction,html.o
   #expenseview .dashboard-details>summary svg{width:14px;height:14px;flex-basis:14px}
 }
 
-/* 4.0.1 — resumo financeiro simplificado; estrutura e lógica financeira preservadas. */
+/* 4.0.2 — barra inferior compacta; botão central saliente. */
 :root{--bg:#F3F6F4;--tx:#20352A;--mut:#52675B;--ac:#35694F;--focus:#35694F;--bd:#DCE5DF;--surface-soft:#E5EFE8;--control-border:#879D90;--avatar-bg:#E1EFE5;--avatar-text:#35694F;--chart-bar:#60967A;--radius-card:22px;--radius-control:14px;--hero-green:#35694F;--hero-ink:#FFFFFF;--hero-muted:#DCECE2;--soft-shadow:0 5px 18px #254D3710}
 :root[data-theme="dark"]{--bg:#101C17;--card:#1B2B23;--tx:#E7F0EA;--mut:#B0C4B7;--ac:#91CBA6;--on:#102419;--focus:#91CBA6;--bd:#344A3D;--surface-soft:#293D31;--nav-bg:#1B2B23;--input-bg:#17271E;--control-border:#718B7A;--avatar-bg:#304C3A;--avatar-text:#B0DCC0;--hero-green:#28543D;--hero-ink:#FFFFFF;--hero-muted:#D6E9DC;--soft-shadow:0 5px 18px #0002}
 .pagehead{background:var(--hero-green);color:var(--hero-ink);border-radius:22px;padding:16px 14px;margin-bottom:12px;min-height:66px}
@@ -869,15 +869,15 @@ html.offline-readonly #opensettlement,html.offline-readonly #settleaction,html.o
 #list .it{padding:12px 0}
 #list .it:last-child{border-bottom:0}
 #list .payer-avatar{border-radius:14px}
-#app .tabnav{overflow:visible;border-radius:24px;padding:8px 7px;box-shadow:0 8px 30px #172F2526;align-items:end;grid-template-columns:repeat(5,minmax(0,1fr))}
-#app .tabnav button{min-height:52px;border-radius:15px;gap:4px}
+#app .tabnav{overflow:visible;border-radius:22px;padding:4px 7px;box-shadow:0 8px 30px #172F2526;align-items:center;grid-template-columns:repeat(5,minmax(0,1fr));grid-template-rows:48px}
+#app .tabnav button{min-height:48px;border-radius:15px;gap:3px}
 #app .tabnav svg{width:22px;height:22px}
-#app .tabnav #openexpense{width:60px;height:60px;min-height:60px;max-width:100%;border-radius:50%;align-self:end;transform:translateY(-15px);box-shadow:0 0 0 5px var(--nav-bg),0 7px 15px #183C2B40;background:var(--hero-green);color:white}
+#app .tabnav #openexpense{width:60px;height:60px;min-height:60px;max-width:100%;border-radius:50%;align-self:center;transform:translateY(-12px);box-shadow:0 0 0 5px var(--nav-bg),0 7px 15px #183C2B40;background:var(--hero-green);color:white}
 #app .tabnav #openexpense svg{width:32px;height:32px;stroke-width:2.5}
 #app .tabnav #openexpense:focus-visible{outline-offset:6px}
 #app{padding-bottom:45px}
 html{scroll-padding-bottom:calc(125px + env(safe-area-inset-bottom,0px))}
-@media(max-width:360px){.pagehead{padding:12px 9px;gap:5px}.pagehead .brand-home svg{width:20px;height:20px}#app .tabnav #openexpense{width:54px;height:54px;min-height:54px;transform:translateY(-13px)}#app .tabnav{padding:6px 4px}#list{padding:4px 7px}#expenseview .dashboard-stat.dashboard-balance{padding:14px}}
+@media(max-width:360px){.pagehead{padding:12px 9px;gap:5px}.pagehead .brand-home svg{width:20px;height:20px}#app .tabnav #openexpense{width:54px;height:54px;min-height:54px;transform:translateY(-12px)}#app .tabnav{padding:4px 4px}#list{padding:4px 7px}#expenseview .dashboard-stat.dashboard-balance{padding:14px}}
 
 </style>
 </head>
