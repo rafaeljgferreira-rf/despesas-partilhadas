@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <link rel="preconnect" href="https://yinwpwywuvpborlfswzt.supabase.co" crossorigin>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-dJzaJwprXSvvTuuFT9tV+an26x+hAT6ML//m7moiQbs=' 'sha256-fCYRTTn3EcQEOw0c5I0MyGoPvGaZgB89ywcMZbhlALU=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-dJzaJwprXSvvTuuFT9tV+an26x+hAT6ML//m7moiQbs=' 'sha256-HZdgBQdDSKkW/rvqw+Z4P3KAvtEATW0qsgj4UvzfT74=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
 <title>A Nossa Casa</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#F4F6F9">
@@ -879,6 +879,21 @@ html.offline-readonly #opensettlement,html.offline-readonly #settleaction,html.o
 html{scroll-padding-bottom:calc(125px + env(safe-area-inset-bottom,0px))}
 @media(max-width:360px){.pagehead{padding:12px 9px;gap:5px}.pagehead .brand-home svg{width:20px;height:20px}#app .tabnav #openexpense{width:54px;height:54px;min-height:54px;transform:translateY(-12px)}#app .tabnav{padding:4px 4px}#list{padding:4px 7px}#expenseview .dashboard-stat.dashboard-balance{padding:14px}}
 
+/* 4.0.3 — movimentos fluidos e acertos compactos. */
+#expenseview #list{background:transparent;border:0;border-radius:0;box-shadow:none;padding:0 2px;margin-bottom:25px}
+#list .it{width:100%;min-height:56px;padding:12px 3px;border:0;border-bottom:1px solid var(--bd);border-radius:0;background:transparent;color:var(--tx);text-align:left;letter-spacing:normal;font-weight:400;gap:10px}
+#list .movement-day+.it{border-top:0}
+#list .it:last-child{border-bottom:0}
+#list .expense-title,#list .expense-info>.mut{display:block}
+#list .expense-info>.mut{margin-top:3px}
+#list .movement-editable:focus-visible{outline-offset:0;border-radius:10px}
+#list .movement-editable:active{background:var(--surface-soft);filter:none;border-radius:10px}
+@media(hover:hover){#list .movement-editable:hover{background:var(--surface-soft);border-radius:10px}}
+#expenseview .dashboard-state{font-size:10px;line-height:1.2;padding:3px 7px;font-weight:650;border:0}
+#expenseview .dashboard-state.is-receivable{background:var(--ok-bg);color:var(--ok-text)}
+#expenseview .settlement-card #settlehint{margin:8px 0 12px}
+#historyview #settlelist .settle-history-info{gap:3px}
+@media(max-width:360px){#list .it{gap:7px}}
 </style>
 </head>
 <body>
@@ -1021,14 +1036,13 @@ html{scroll-padding-bottom:calc(125px + env(safe-area-inset-bottom,0px))}
     </section>
     <section id="settlementpanel" class="card settlement-card hidden" aria-labelledby="settletitle">
       <h2 id="settletitle">Acertar contas</h2>
-      <p class="mut" id="settlehint">Os pagamentos entre vocês aparecem aqui, sem contar como novas despesas.</p>
+      <p class="mut" id="settlehint">Saldo global atual.</p>
       <div id="settleaction" class="hidden">
         <label for="settleamount" class="settle-label">Quanto vais pagar (€)</label>
         <div class="settle-controls"><input id="settleamount" aria-label="Valor do pagamento em euros" type="number" inputmode="decimal" min="0.01" step="0.01" placeholder="0,00"><button id="settlepay" type="button">Registar pagamento</button></div>
-        <small>Regista o pagamento depois de o fazeres à outra pessoa.</small>
       </div>
     </section>
-    <h2 class="movements-title">Movimentos</h2><div class="card" id="list"></div>
+    <h2 class="movements-title">Movimentos</h2><div id="list"></div>
     <div class="recurring-section">
       <details id="recurringmanage" class="recurring-manage">
         <summary><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06-2.91 2.91-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 1.52V21h-4v-.08A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06-2.91-2.91.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.52-1H3v-4h.08A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06 2.91-2.91.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.52V3h4v.08A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06 2.91 2.91-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.52 1H21v4h-.08A1.65 1.65 0 0 0 19.4 15z"/></svg><span>Gerir despesas fixas</span> <span id="recurringcount"></span></summary>
@@ -1078,14 +1092,13 @@ html{scroll-padding-bottom:calc(125px + env(safe-area-inset-bottom,0px))}
   <section id="historyview" class="hidden" aria-labelledby="historytitle">
     <div class="card">
       <h2 id="historytitle">Acertos</h2>
-      <p class="mut">Pagamentos registados no mês selecionado. Os pagamentos posteriores podem liquidar retroativamente dívidas antigas; o saldo global mantém-se atualizado.</p>
+      <p class="mut">Pagamentos do mês.</p>
       <div id="settlehistory"><div id="settlelist"></div></div>
       <p id="settleempty" class="mut hidden" role="status">Ainda não existem pagamentos registados neste mês.</p>
     </div>
     <div class="recurring-section history-recurring-section">
       <details id="endedrecurringmanage" class="recurring-manage">
         <summary><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06-2.91 2.91-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 1.52V21h-4v-.08A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06-2.91-2.91.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.52-1H3v-4h.08A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06 2.91-2.91.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.52V3h4v.08A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06 2.91 2.91-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.52 1H21v4h-.08A1.65 1.65 0 0 0 19.4 15z"/></svg><span>Despesas fixas terminadas</span> <span id="endedrecurringcount"></span></summary>
-        <p class="mut helper">Despesas fixas que já terminaram até ao mês selecionado. Podes consultar, editar ou reativar alterando o mês de fim.</p>
         <div id="endedrecurringlist" class="recurring-list"></div>
         <p id="endedrecurringempty" class="mut hidden">Não existem despesas fixas terminadas até este mês.</p>
       </details>
@@ -1893,7 +1906,22 @@ function render(){
  renderSettlements(currentDebt,curPayments,otherCount);
  const L=$('#list');L.textContent='';
  let lastDay=''; const now=new Date();const today=periodNow()+'-'+String(now.getDate()).padStart(2,'0');const yesterdayDate=new Date(now.getFullYear(),now.getMonth(),now.getDate()-1);const yesterday=yesterdayDate.getFullYear()+'-'+String(yesterdayDate.getMonth()+1).padStart(2,'0')+'-'+String(yesterdayDate.getDate()).padStart(2,'0');
- cur.sort((a,b)=>(b.date||'').localeCompare(a.date||'')).forEach(i=>{if(i.date!==lastDay){lastDay=i.date;const heading=document.createElement('h3');heading.className='movement-day';heading.textContent=i.date===today?'Hoje':i.date===yesterday?'Ontem':new Date(i.date+'T12:00:00').toLocaleDateString('pt-PT',{day:'numeric',month:'long'});L.append(heading)}const r=document.createElement('div');r.className='it row sp';const l=document.createElement('div');l.className='expense-info';const t=document.createElement('div');t.textContent=i.description;t.className='expense-title';const s=document.createElement('div');s.className='mut';s.textContent=categoryForExpense(i)+' · '+(i.payer===me.id?'pago por ti':'pago pela outra pessoa')+(i.shared?' · partilhada':'');l.append(t,s);if(i.recurring_expense_id){const tag=document.createElement('div');tag.className='tag-fixed';tag.textContent='Despesa fixa';l.append(tag)}const rt=document.createElement('div');rt.className='expense-actions';const v=document.createElement('strong');v.textContent=fmt(i.amount);if(!offlineMode&&i.payer===me.id){const controls=document.createElement('div');controls.className='expense-controls';controls.append(createExpenseIconButton('edit','Editar '+i.description,()=>openEditExpense(i.id)),createExpenseIconButton('remove','Remover '+i.description,()=>deleteExpense(i.id)));rt.append(controls)}rt.append(v);const avatar=document.createElement('span');avatar.className='payer-avatar'+(memberColorIndex(i.payer)===1?' payer-avatar--alt':'');const payerName=memberDisplayName(i.payer,displayNames);avatar.textContent=memberInitials(payerName,i.payer===me.id?'T':'O');avatar.title=payerName||(i.payer===me.id?'Tu':'Outra pessoa');avatar.setAttribute('aria-hidden','true');if(payerName)s.textContent=categoryForExpense(i)+' · pago por '+payerName+(i.shared?' · partilhada':'');r.append(avatar,l,rt);L.append(r)});
+ cur.sort((a,b)=>(b.date||'').localeCompare(a.date||'')).forEach(i=>{
+  if(i.date!==lastDay){
+   lastDay=i.date;const heading=document.createElement('h3');heading.className='movement-day';heading.textContent=i.date===today?'Hoje':i.date===yesterday?'Ontem':new Date(i.date+'T12:00:00').toLocaleDateString('pt-PT',{day:'numeric',month:'long'});L.append(heading);
+  }
+  const editable=!offlineMode&&i.payer===me.id;
+  const r=document.createElement(editable?'button':'div');r.className='it row sp'+(editable?' movement-editable':'');
+  if(editable){r.type='button';r.setAttribute('aria-haspopup','dialog');r.onclick=()=>{if(!offlineMode)openEditExpense(i.id)};}
+  const l=document.createElement('span');l.className='expense-info';
+  const t=document.createElement('span');t.textContent=i.description;t.className='expense-title';
+  const s=document.createElement('span');s.className='mut';s.textContent=categoryForExpense(i)+(i.shared?' · partilhada':'');l.append(t,s);
+  if(i.recurring_expense_id){const tag=document.createElement('span');tag.className='tag-fixed';tag.textContent='Despesa fixa';l.append(tag)}
+  const rt=document.createElement('span');rt.className='expense-actions';const v=document.createElement('strong');v.textContent=fmt(i.amount);rt.append(v);
+  const avatar=document.createElement('span');avatar.className='payer-avatar'+(memberColorIndex(i.payer)===1?' payer-avatar--alt':'');
+  const payerName=memberDisplayName(i.payer,displayNames);avatar.textContent=memberInitials(payerName,i.payer===me.id?'T':'O');avatar.title=payerName||(i.payer===me.id?'Tu':'Outra pessoa');avatar.setAttribute('role','img');avatar.setAttribute('aria-label','Pago por '+avatar.title);
+  r.append(avatar,l,rt);L.append(r);
+ });
  if(!cur.length){const p=document.createElement('p');p.className='mut';p.textContent='Ainda não existem despesas neste mês.';L.append(p)}
  if(activeTab==='charts')renderCharts();renderRecurring();
 }
@@ -1958,17 +1986,17 @@ function renderSettlements(net,curPayments,otherCount){
  show('#settlehistory',settlementsReady&&curPayments.length>0);
  show('#settleempty',settlementsReady&&curPayments.length===0);
  if(!settlementsReady){hint.textContent='Os pagamentos ainda não estão configurados no Supabase.';return}
- if(!otherCount)hint.textContent='Quando a outra pessoa entrar, poderão registar aqui os pagamentos.';
- else if(net<-.005)hint.textContent='Podes registar um pagamento até '+fmt(-net)+' à outra pessoa. O pagamento será registado no mês atual e liquidará primeiro as dívidas mais antigas.';
- else if(net>.005)hint.textContent='Tens '+fmt(net)+' a receber no saldo global atual. A outra pessoa pode registar aqui o pagamento.';
- else hint.textContent='Contas globais acertadas à data de hoje.';
+ if(!otherCount)hint.textContent='À espera da outra pessoa.';
+ else if(net<-.005)hint.textContent='Deves '+fmt(-net)+' no total.';
+ else if(net>.005)hint.textContent='Tens '+fmt(net)+' a receber no total.';
+ else hint.textContent='Contas acertadas.';
  if(net<-.005&&document.activeElement!==input)input.value=(Math.round(-net*100)/100).toFixed(2);
  list.replaceChildren();
  for(const p of curPayments){
   const item=document.createElement('div');item.className='settle-history-item';
   const left=document.createElement('div');left.className='settle-history-info';
   const title=document.createElement('strong');title.textContent='Acerto de contas';
-  const detail=document.createElement('span');detail.className='mut';detail.textContent=p.sender===me.id?'Fizeste um pagamento à outra pessoa':'Recebeste um pagamento da outra pessoa';
+  const detail=document.createElement('span');detail.className='mut';detail.textContent=p.sender===me.id?'Pagamento enviado':'Pagamento recebido';
   const date=document.createElement('span');date.className='mut';date.textContent=new Date(p.created_at).toLocaleDateString('pt-PT');
   left.append(title,detail,date);
   const right=document.createElement('div');right.className='settle-history-actions';
@@ -1995,7 +2023,7 @@ async function registerSettlement(){
   const {error}=await sbClient.rpc('anc_manual_operation',{p_action:'settlement_created',p_data:{household_id:householdId,period:paymentPeriod+'-01',recipient,amount:amount/100}});
   if(error)throw error;
   if(month!==paymentPeriod){month=paymentPeriod;selectedBarMonth=null;syncExpenseDate()}
-  await loadExpenses();status('Pagamento registado no mês atual. As dívidas anteriores foram atualizadas.');
+  await loadExpenses();status('Pagamento registado.');
  }catch(error){status('Não foi possível registar o pagamento: '+error.message,true)}finally{btn.disabled=false}
 }
 async function undoSettlement(id){
@@ -2196,8 +2224,9 @@ async function commitPendingDelete(pending){
  }catch(error){status('Não foi possível concluir a eliminação: '+error.message,true);}
  finally{if(pendingDelete===pending)pendingDelete=null;}
 }
-function openEditExpense(id){const expense=items.find(x=>x.id===id&&x.payer===me.id);if(!expense)return;editingExpenseId=id;$('#ed').value=expense.description||'';$('#ea').value=(Math.round(Number(expense.amount)*100)/100).toFixed(2);fillCategorySelect('#ec',expense.category);$('#es').checked=!!expense.shared;show('#editoverlay');$('#ed').focus()}
-function closeEditExpense(){editingExpenseId=null;show('#editoverlay',false)}
+let editExpenseTrigger=null;
+function openEditExpense(id){if(offlineMode||!me)return;const expense=items.find(x=>x.id===id&&x.payer===me.id);if(!expense)return;editExpenseTrigger=document.activeElement;editingExpenseId=id;$('#ed').value=expense.description||'';$('#ea').value=(Math.round(Number(expense.amount)*100)/100).toFixed(2);fillCategorySelect('#ec',expense.category);$('#es').checked=!!expense.shared;show('#editoverlay');$('#ed').focus()}
+function closeEditExpense(){const trigger=editExpenseTrigger;editExpenseTrigger=null;editingExpenseId=null;show('#editoverlay',false);if(trigger?.isConnected)trigger.focus({preventScroll:true})}
 async function saveEditExpense(){
  if(!editingExpenseId)return;
  const description=$('#ed').value.trim(),amount=normalizeAmount($('#ea').value),shared=$('#es').checked;
