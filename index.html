@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <link rel="preconnect" href="https://yinwpwywuvpborlfswzt.supabase.co" crossorigin>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-dJzaJwprXSvvTuuFT9tV+an26x+hAT6ML//m7moiQbs=' 'sha256-qy4vWblk8MioP/Rx/5KibGv/oUvhV8O7hF2X+U/4e7k=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-dJzaJwprXSvvTuuFT9tV+an26x+hAT6ML//m7moiQbs=' 'sha256-lYtxEwQd+djJg3Dco/QFLlTqw0rPAen1lbGQJGrg8BI=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
 <title>A Nossa Casa</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#F4F6F9">
@@ -1459,11 +1459,13 @@ function monthlyOpenBalances(expenses,payments,people,userId,asOfPeriod){
  const periods=[...new Set([...expenseMonths.keys(),...paymentMonths.keys()])].sort();
  const open=new Map(),lots=[];
  // O cêntimo ímpar é distribuído no total acumulado, como no saldo global.
- let cumulative=[],previousExpenseBalance=0;
+ let totalCents=0,paidCents=0,importedNet=0,previousExpenseBalance=0,firstOpen=0;
+ const ordered=[...people].sort();
  function apply(signed,period){
   let remainder=signed;
   if(!remainder)return;
-  for(const lot of lots){
+  for(let index=firstOpen;index<lots.length;index++){
+   const lot=lots[index];
    if(!remainder)break;
    if(!lot.remaining||Math.sign(lot.remaining)===Math.sign(remainder))continue;
    const settled=Math.min(Math.abs(remainder),Math.abs(lot.remaining));
@@ -1471,11 +1473,17 @@ function monthlyOpenBalances(expenses,payments,people,userId,asOfPeriod){
    lot.remaining-=lotSign*settled;
    remainder+=lotSign*settled;
   }
+  while(firstOpen<lots.length&&!lots[firstOpen].remaining)firstOpen++;
   if(remainder)lots.push({period,remaining:remainder});
  }
  for(const period of periods){
-  cumulative.push(...(expenseMonths.get(period)||[]));
-  const expenseBalance=balanceCents(cumulative,[],people,userId);
+  for(const e of expenseMonths.get(period)||[]){
+   if(e.splitwise_net_cents===null||e.splitwise_net_cents===undefined){
+    const cents=toCents(e.amount);totalCents+=cents;if(e.payer===userId)paidCents+=cents;
+   }else importedNet+=e.payer===userId?Number(e.splitwise_net_cents):-Number(e.splitwise_net_cents);
+  }
+  const fairCents=ordered.length===2?Math.floor(totalCents/2)+(ordered[0]===userId?totalCents%2:0):ordered.length===1?totalCents:0;
+  const expenseBalance=paidCents-fairCents+importedNet;
   apply(expenseBalance-previousExpenseBalance,period);
   previousExpenseBalance=expenseBalance;
   apply(paymentMonths.get(period)||0,null);
@@ -1813,8 +1821,8 @@ async function ensureRecurringForMonth(period){
 // O Supabase limita cada resposta a 1000 registos; percorrer todas as páginas.
 async function loadHouseholdTable(table,sortField,homeId=householdId){
  const all=[];
- for(let offset=0;offset<20000;offset+=1000){
-  const {data,error}=await sbClient.from(table).select('*').eq('household_id',homeId).order(sortField,{ascending:false}).range(offset,offset+999);
+ for(let offset=0;offset<1000000;offset+=1000){
+  const {data,error}=await sbClient.from(table).select('*').eq('household_id',homeId).order(sortField,{ascending:false}).order('id',{ascending:false}).range(offset,offset+999);
   if(error)throw error;
   all.push(...(data||[]));
   if(!data||data.length<1000)return all;
@@ -1831,13 +1839,15 @@ function loadExpenses({syncRecurring=false}={}){
  const run=async()=>{
   if(!syncCurrent(state,user,home))return false;
   try{
+   const readMovements=()=>Promise.allSettled([loadHouseholdTable('expenses','date',home),loadHouseholdTable('settlements','created_at',home)]);
+   const pendingMovements=syncRecurring?null:readMovements();
    const fixed=await sbClient.from('recurring_expenses').select('*').eq('household_id',home).order('created_at',{ascending:false});
    if(!syncCurrent(state,user,home))return false;
    recurringReady=!fixed.error;recurringError=fixed.error?.message||'';
    if(recurringReady)recurring=fixed.data||[];
    if(syncRecurring&&recurringReady)await ensureRecurringForMonth(period);
    if(!syncCurrent(state,user,home))return false;
-   const [expenseResult,paymentResult]=await Promise.allSettled([loadHouseholdTable('expenses','date',home),loadHouseholdTable('settlements','created_at',home)]);
+   const [expenseResult,paymentResult]=await (pendingMovements||readMovements());
    if(expenseResult.status==='rejected')throw expenseResult.reason;
    if(paymentResult.status==='rejected')throw paymentResult.reason;
    const expenses=expenseResult.value,payments=paymentResult.value;
@@ -1908,18 +1918,24 @@ $('#member-names-save').addEventListener('click',()=>{
  catch(e){$('#member-names-status').textContent='Não foi possível guardar os nomes neste dispositivo.'}
 });
 function render(){
- const displayNames=readMemberNames();
+ if(activeTab==='account')return;
  renderPeriodSelect();
+ if(activeTab==='charts'){renderCharts();return}
+ const people=members.length?members:[me.id];
+ const curPayments=settlements.filter(p=>p.period===month+'-01');
+ const otherCount=Math.max(0,people.length-1);
+ if(activeTab==='history'){
+  renderSettlements(0,curPayments,otherCount,false);
+  renderRecurring(true);return;
+ }
+ const displayNames=readMemberNames();
  const cur=items.filter(i=>(i.date||'').slice(0,7)===month);
  const total=cur.reduce((s,i)=>s+Number(i.amount),0);
  $('#tot').textContent=fmt(total);
- const people=members.length?members:[me.id];
- const curPayments=settlements.filter(p=>p.period===month+'-01');
  const asOfPeriod=month>periodNow()?month:periodNow();
  const outstanding=monthlyOpenBalances(items,settlements,people,me.id,asOfPeriod);
  const monthCents=outstanding.get(month)||0;
  const globalCents=balanceThroughMonth(items,settlements,people,me.id,asOfPeriod);
- const otherCount=Math.max(0,people.length-1);
  const hasMonthMovements=items.some(e=>e.shared&&(e.date||'').slice(0,7)===month);
  const b=$('#bal'),hint=$('#balancehint'),badge=$('#balancestate'),note=$('#balanceperiod');
  b.className='bal balance-line dashboard-amount';
@@ -1972,7 +1988,7 @@ function render(){
   for(const row of [...details.children].slice(-2))row.lastElementChild.textContent='—';
  }
  const currentDebt=(asOfPeriod===periodNow()?globalCents:balanceThroughMonth(items,settlements,people,me.id,periodNow()))/100;
- renderSettlements(currentDebt,curPayments,otherCount);
+ renderSettlements(currentDebt,curPayments,otherCount,true);
  const L=$('#list');L.textContent='';
  let lastDay=''; const now=new Date();const today=periodNow()+'-'+String(now.getDate()).padStart(2,'0');const yesterdayDate=new Date(now.getFullYear(),now.getMonth(),now.getDate()-1);const yesterday=yesterdayDate.getFullYear()+'-'+String(yesterdayDate.getMonth()+1).padStart(2,'0')+'-'+String(yesterdayDate.getDate()).padStart(2,'0');
  cur.sort((a,b)=>(b.date||'').localeCompare(a.date||'')).forEach(i=>{
@@ -1992,15 +2008,18 @@ function render(){
   r.append(avatar,l,rt);L.append(r);
  });
  if(!cur.length){const p=document.createElement('p');p.className='mut';p.textContent='Ainda não existem despesas neste mês.';L.append(p)}
- if(activeTab==='charts')renderCharts();renderRecurring();
+ renderRecurring(false);
 }
-function renderRecurring(){
+function renderRecurring(isHistory){
  const active=recurring.filter(r=>r.active!==false&&(!monthFromDate(r.end_month)||monthFromDate(r.end_month)>=month));
  const ended=recurring.filter(r=>r.active!==false&&monthFromDate(r.end_month)&&monthFromDate(r.end_month)<month);
- $('#recurringcount').textContent=recurringReady?'('+active.length+')':'';
- $('#endedrecurringcount').textContent=recurringReady?'('+ended.length+')':'';
- renderRecurringList('#recurringlist','#recurringempty',active,false);
- renderRecurringList('#endedrecurringlist','#endedrecurringempty',ended,true);
+ if(isHistory){
+  $('#endedrecurringcount').textContent=recurringReady?'('+ended.length+')':'';
+  renderRecurringList('#endedrecurringlist','#endedrecurringempty',ended,true);
+ }else{
+  $('#recurringcount').textContent=recurringReady?'('+active.length+')':'';
+  renderRecurringList('#recurringlist','#recurringempty',active,false);
+ }
 }
 function createExpenseIconButton(kind,label,onClick){
  const button=document.createElement('button');
@@ -2043,18 +2062,22 @@ function renderRecurringList(listSelector,emptySelector,records,isEnded){
  });
 }
 
-function renderSettlements(net,curPayments,otherCount){
+function renderSettlements(net,curPayments,otherCount,isExpenseView){
  const hint=$('#settlehint'), input=$('#settleamount'), list=$('#settlelist');
+ if(isExpenseView){
  show('#settleaction',!offlineMode&&settlementsReady&&otherCount>0&&net<-.005);
- show('#settlehistory',settlementsReady&&curPayments.length>0);
- show('#settleempty',settlementsReady&&curPayments.length===0);
- if(!settlementsReady){hint.textContent='Saldos indisponíveis.';list.replaceChildren();return}
+ if(!settlementsReady){hint.textContent='Saldos indisponíveis.';return}
  if(!otherCount)hint.textContent='À espera da outra pessoa.';
  else if(net<-.005)hint.textContent='Por pagar: '+fmt(-net);
  else if(net>.005)hint.textContent='A receber: '+fmt(net);
  else hint.textContent='Contas acertadas.';
  if(net<-.005&&document.activeElement!==input)input.value=(Math.round(-net*100)/100).toFixed(2);
+ return;
+ }
+ show('#settlehistory',settlementsReady&&curPayments.length>0);
+ show('#settleempty',settlementsReady&&curPayments.length===0);
  list.replaceChildren();
+ if(!settlementsReady)return;
  for(const p of curPayments){
   const item=document.createElement('div');item.className='settle-history-item';
   const left=document.createElement('div');left.className='settle-history-info';
@@ -2444,6 +2467,9 @@ function renderPeriodSelect(){
  for(const r of recurring){const y=Number(String(r.start_month||'').slice(0,4));if(y>=1900&&y<=2200)years.push(y)}
  const minYear=Math.min(...years,Number(today.slice(0,4))-5);
  const maxYear=Math.max(...years,Number(today.slice(0,4))+1);
+ const optionKey=[annual,minYear,maxYear,current,chosen!==current].join('|');
+ if(select.dataset.optionKey===optionKey){select.value=chosen;return}
+ select.dataset.optionKey=optionKey;
  const fragment=document.createDocumentFragment();
  if(chosen!==current){
   const shortcut=document.createElement('option');shortcut.value='__today__';shortcut.textContent=annual?'↩ Voltar ao ano atual':'↩ Voltar ao mês atual';fragment.append(shortcut);
