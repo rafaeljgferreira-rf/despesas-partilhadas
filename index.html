@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <link rel="preconnect" href="https://yinwpwywuvpborlfswzt.supabase.co" crossorigin>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-dJzaJwprXSvvTuuFT9tV+an26x+hAT6ML//m7moiQbs=' 'sha256-D1H3OJOaKvInoDRQR8cpFBodRXZwsq36fWzhAo0B5oE=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-dJzaJwprXSvvTuuFT9tV+an26x+hAT6ML//m7moiQbs=' 'sha256-J4IzLgQDqeA0JGzxhTVscNXpx6AaJgIEwkRosVOO0/s=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
 <title>A Nossa Casa</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#F4F6F9">
@@ -1786,10 +1786,10 @@ async function loadHousehold(prefetch=null){
   if(!current())return;
   if(first.error)throw first.error;
   // Se foram geradas despesas fixas agora, volta a ler as despesas para refletir o estado final.
-  const data=generated?await loadHouseholdTable('expenses','date',homeId):first.data;
+  const [data,paymentData]=generated?await Promise.all([loadHouseholdTable('expenses','date',homeId),loadHouseholdTable('settlements','created_at',homeId)]):[first.data,paid.data];
   if(!current())return;
   if(paid.error)throw new Error('Não foi possível consultar os pagamentos. Tenta novamente.');
-  items=data;settlements=paid.data;settlementsReady=true;
+  items=data;settlements=paymentData;settlementsReady=true;
   const renderStart=performance.now();
   render();show('#app');subscribe();offlineCapture();
   if(!recurringReady)status('Despesas carregadas, mas não foi possível consultar as despesas fixas.',true);
@@ -1800,7 +1800,7 @@ async function loadHousehold(prefetch=null){
 // A configuração das despesas fixas é atualizada juntamente com os movimentos.
 async function loadRecurring(){return loadExpenses()}
 async function ensureRecurringForMonth(period){
- if(!recurringReady||!householdId||!recurring.length||period<periodNow())return false;
+ if(!recurringReady||!householdId||!recurring.length)return false;
  const homeId=householdId,userId=me?.id,state=syncState;
  if(!syncCurrent(state,userId,homeId))return false;
  const {error}=await sbClient.rpc('anc_generate_recurring',{p_household_id:homeId,p_period:firstDayOfMonth(period)});
@@ -2082,22 +2082,42 @@ function renderSettlements(net,curPayments,otherCount,isExpenseView){
   item.append(left,right);list.append(item);
  }
 }
+// Uma operação lógica, um UUID: repetir apenas falhas de transporte/servidor.
+async function manualOperation(action,data){
+ const state=syncState,user=me?.id,home=householdId;
+ if(!syncCurrent(state,user,home)||data.household_id!==home)throw new Error('Sessão alterada.');
+ const args={p_request_id:crypto.randomUUID(),p_action:action,p_data:data};
+ let uncertain=false;
+ for(let attempt=0;attempt<2;attempt++){
+  if(!syncCurrent(state,user,home))throw new Error('Sessão alterada.');
+  let result;
+  try{result=await sbClient.rpc('anc_manual_operation_once',args)}catch(error){result={error,status:0}}
+  if(!syncCurrent(state,user,home))throw new Error('Sessão alterada.');
+  if(!result.error)return result;
+  const retryable=result.status===0||result.status===408||result.status>=500||!result.status;
+  if(!retryable&&!uncertain)return result;
+  uncertain=true;
+  if(!retryable||attempt===1)break;
+  await new Promise(resolve=>setTimeout(resolve,500));
+ }
+ scheduleSync();
+ return {error:{message:'Não foi possível confirmar a operação. Verifica os movimentos antes de repetir.'}};
+}
 async function registerSettlement(){
  if(!settlementsReady||!me||members.length!==2||$('#settlepay').disabled)return;
- const btn=$('#settlepay');btn.disabled=true;
+ const btn=$('#settlepay'),state=syncState,user=me.id,home=householdId;btn.disabled=true;
+ const amount=Math.round(Number($('#settleamount').value.replace(',','.'))*100);
  try{
-  // Revalidar no servidor todos os meses e os cêntimos importados do Splitwise.
-  const [expenses,payments]=await Promise.all([
-   loadHouseholdTable('expenses','date'),
-   loadHouseholdTable('settlements','created_at')
-  ]);
-  const debt=-balanceThroughMonth(expenses,payments,members,me.id,periodNow());
-  const amount=Math.round(Number($('#settleamount').value.replace(',','.'))*100);
+  // Recuperar despesas fixas antes de validar o pagamento.
+  if(!await loadExpenses({syncRecurring:true}))throw new Error('Sincronização incompleta. Tenta novamente.');
+  if(!syncCurrent(state,user,home))return;
+  $('#settleamount').value=(amount/100).toFixed(2);
+  const debt=-balanceThroughMonth(items,settlements,members,user,periodNow());
   if(!(amount>0)||amount>debt){status('Indica um valor válido, até '+fmt(Math.max(0,debt)/100)+'.',true);return}
   const recipient=members.find(id=>id!==me.id);
   if(!recipient||!confirm('Confirmas que pagaste '+fmt(amount/100)+' à outra pessoa? Este botão regista o pagamento, não transfere dinheiro.'))return;
   const paymentPeriod=periodNow();
-  const {error}=await sbClient.rpc('anc_manual_operation',{p_action:'settlement_created',p_data:{household_id:householdId,period:paymentPeriod+'-01',recipient,amount:amount/100}});
+  const {error}=await manualOperation('settlement_created',{household_id:householdId,period:paymentPeriod+'-01',recipient,amount:amount/100});
   if(error)throw error;
   if(month!==paymentPeriod){month=paymentPeriod;selectedBarMonth=null;syncExpenseDate()}
   closeSettlement();await loadExpenses();status('Pagamento registado.');
@@ -2297,7 +2317,7 @@ async function commitPendingDelete(pending){
  try{
  const {error}=item.recurring_expense_id
   ?await sbClient.rpc('anc_recurring_operation',{p_action:'exclude',p_data:{household_id:pending.house,id:item.recurring_expense_id,period:firstDayOfMonth(monthFromDate(item.recurring_period||item.date))}})
-  :await sbClient.rpc('anc_manual_operation',{p_action:'expense_deleted',p_data:{household_id:pending.house,id}});
+  :await manualOperation('expense_deleted',{household_id:pending.house,id});
  if(error){status('Não foi possível apagar: '+error.message,true);scheduleSync();return}
  if(editingExpenseId===id)closeEditExpense();await loadExpenses();status('Despesa apagada.');
  }catch(error){status('Não foi possível concluir a eliminação: '+error.message,true);}
@@ -2318,7 +2338,7 @@ async function saveEditExpense(){
  if(!editingExpenseId)return;
  const description=$('#ed').value.trim(),amount=normalizeAmount($('#ea').value),shared=$('#es').checked;
  if(!description||!(amount>0)){status('Indica uma descrição e um valor válido.',true);return}
- const {error}=await sbClient.rpc('anc_manual_operation',{p_action:'expense_updated',p_data:{household_id:householdId,id:editingExpenseId,description,amount,category:categorySelected('#ec',description),shared}});
+ const {error}=await manualOperation('expense_updated',{household_id:householdId,id:editingExpenseId,description,amount,category:categorySelected('#ec',description),shared});
  if(error){status('Não foi possível editar a despesa: '+error.message,true);return}
  closeEditExpense();await loadExpenses();status('Despesa atualizada com sucesso.');
 }
@@ -2384,7 +2404,7 @@ async function changeRecurring(id,action,extra={},generate=false,success=''){
 async function toggleRecurringMonth(id,period,exclude){
  const r=recurring.find(x=>x.id===id&&x.payer===me.id);if(!r||recurringWrites.has(id))return;
  if(exclude&&!confirm('Excluir '+monthName(period)+' desta despesa fixa? O lançamento deste mês, se existir, será apagado.'))return;
- await changeRecurring(id,exclude?'exclude':'include',{period:firstDayOfMonth(period)},!exclude,exclude?'Mês excluído e lançamento removido.':'Mês incluído. Será lançado quando chegar esse mês.');
+ await changeRecurring(id,exclude?'exclude':'include',{period:firstDayOfMonth(period)},!exclude,exclude?'Mês excluído e lançamento removido.':'Mês incluído na configuração.');
 }
 async function removeRecurring(id){
  const r=recurring.find(x=>x.id===id&&x.payer===me.id);if(!r||recurringWrites.has(id))return;
@@ -2610,7 +2630,7 @@ $('#signup').onclick=async()=>{
 };
 $('#createhome').onclick=async()=>{const {data,error}=await sbClient.rpc('create_household');if(error){message('#homemsg','Erro: '+error.message,true);return}householdId=data;await loadHousehold()};
 $('#joinhome').onclick=async()=>{const code=$('#invite').value.trim().toUpperCase();if(!code)return;const {data,error}=await sbClient.rpc('join_household',{p_code:code});if(error){message('#homemsg','Não foi possível entrar: '+error.message,true);return}householdId=data;await loadHousehold()};
-async function submitNewExpense(){if($('#isrecurring').checked){await addRecurringExpense();return}const description=$('#d').value.trim(),amount=normalizeAmount($('#a').value);if(!description||!(amount>0)){status('Indica uma descrição e um valor válido.',true);return}const date=$('#expense-date').value;if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||Number.isNaN(new Date(date+'T12:00:00').getTime())){status('Escolhe uma data válida para a despesa.',true);return}const selectedPeriod=date.slice(0,7);if(selectedPeriod!==periodNow()){if(!confirm('Atenção: a data escolhida ('+date.split('-').reverse().join('/')+') não pertence ao mês atual.\n\nQueres mesmo adicionar esta despesa?'))return;}const row={household_id:householdId,description,amount,category:categorySelected('#c',description),shared:$('#s').checked,payer:me.id,date};const {error}=await sbClient.rpc('anc_manual_operation',{p_action:'expense_created',p_data:row});if(error){status('Não foi possível adicionar: '+error.message,true);return}$('#d').value='';$('#a').value='';$('#c').value='';$('#s').checked=true;closeNewExpense();syncCategoryChips();if(month!==date.slice(0,7)){month=date.slice(0,7);selectedBarMonth=null}syncExpenseDate();await loadExpenses();status('Despesa adicionada com sucesso ✓')}
+async function submitNewExpense(){if($('#isrecurring').checked){await addRecurringExpense();return}const description=$('#d').value.trim(),amount=normalizeAmount($('#a').value);if(!description||!(amount>0)){status('Indica uma descrição e um valor válido.',true);return}const date=$('#expense-date').value;if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||Number.isNaN(new Date(date+'T12:00:00').getTime())){status('Escolhe uma data válida para a despesa.',true);return}const selectedPeriod=date.slice(0,7);if(selectedPeriod!==periodNow()){if(!confirm('Atenção: a data escolhida ('+date.split('-').reverse().join('/')+') não pertence ao mês atual.\n\nQueres mesmo adicionar esta despesa?'))return;}const row={household_id:householdId,description,amount,category:categorySelected('#c',description),shared:$('#s').checked,payer:me.id,date};const {error}=await manualOperation('expense_created',row);if(error){status('Não foi possível adicionar: '+error.message,true);return}$('#d').value='';$('#a').value='';$('#c').value='';$('#s').checked=true;closeNewExpense();syncCategoryChips();if(month!==date.slice(0,7)){month=date.slice(0,7);selectedBarMonth=null}syncExpenseDate();await loadExpenses();status('Despesa adicionada com sucesso ✓')}
 $('#add').onclick=()=>guardExpenseWrite('#add',submitNewExpense);
 
 
