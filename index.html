@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <link rel="preconnect" href="https://yinwpwywuvpborlfswzt.supabase.co" crossorigin>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-dJzaJwprXSvvTuuFT9tV+an26x+hAT6ML//m7moiQbs=' 'sha256-lYtxEwQd+djJg3Dco/QFLlTqw0rPAen1lbGQJGrg8BI=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-dJzaJwprXSvvTuuFT9tV+an26x+hAT6ML//m7moiQbs=' 'sha256-D1H3OJOaKvInoDRQR8cpFBodRXZwsq36fWzhAo0B5oE=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
 <title>A Nossa Casa</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#F4F6F9">
@@ -1800,22 +1800,13 @@ async function loadHousehold(prefetch=null){
 // A configuração das despesas fixas é atualizada juntamente com os movimentos.
 async function loadRecurring(){return loadExpenses()}
 async function ensureRecurringForMonth(period){
- if(!recurringReady||!householdId||!recurring.length||period<periodNow())return;
- const eligible=recurring.filter(rec=>rec.active!==false&&inRecurringRange(rec,period));
- if(!eligible.length)return;
+ if(!recurringReady||!householdId||!recurring.length||period<periodNow())return false;
  const homeId=householdId,userId=me?.id,state=syncState;
- const periodKey=firstDayOfMonth(period);
- const {data:existing,error:getError}=await sbClient.from('expenses').select('recurring_expense_id').eq('household_id',homeId).eq('recurring_period',periodKey).not('recurring_expense_id','is',null);
- if(getError||!syncCurrent(state,userId,homeId))return;
- const have=new Set((existing||[]).map(r=>r.recurring_expense_id));
- const rows=[];
- for(const rec of eligible){
-  if(have.has(rec.id))continue;
-  rows.push({household_id:householdId,description:rec.description,amount:Number(rec.amount),category:rec.category,shared:!!rec.shared,payer:rec.payer,date:buildDate(period, rec.day_of_month),recurring_expense_id:rec.id,recurring_period:periodKey});
- }
- if(!rows.length)return;
- const {error}=await sbClient.from('expenses').insert(rows);
- if(error && error.code!=='23505')status('Não foi possível gerar as despesas fixas: '+error.message,true);
+ if(!syncCurrent(state,userId,homeId))return false;
+ const {error}=await sbClient.rpc('anc_generate_recurring',{p_household_id:homeId,p_period:firstDayOfMonth(period)});
+ if(!syncCurrent(state,userId,homeId))return false;
+ if(error)throw new Error('Não foi possível gerar as despesas fixas: '+error.message);
+ // Reconsultar mesmo quando outro dispositivo tiver criado os movimentos primeiro.
  return true;
 }
 // O Supabase limita cada resposta a 1000 registos; percorrer todas as páginas.
@@ -2012,7 +2003,7 @@ function render(){
 }
 function renderRecurring(isHistory){
  const active=recurring.filter(r=>r.active!==false&&(!monthFromDate(r.end_month)||monthFromDate(r.end_month)>=month));
- const ended=recurring.filter(r=>r.active!==false&&monthFromDate(r.end_month)&&monthFromDate(r.end_month)<month);
+ const ended=recurring.filter(r=>r.active===false||(monthFromDate(r.end_month)&&monthFromDate(r.end_month)<month));
  if(isHistory){
   $('#endedrecurringcount').textContent=recurringReady?'('+ended.length+')':'';
   renderRecurringList('#endedrecurringlist','#endedrecurringempty',ended,true);
@@ -2052,7 +2043,7 @@ function renderRecurringList(listSelector,emptySelector,records,isEnded){
   const title=document.createElement('span');title.className='recurring-title';title.textContent=r.description;
   const meta=document.createElement('span');meta.className='mut recurring-meta';
   const from=monthFromDate(r.start_month)||monthFromDate(r.created_at)||periodNow(),end=monthFromDate(r.end_month);
-  meta.textContent='Dia '+r.day_of_month+(r.shared?' · partilhada':' · individual')+' · '+monthName(from)+(end?' a '+monthName(end):' em diante');
+  meta.textContent='Dia '+r.day_of_month+(r.shared?' · partilhada':' · individual')+' · '+monthName(from)+(end?' a '+monthName(end):' em diante')+(r.active===false?' · interrompida':'');
   left.append(title,meta);
   if(excludedMonths(r).length){const skipped=document.createElement('span');skipped.className='mut recurring-meta';skipped.textContent='Meses excluídos: '+excludedMonths(r).map(monthName).join(', ');left.append(skipped)}
   const avatar=document.createElement('span');avatar.className='payer-avatar'+(memberColorIndex(r.payer)===1?' payer-avatar--alt':'');
@@ -2304,15 +2295,10 @@ async function commitPendingDelete(pending){
  if(!item){cancelPendingDelete(false);return;}
  pending.committing=true;clearInterval(pending.ticker);show('#undo-delete',false);
  try{
- if(item.recurring_expense_id){
-  const r=recurring.find(x=>x.id===item.recurring_expense_id);
-  if(r){const months=new Set(excludedMonths(r));months.add(monthFromDate(item.recurring_period||item.date));
-   const {error:e}=await sbClient.from('recurring_expenses').update({excluded_months:[...months].map(firstDayOfMonth)}).eq('id',r.id).eq('payer',pending.user).eq('household_id',pending.house);
-   if(e){status('Não foi possível excluir este mês da despesa fixa: '+e.message,true);return}
-  }
- }
- const {error}=await sbClient.rpc('anc_manual_operation',{p_action:'expense_deleted',p_data:{household_id:pending.house,id}});
- if(error){status('Não foi possível apagar: '+error.message,true);return}
+ const {error}=item.recurring_expense_id
+  ?await sbClient.rpc('anc_recurring_operation',{p_action:'exclude',p_data:{household_id:pending.house,id:item.recurring_expense_id,period:firstDayOfMonth(monthFromDate(item.recurring_period||item.date))}})
+  :await sbClient.rpc('anc_manual_operation',{p_action:'expense_deleted',p_data:{household_id:pending.house,id}});
+ if(error){status('Não foi possível apagar: '+error.message,true);scheduleSync();return}
  if(editingExpenseId===id)closeEditExpense();await loadExpenses();status('Despesa apagada.');
  }catch(error){status('Não foi possível concluir a eliminação: '+error.message,true);}
  finally{if(pendingDelete===pending)pendingDelete=null;}
@@ -2350,7 +2336,7 @@ async function addRecurringExpense(){
   const {error}=await sbClient.from('recurring_expenses').insert(row);
   if(error)throw error;
   $('#d').value='';$('#a').value='';$('#c').value='';$('#rday').value='1';$('#s').checked=true;$('#rstart').value=periodNow();$('#rend').value='';$('#isrecurring').checked=false;setRecurringMode();
-  closeNewExpense();syncCategoryChips();await loadExpenses({syncRecurring:true});status('Despesa fixa guardada para os meses escolhidos.');
+  closeNewExpense();syncCategoryChips();if(await loadExpenses({syncRecurring:true}))status('Despesa fixa guardada para os meses escolhidos.');
  }catch(error){status('Não foi possível guardar a despesa fixa: '+error.message,true)}finally{btn.disabled=false}
 }
 let editRecurringTrigger=null;
@@ -2361,7 +2347,7 @@ function openEditRecurring(id){
  $('#erstart').value=monthFromDate(r.start_month)||monthFromDate(r.created_at)||periodNow();$('#erend').value=monthFromDate(r.end_month);$('#ers').checked=!!r.shared;
  const from=monthFromDate(r.start_month)||monthFromDate(r.created_at)||periodNow(),end=monthFromDate(r.end_month),period=month;
  const skip=$('#editrec-skip'),excluded=excludedMonths(r).includes(period);
- show('#editrec-skip',period>=from&&(!end||period<=end));
+ show('#editrec-skip',r.active!==false&&period>=from&&(!end||period<=end));
  skip.textContent=(excluded?'Incluir ':'Excluir ')+monthName(period);
  skip.onclick=()=>{if(offlineMode||editingRecurringId!==id)return;closeEditRecurring();toggleRecurringMonth(id,period,!excluded)};
  show('#editrecurringoverlay');$('#closeeditrec').focus({preventScroll:true});
@@ -2374,51 +2360,40 @@ async function saveEditRecurring(){
  if(!description||!(amount>0)||!Number.isFinite(amount)||!Number.isInteger(day)||day<1||day>28||!start||(end&&end<start)){
   status('Verifica a descrição, valor, dia do mês e intervalo de meses.',true);return
  }
+ if(recurringWrites.has(r.id))return;recurringWrites.add(r.id);
  const btn=$('#saveeditrec'),actions=[$('#editrec-skip'),$('#editrec-remove')];btn.disabled=true;actions.forEach(b=>b.disabled=true);
  try{
-  // First change the schedule, then reconcile only movements connected to this template.
-  const {error}=await sbClient.from('recurring_expenses').update({description,amount,category:categorySelected('#erc',description),shared,day_of_month:day,start_month:firstDayOfMonth(start),end_month:end?firstDayOfMonth(end):null}).eq('id',r.id).eq('payer',me.id);
+  const {error}=await sbClient.rpc('anc_recurring_operation',{p_action:'edit',p_data:{household_id:householdId,id:r.id,description,amount,category:categorySelected('#erc',description),shared,day_of_month:day,start_month:firstDayOfMonth(start),end_month:end?firstDayOfMonth(end):null}});
   if(error)throw error;
-  const {data:existing,error:readError}=await sbClient.from('expenses').select('id,recurring_period,date').eq('household_id',householdId).eq('recurring_expense_id',r.id);
-  if(readError)throw readError;
-  const excluded=excludedMonths(r);
-  for(const e of existing||[]){
-    const period=monthFromDate(e.recurring_period)||monthFromDate(e.date);
-    if(period<start||(end&&period>end)||excluded.includes(period)){
-      const {error:delError}=await sbClient.from('expenses').delete().eq('id',e.id).eq('payer',me.id);
-      if(delError)throw delError;
-    }else{
-      const {error:updError}=await sbClient.from('expenses').update({description,amount,category:categorySelected('#erc',description),shared,date:buildDate(period,day)}).eq('id',e.id).eq('payer',me.id);
-      if(updError)throw updError;
-    }
-  }
-  closeEditRecurring();await loadExpenses({syncRecurring:true});status('Despesa fixa e meses já gerados atualizados.');
- }catch(error){status('Não foi possível concluir a edição: '+error.message+'. Verifica os lançamentos antes de repetir.',true)}finally{btn.disabled=false;actions.forEach(b=>b.disabled=false)}
+  closeEditRecurring();if(await loadExpenses({syncRecurring:true}))status('Despesa fixa e meses já gerados atualizados.');
+ }catch(error){status('Não foi possível confirmar a edição: '+error.message+'. Sincroniza antes de repetir.',true);scheduleSync()}finally{recurringWrites.delete(r.id);btn.disabled=false;actions.forEach(b=>b.disabled=false)}
+}
+const recurringWrites=new Set();
+async function changeRecurring(id,action,extra={},generate=false,success=''){
+ if(offlineMode||!me||recurringWrites.has(id))return;
+ const home=householdId,user=me.id,state=syncState;
+ recurringWrites.add(id);
+ try{
+  const {error}=await sbClient.rpc('anc_recurring_operation',{p_action:action,p_data:{household_id:home,id,...extra}});
+  if(!syncCurrent(state,user,home))return;
+  if(error)throw error;
+  if(await loadExpenses({syncRecurring:generate}))status(success);
+ }catch(error){if(syncCurrent(state,user,home)){status('Não foi possível confirmar a alteração: '+error.message,true);scheduleSync();}}
+ finally{recurringWrites.delete(id);}
 }
 async function toggleRecurringMonth(id,period,exclude){
- const r=recurring.find(x=>x.id===id&&x.payer===me.id);if(!r)return;
- const excluded=new Set(excludedMonths(r));if(exclude)excluded.add(period);else excluded.delete(period);
+ const r=recurring.find(x=>x.id===id&&x.payer===me.id);if(!r||recurringWrites.has(id))return;
  if(exclude&&!confirm('Excluir '+monthName(period)+' desta despesa fixa? O lançamento deste mês, se existir, será apagado.'))return;
- const {error}=await sbClient.from('recurring_expenses').update({excluded_months:[...excluded].map(firstDayOfMonth)}).eq('id',id).eq('payer',me.id);
- if(error){status('Não foi possível alterar os meses: '+error.message,true);return}
- if(exclude){const {error:delError}=await sbClient.from('expenses').delete().eq('recurring_expense_id',id).eq('recurring_period',firstDayOfMonth(period)).eq('payer',me.id);if(delError){status('Mês excluído, mas não foi possível apagar o lançamento: '+delError.message,true);return}}
- await loadExpenses({syncRecurring:!exclude});status(exclude?'Mês excluído e lançamento removido.':'Mês incluído. Será lançado quando chegar esse mês.');
+ await changeRecurring(id,exclude?'exclude':'include',{period:firstDayOfMonth(period)},!exclude,exclude?'Mês excluído e lançamento removido.':'Mês incluído. Será lançado quando chegar esse mês.');
 }
 async function removeRecurring(id){
- const r=recurring.find(x=>x.id===id&&x.payer===me.id);if(!r)return;
- // Two explicit choices. Avoid deleting past entries without consent.
+ const r=recurring.find(x=>x.id===id&&x.payer===me.id);if(!r||recurringWrites.has(id))return;
  const removeAll=confirm('Remover "'+r.description+'" de TODOS os meses, incluindo os lançamentos já criados?\n\nOK = apagar os lançamentos e a despesa fixa.\nCancelar = escolher manter os lançamentos existentes.');
  if(!removeAll){
   if(!confirm('Queres apenas PARAR as repetições futuras, mantendo os lançamentos já feitos?'))return;
-  const {error}=await sbClient.from('recurring_expenses').update({active:false}).eq('id',id).eq('payer',me.id);
-  if(error){status('Não foi possível parar as repetições: '+error.message,true);return}
-  await loadRecurring();status('As repetições futuras foram interrompidas. Os movimentos anteriores continuam guardados.');return;
+  await changeRecurring(id,'stop',{},false,'As repetições futuras foram interrompidas. Os movimentos anteriores continuam guardados.');return;
  }
- const {error:delError}=await sbClient.from('expenses').delete().eq('household_id',householdId).eq('recurring_expense_id',id).eq('payer',me.id);
- if(delError){status('Não foi possível apagar os lançamentos: '+delError.message,true);return}
- const {error}=await sbClient.from('recurring_expenses').delete().eq('id',id).eq('payer',me.id);
- if(error){status('Os lançamentos foram removidos, mas não foi possível remover a despesa fixa: '+error.message,true);return}
- await loadExpenses();status('Despesa fixa removida de todos os meses, incluindo os lançamentos gerados.');
+ await changeRecurring(id,'remove',{},false,'Despesa fixa removida de todos os meses, incluindo os lançamentos gerados.');
 }
 
 $('#editrec-remove').onclick=()=>{if(offlineMode||!editingRecurringId)return;const id=editingRecurringId;closeEditRecurring();removeRecurring(id)};
