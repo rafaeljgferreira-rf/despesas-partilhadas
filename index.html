@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <link rel="preconnect" href="https://yinwpwywuvpborlfswzt.supabase.co" crossorigin>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-dJzaJwprXSvvTuuFT9tV+an26x+hAT6ML//m7moiQbs=' 'sha256-HZdgBQdDSKkW/rvqw+Z4P3KAvtEATW0qsgj4UvzfT74=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-dJzaJwprXSvvTuuFT9tV+an26x+hAT6ML//m7moiQbs=' 'sha256-IOhIx15f2dNl75YS34cUqxuQDKRKC3kJnsTw+DhZbpE=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
 <title>A Nossa Casa</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#F4F6F9">
@@ -678,15 +678,15 @@ html.biometric-locked #startup,html.biometric-locked #app,html.biometric-locked 
 .amount-entry #a{font-size:var(--fs-6xl);font-weight:750;background:transparent;border:0;padding:0 0 8px;min-width:0;letter-spacing:-1px}
 .amount-entry span{font-size:var(--fs-3xl);color:var(--mut);font-weight:700}
 #c{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
-#category-chips{display:flex;gap:7px;flex-wrap:wrap}
-#category-chips .category-chip{border:1px solid var(--bd);background:var(--card);color:var(--tx);min-height:44px;border-radius:24px;padding:8px 12px;font-size:var(--fs-md);margin:0;display:flex;align-items:center;gap:6px}
+:is(#category-chips,.edit-category-chips){display:flex;gap:7px;flex-wrap:wrap}
+:is(#category-chips,.edit-category-chips) .category-chip{border:1px solid var(--bd);background:var(--card);color:var(--tx);min-height:44px;border-radius:24px;padding:8px 12px;font-size:var(--fs-md);margin:0;display:flex;align-items:center;gap:6px}
 .category-chip:before{content:"";background:var(--mut);width:8px;height:8px;border-radius:50%}
 .category-chip[data-category="Casa"]:before{background:var(--cat-casa)}
 .category-chip[data-category="Comida"]:before{background:var(--cat-comida)}
 .category-chip[data-category="Transportes"]:before{background:var(--cat-transportes)}
 .category-chip[data-category="Lazer"]:before{background:var(--cat-lazer)}
 .category-chip[data-category="Saúde"]:before{background:var(--cat-saude)}
-#category-chips .category-chip[aria-pressed="true"]{border-color:var(--ac)}
+:is(#category-chips,.edit-category-chips) .category-chip[aria-pressed="true"]{border-color:var(--ac)}
 #expense-more{border-top:1px solid var(--bd);padding:13px 0;color:var(--ac);font-size:var(--fs-md)}
 #expense-more summary{cursor:pointer;min-height:32px;font-weight:650}
 body.expense-sheet-open:has(#newexpensepanel:not(.hidden)){overflow:hidden}
@@ -758,9 +758,9 @@ html,html[data-theme="dark"]{background-color:var(--bg)}
 #expenseview .dashboard-retro-note{color:var(--ok-text)}
 #expenseview>.balance-actions .balance-action-settle{background:var(--card);color:var(--ac);border-color:var(--control-border);border-radius:var(--radius-control)}
 .dashboard-details>summary{border-radius:var(--radius-control)}
-#category-chips .category-chip[aria-pressed="true"]{color:var(--ac);background:var(--surface-soft);border:2px solid var(--ac);padding:7px 11px}
+:is(#category-chips,.edit-category-chips) .category-chip[aria-pressed="true"]{color:var(--ac);background:var(--surface-soft);border:2px solid var(--ac);padding:7px 11px}
 .category-chip[data-category="Outros"]:before{background:var(--cat-outros)}
-#category-chips .category-chip:before{flex:none;width:10px;height:10px}
+:is(#category-chips,.edit-category-chips) .category-chip:before{flex:none;width:10px;height:10px}
 #app .tabnav #openexpense{background:var(--ac);color:var(--on)}
 #app .tabnav button[aria-selected="true"]:not(#openexpense){color:var(--ac);background:var(--surface-soft)}
 #chartview .period-toggle button[aria-pressed="true"]{background:var(--ac);color:var(--on)}
@@ -894,6 +894,31 @@ html{scroll-padding-bottom:calc(125px + env(safe-area-inset-bottom,0px))}
 #expenseview .settlement-card #settlehint{margin:8px 0 12px}
 #historyview #settlelist .settle-history-info{gap:3px}
 @media(max-width:360px){#list .it{gap:7px}}
+
+/* 4.0.5 — edição em folha inferior e saldo simplificado. */
+#expenseview .dashboard-topline{justify-content:flex-start}
+.recurring-list .recurring-item{width:100%;display:flex;align-items:center;text-align:left;background:transparent;color:var(--tx);border:0;border-top:1px solid var(--bd);border-radius:0;padding:12px 2px;min-height:56px;gap:9px;font-weight:400;letter-spacing:normal;margin:0;box-shadow:none}
+.recurring-list .recurring-main{display:grid;gap:3px;min-width:0;flex:1}
+.recurring-list .payer-avatar--alt{background:var(--avatar-alt-bg);color:var(--avatar-alt-text)}
+.recurring-list .recurring-amount{flex:none;font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}
+.recurring-list .recurring-meta{overflow-wrap:anywhere;font-size:var(--fs-xs)}
+.recurring-list .recurring-editable:active{background:var(--surface-soft);border-radius:10px;filter:none}
+@media(hover:hover){.recurring-list .recurring-editable:hover{background:var(--surface-soft);border-radius:10px}}
+#erc,#ec{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.edit-sheet{margin:0;padding:0;z-index:80}
+.edit-sheet>.add-card{width:min(100%,620px);max-height:90dvh;overflow:auto;padding:12px 20px max(22px,env(safe-area-inset-bottom));border-radius:25px 25px 0 0;box-shadow:var(--sheet-shadow);animation:sheet-in .2s ease-out}
+.edit-sheet h2{margin:0;font-size:var(--fs-2xl)}
+.edit-sheet .sheet-close{min-width:44px;min-height:44px;font-size:var(--fs-3xl);padding:0;border:0}
+.edit-sheet .amount-entry input{font-size:var(--fs-6xl);font-weight:750;background:transparent;border:0;padding:0 0 8px;min-width:0;letter-spacing:-1px}
+.edit-sheet .add-fields{gap:9px}
+.edit-sheet .add-fields{grid-template-columns:minmax(0,1fr)}
+.edit-sheet .month-range{grid-template-columns:repeat(2,minmax(0,1fr))}
+.edit-sheet .month-range>div,.edit-sheet .month-range input{min-width:0}
+@media(max-width:420px){.edit-sheet .month-range{grid-template-columns:minmax(0,1fr)}}
+.edit-sheet .add-fields label{font-weight:600;color:var(--mut)}
+.edit-sheet .edit-danger{color:var(--danger-text)}
+body:has(.edit-sheet:not(.hidden)){overflow:hidden}
+@media(prefers-reduced-motion:reduce){.edit-sheet>.add-card{animation:none}}
 </style>
 </head>
 <body>
@@ -983,7 +1008,7 @@ html{scroll-padding-bottom:calc(125px + env(safe-area-inset-bottom,0px))}
         
       </section>
       <section class="card dashboard-stat dashboard-balance" aria-label="Estado das dívidas do mês">
-        <div class="dashboard-topline"><span id="balancekicker" class="dashboard-kicker">Por liquidar</span><span id="balancestate" class="dashboard-state">A verificar</span></div>
+        <div class="dashboard-topline"><span id="balancestate" class="dashboard-state">A verificar</span></div>
         <div id="bal" class="bal balance-line dashboard-amount" aria-live="polite">—</div>
         <p id="balancehint" class="dashboard-caption"></p>
         <p id="balanceperiod" class="dashboard-retro-note" aria-live="polite"></p>
@@ -1262,14 +1287,13 @@ html{scroll-padding-bottom:calc(125px + env(safe-area-inset-bottom,0px))}
 
 <button class="g" id="logout" type="button" aria-label="Terminar sessão" title="Terminar sessão"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M10 17l5-5-5-5M15 12H3"/><path d="M12 3h6a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3h-6"/></svg><span>Terminar sessão</span></button>
   </div></section>
-  <div id="editrecurringoverlay" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="er-title">
-    <div class="card modal-card">
-      <div class="row sp"><h2 id="er-title">Editar despesa fixa</h2><button id="closeeditrec" class="g smallbtn" type="button">Fechar</button></div>
+  <div id="editrecurringoverlay" class="modal-backdrop edit-sheet hidden" role="dialog" aria-modal="true" aria-labelledby="er-title">
+    <div class="card add-card modal-card"><div class="sheet-handle" aria-hidden="true"></div>
+      <div class="row sp"><h2 id="er-title">Editar despesa fixa</h2><button id="closeeditrec" class="g sheet-close" type="button" aria-label="Fechar">×</button></div>
       <div class="add-fields">
-        <label for="erd">Descrição</label><input id="erd" maxlength="60">
-        <div class="amount-category-row">
-          <div><label for="era">Valor (€)</label><input id="era" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0,00"></div>
-          <div><label for="erc">Categoria</label><select id="erc" aria-label="Categoria da despesa">
+        <label for="era">Valor</label><div class="amount-entry"><input id="era" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0,00"><span>€</span></div>
+        <label for="erd">Descrição</label><input id="erd" maxlength="60" autocomplete="off">
+        <label id="erc-label" for="erc">Categoria</label><select id="erc" tabindex="-1" aria-hidden="true">
             <option value="">Automática</option>
                           <option value="Casa">Casa</option>
                           <option value="Comida">Comida</option>
@@ -1277,28 +1301,27 @@ html{scroll-padding-bottom:calc(125px + env(safe-area-inset-bottom,0px))}
                           <option value="Lazer">Lazer</option>
                           <option value="Saúde">Saúde</option>
                           <option value="Outros">Outros</option>
-          </select></div>
-        </div>
+          </select><div id="erc-chips" class="edit-category-chips" role="group" aria-labelledby="erc-label"></div>
         <label for="erday">Dia do mês (1 a 28)</label><input id="erday" type="number" min="1" max="28" step="1" inputmode="numeric">
         <div class="month-range">
           <div><label for="erstart">Mês de início</label><input id="erstart" type="month" required></div>
           <div><label for="erend">Mês de fim (opcional)</label><input id="erend" type="month"></div>
         </div>
         <label class="share-check" for="ers"><input id="ers" type="checkbox"><span>Despesa partilhada</span></label>
-        <button id="saveeditrec" type="button">Guardar e atualizar lançamentos</button>
-        <p class="mut helper">Atualiza também os meses já gerados desta despesa fixa. Meses fora do novo intervalo são removidos. Os meses que escolheste excluir continuam excluídos.</p>
+        <button id="saveeditrec" type="button">Guardar alterações</button>
+        <p class="mut helper">Atualiza os lançamentos já gerados; os meses fora do intervalo são removidos. Os meses excluídos mantêm-se excluídos.</p>
+        <button id="editrec-skip" class="g hidden" type="button"></button>
+        <button id="editrec-remove" class="g edit-danger" type="button">Remover despesa fixa</button>
       </div>
     </div>
   </div>
-  <div id="editoverlay" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="edititle">
-    <div class="card modal-card">
-      <div class="row sp"><h2 id="edititle">Editar despesa</h2><button id="canceledit" class="g smallbtn" type="button">Fechar</button></div>
+  <div id="editoverlay" class="modal-backdrop edit-sheet hidden" role="dialog" aria-modal="true" aria-labelledby="edititle">
+    <div class="card add-card modal-card"><div class="sheet-handle" aria-hidden="true"></div>
+      <div class="row sp"><h2 id="edititle">Editar despesa</h2><button id="canceledit" class="g sheet-close" type="button" aria-label="Fechar">×</button></div>
       <div class="add-fields">
-        <label for="ed">Descrição</label>
-        <input id="ed" maxlength="60" autocomplete="off">
-        <div class="amount-category-row">
-          <div><label for="ea">Valor (€)</label><input id="ea" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0,00"></div>
-          <div><label for="ec">Categoria</label><select id="ec" aria-label="Categoria da despesa">
+        <label for="ea">Valor</label><div class="amount-entry"><input id="ea" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0,00"><span>€</span></div>
+        <label for="ed">Descrição</label><input id="ed" maxlength="60" autocomplete="off">
+        <label id="ec-label" for="ec">Categoria</label><select id="ec" tabindex="-1" aria-hidden="true">
             <option value="">Automática</option>
                           <option value="Casa">Casa</option>
                           <option value="Comida">Comida</option>
@@ -1306,8 +1329,7 @@ html{scroll-padding-bottom:calc(125px + env(safe-area-inset-bottom,0px))}
                           <option value="Lazer">Lazer</option>
                           <option value="Saúde">Saúde</option>
                           <option value="Outros">Outros</option>
-          </select></div>
-        </div>
+          </select><div id="ec-chips" class="edit-category-chips" role="group" aria-labelledby="ec-label"></div>
         <label class="share-check" for="es"><input type="checkbox" id="es" checked><span>Despesa partilhada</span></label>
         <div class="dual-actions"><button id="saveedit" type="button">Guardar alterações</button><button id="deleteedit" class="g" type="button">Apagar despesa</button></div>
         <p class="mut helper">Editar uma despesa corrige apenas esse registo. Se a despesa veio de uma despesa fixa, os próximos meses continuam a ser gerados normalmente.</p>
@@ -1874,7 +1896,6 @@ function render(){
  }
  note.textContent=settledLater?'✓ Liquidado posteriormente':hasMonthMovements&&month<asOfPeriod?'Estado atual · inclui acertos posteriores':'';
  note.classList.toggle('hidden',!settledLater);
- $('#balancekicker').textContent=monthCents<0?'Deves':monthCents>0?'Devem-te':'Por liquidar';
  b.classList.toggle('positive',monthCents>0);
  b.classList.toggle('settled',otherCount>0&&hasMonthMovements&&monthCents===0);
  // O estado do cartão já indica se existe saldo por pagar, a receber ou pago.
@@ -1955,28 +1976,22 @@ function renderRecurringList(listSelector,emptySelector,records,isEnded){
  if(!recurringReady){empty.classList.remove('hidden');empty.textContent='As despesas fixas ainda não estão configuradas no Supabase.';return}
  empty.classList.toggle('hidden',records.length>0);
  if(!records.length){empty.textContent=isEnded?'Não existem despesas fixas terminadas até este mês.':'Ainda não existem despesas fixas para este mês.';return}
+ const names=readMemberNames();
  records.forEach(r=>{
-  const item=document.createElement('div');item.className='recurring-item';const left=document.createElement('div');left.className='recurring-main';
-  const title=document.createElement('div');title.className='recurring-title';title.textContent=r.description;
-  const meta=document.createElement('div');meta.className='mut recurring-meta';
+  const editable=!offlineMode&&r.payer===me.id;
+  const item=document.createElement(editable?'button':'div');item.className='recurring-item'+(editable?' recurring-editable':'');
+  if(editable){item.type='button';item.setAttribute('aria-haspopup','dialog');item.onclick=()=>openEditRecurring(r.id)}
+  const left=document.createElement('span');left.className='recurring-main';
+  const title=document.createElement('span');title.className='recurring-title';title.textContent=r.description;
+  const meta=document.createElement('span');meta.className='mut recurring-meta';
   const from=monthFromDate(r.start_month)||monthFromDate(r.created_at)||periodNow(),end=monthFromDate(r.end_month);
-  meta.textContent=fmt(r.amount)+' · dia '+r.day_of_month+(r.shared?' · partilhada':' · individual')+' · '+monthName(from)+(end?' a '+monthName(end):' em diante')+(r.payer===me.id?' · criada por ti':' · criada pela outra pessoa');
+  meta.textContent='Dia '+r.day_of_month+(r.shared?' · partilhada':' · individual')+' · '+monthName(from)+(end?' a '+monthName(end):' em diante');
   left.append(title,meta);
-  if(excludedMonths(r).length){const skipped=document.createElement('div');skipped.className='mut';skipped.textContent='Meses excluídos: '+excludedMonths(r).map(monthName).join(', ');left.append(skipped)}
-  const right=document.createElement('div');right.className='inline-actions';
-  if(!offlineMode&&r.payer===me.id){
-    right.append(createExpenseIconButton('edit',(isEnded?'Editar ou reativar ':'Editar ')+r.description,()=>openEditRecurring(r.id)));
-    right.append(createExpenseIconButton('remove','Remover '+r.description,()=>removeRecurring(r.id)));
-    if(!isEnded&&month>=from&&(!end||month<=end)){
-      const skip=document.createElement('button');skip.type='button';skip.className='g smallbtn';
-      const excluded=excludedMonths(r).includes(month);
-      skip.textContent=excluded?'Incluir '+MES[Number(month.slice(5,7))-1]:'Excluir '+MES[Number(month.slice(5,7))-1];
-      skip.title=excluded?'Voltar a incluir este mês':'Não lançar esta despesa neste mês';
-      skip.onclick=()=>toggleRecurringMonth(r.id,month,!excluded);
-      left.append(skip);
-    }
-  }
-  item.append(left,right);list.append(item)
+  if(excludedMonths(r).length){const skipped=document.createElement('span');skipped.className='mut recurring-meta';skipped.textContent='Meses excluídos: '+excludedMonths(r).map(monthName).join(', ');left.append(skipped)}
+  const avatar=document.createElement('span');avatar.className='payer-avatar'+(memberColorIndex(r.payer)===1?' payer-avatar--alt':'');
+  const name=memberDisplayName(r.payer,names);avatar.textContent=memberInitials(name,r.payer===me.id?'T':'O');avatar.title=name||(r.payer===me.id?'Tu':'Outra pessoa');avatar.setAttribute('role','img');avatar.setAttribute('aria-label','Criada por '+avatar.title);
+  const amount=document.createElement('strong');amount.className='recurring-amount';amount.textContent=fmt(r.amount);
+  item.append(avatar,left,amount);list.append(item)
  });
 }
 
@@ -2044,6 +2059,8 @@ function toggleBalanceAction(panelId){
  }
 }
 function closeNewExpense(){show('#newexpensepanel',false);$('#openexpense').setAttribute('aria-expanded','false');document.body.classList.remove('expense-sheet-open');}
+function syncEditCategoryChips(id){for(const chip of $('#'+id+'-chips').children)chip.setAttribute('aria-pressed',String(chip.dataset.category===$('#'+id).value))}
+for(const id of ['ec','erc']){for(const option of $('#'+id).options){const chip=document.createElement('button');chip.type='button';chip.className='category-chip';chip.dataset.category=option.value;chip.textContent=option.textContent.trim();chip.onclick=()=>{$('#'+id).value=option.value;syncEditCategoryChips(id)};$('#'+id+'-chips').append(chip)}}
 function syncCategoryChips(){for(const chip of $('#category-chips').children)chip.setAttribute('aria-pressed',String(chip.dataset.category===$('#c').value));}
 for(const option of $('#c').options){const chip=document.createElement('button');chip.type='button';chip.className='category-chip';chip.dataset.category=option.value;chip.textContent=option.textContent.trim();chip.onclick=()=>{$('#c').value=option.value;syncCategoryChips()};$('#category-chips').append(chip)}
 syncCategoryChips();
@@ -2225,7 +2242,7 @@ async function commitPendingDelete(pending){
  finally{if(pendingDelete===pending)pendingDelete=null;}
 }
 let editExpenseTrigger=null;
-function openEditExpense(id){if(offlineMode||!me)return;const expense=items.find(x=>x.id===id&&x.payer===me.id);if(!expense)return;editExpenseTrigger=document.activeElement;editingExpenseId=id;$('#ed').value=expense.description||'';$('#ea').value=(Math.round(Number(expense.amount)*100)/100).toFixed(2);fillCategorySelect('#ec',expense.category);$('#es').checked=!!expense.shared;show('#editoverlay');$('#ed').focus()}
+function openEditExpense(id){if(offlineMode||!me)return;const expense=items.find(x=>x.id===id&&x.payer===me.id);if(!expense)return;editExpenseTrigger=document.activeElement;editingExpenseId=id;$('#ed').value=expense.description||'';$('#ea').value=(Math.round(Number(expense.amount)*100)/100).toFixed(2);fillCategorySelect('#ec',expense.category);syncEditCategoryChips('ec');$('#es').checked=!!expense.shared;show('#editoverlay');$('#canceledit').focus({preventScroll:true})}
 function closeEditExpense(){const trigger=editExpenseTrigger;editExpenseTrigger=null;editingExpenseId=null;show('#editoverlay',false);if(trigger?.isConnected)trigger.focus({preventScroll:true})}
 async function saveEditExpense(){
  if(!editingExpenseId)return;
@@ -2252,13 +2269,20 @@ async function addRecurringExpense(){
   closeNewExpense();syncCategoryChips();await loadRecurring();await loadExpenses({syncRecurring:true});status('Despesa fixa guardada para os meses escolhidos.');
  }catch(error){status('Não foi possível guardar a despesa fixa: '+error.message,true)}finally{btn.disabled=false}
 }
+let editRecurringTrigger=null;
 function openEditRecurring(id){
+ if(offlineMode||!me)return;
  const r=recurring.find(x=>x.id===id&&x.payer===me.id);if(!r)return;
- editingRecurringId=id;$('#erd').value=r.description;$('#era').value=Number(r.amount).toFixed(2);fillCategorySelect('#erc',r.category);$('#erday').value=r.day_of_month;
+ editRecurringTrigger=document.activeElement;editingRecurringId=id;$('#erd').value=r.description;$('#era').value=Number(r.amount).toFixed(2);fillCategorySelect('#erc',r.category);syncEditCategoryChips('erc');$('#erday').value=r.day_of_month;
  $('#erstart').value=monthFromDate(r.start_month)||monthFromDate(r.created_at)||periodNow();$('#erend').value=monthFromDate(r.end_month);$('#ers').checked=!!r.shared;
- show('#editrecurringoverlay');$('#erd').focus();
+ const from=monthFromDate(r.start_month)||monthFromDate(r.created_at)||periodNow(),end=monthFromDate(r.end_month),period=month;
+ const skip=$('#editrec-skip'),excluded=excludedMonths(r).includes(period);
+ show('#editrec-skip',period>=from&&(!end||period<=end));
+ skip.textContent=(excluded?'Incluir ':'Excluir ')+monthName(period);
+ skip.onclick=()=>{if(offlineMode||editingRecurringId!==id)return;closeEditRecurring();toggleRecurringMonth(id,period,!excluded)};
+ show('#editrecurringoverlay');$('#closeeditrec').focus({preventScroll:true});
 }
-function closeEditRecurring(){editingRecurringId=null;show('#editrecurringoverlay',false)}
+function closeEditRecurring(){const trigger=editRecurringTrigger;editRecurringTrigger=null;editingRecurringId=null;show('#editrecurringoverlay',false);if(trigger?.isConnected)trigger.focus({preventScroll:true})}
 async function saveEditRecurring(){
  const r=recurring.find(x=>x.id===editingRecurringId&&x.payer===me.id);if(!r)return;
  const description=$('#erd').value.trim(),amount=normalizeAmount($('#era').value),day=Number($('#erday').value),shared=$('#ers').checked;
@@ -2266,7 +2290,7 @@ async function saveEditRecurring(){
  if(!description||!(amount>0)||!Number.isFinite(amount)||!Number.isInteger(day)||day<1||day>28||!start||(end&&end<start)){
   status('Verifica a descrição, valor, dia do mês e intervalo de meses.',true);return
  }
- const btn=$('#saveeditrec');btn.disabled=true;
+ const btn=$('#saveeditrec'),actions=[$('#editrec-skip'),$('#editrec-remove')];btn.disabled=true;actions.forEach(b=>b.disabled=true);
  try{
   // First change the schedule, then reconcile only movements connected to this template.
   const {error}=await sbClient.from('recurring_expenses').update({description,amount,category:categorySelected('#erc',description),shared,day_of_month:day,start_month:firstDayOfMonth(start),end_month:end?firstDayOfMonth(end):null}).eq('id',r.id).eq('payer',me.id);
@@ -2285,7 +2309,7 @@ async function saveEditRecurring(){
     }
   }
   closeEditRecurring();await loadRecurring();await loadExpenses({syncRecurring:true});status('Despesa fixa e meses já gerados atualizados.');
- }catch(error){status('Não foi possível concluir a edição: '+error.message+'. Verifica os lançamentos antes de repetir.',true)}finally{btn.disabled=false}
+ }catch(error){status('Não foi possível concluir a edição: '+error.message+'. Verifica os lançamentos antes de repetir.',true)}finally{btn.disabled=false;actions.forEach(b=>b.disabled=false)}
 }
 async function toggleRecurringMonth(id,period,exclude){
  const r=recurring.find(x=>x.id===id&&x.payer===me.id);if(!r)return;
@@ -2313,6 +2337,8 @@ async function removeRecurring(id){
  await loadRecurring();await loadExpenses();status('Despesa fixa removida de todos os meses, incluindo os lançamentos gerados.');
 }
 
+$('#editrec-remove').onclick=()=>{if(offlineMode||!editingRecurringId)return;const id=editingRecurringId;closeEditRecurring();removeRecurring(id)};
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!$('#editrecurringoverlay').classList.contains('hidden'))closeEditRecurring();else if(!$('#editoverlay').classList.contains('hidden'))closeEditExpense()}});
 $('#closeeditrec').onclick=closeEditRecurring;$('#saveeditrec').onclick=saveEditRecurring;
 $('#editrecurringoverlay').onclick=(e)=>{if(e.target.id==='editrecurringoverlay')closeEditRecurring()};
 // Os meses são agrupados por ano no seletor do cabeçalho.
