@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <link rel="preconnect" href="https://yinwpwywuvpborlfswzt.supabase.co" crossorigin>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-dJzaJwprXSvvTuuFT9tV+an26x+hAT6ML//m7moiQbs=' 'sha256-J4IzLgQDqeA0JGzxhTVscNXpx6AaJgIEwkRosVOO0/s=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-dJzaJwprXSvvTuuFT9tV+an26x+hAT6ML//m7moiQbs=' 'sha256-IhAHLEoXqGdDE68ez0kKI+J8zRACWH6F9qoS5eDfBVI=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
 <title>A Nossa Casa</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#F4F6F9">
@@ -910,8 +910,7 @@ html{scroll-padding-bottom:calc(125px + env(safe-area-inset-bottom,0px))}
 .edit-sheet h2{margin:0;font-size:var(--fs-2xl)}
 .edit-sheet .sheet-close{min-width:44px;min-height:44px;font-size:var(--fs-3xl);padding:0;border:0}
 .edit-sheet .amount-entry input{font-size:var(--fs-6xl);font-weight:750;background:transparent;border:0;padding:0 0 8px;min-width:0;letter-spacing:-1px}
-.edit-sheet .add-fields{gap:9px}
-.edit-sheet .add-fields{grid-template-columns:minmax(0,1fr)}
+.edit-sheet .add-fields{gap:9px;grid-template-columns:minmax(0,1fr)}
 .edit-sheet .month-range{grid-template-columns:repeat(2,minmax(0,1fr))}
 .edit-sheet .month-range>div,.edit-sheet .month-range input{min-width:0}
 @media(max-width:420px){.edit-sheet .month-range{grid-template-columns:minmax(0,1fr)}}
@@ -1798,7 +1797,6 @@ async function loadHousehold(prefetch=null){
  }catch(error){if(current()){show('#app',false);startupError(error.message||'Tenta novamente.');}}
 }
 // A configuração das despesas fixas é atualizada juntamente com os movimentos.
-async function loadRecurring(){return loadExpenses()}
 async function ensureRecurringForMonth(period){
  if(!recurringReady||!householdId||!recurring.length)return false;
  const homeId=householdId,userId=me?.id,state=syncState;
@@ -2142,19 +2140,28 @@ function toggleBalanceAction(panelId){
 }
 function closeSettlement(){show('#settlementpanel',false);$('#opensettlement').setAttribute('aria-expanded','false');}
 function closeNewExpense(){show('#newexpensepanel',false);$('#openexpense').setAttribute('aria-expanded','false');document.body.classList.remove('expense-sheet-open');}
-function syncEditCategoryChips(id){for(const chip of $('#'+id+'-chips').children)chip.setAttribute('aria-pressed',String(chip.dataset.category===$('#'+id).value))}
-for(const id of ['ec','erc']){for(const option of $('#'+id).options){const chip=document.createElement('button');chip.type='button';chip.className='category-chip';chip.dataset.category=option.value;chip.textContent=option.textContent.trim();chip.onclick=()=>{$('#'+id).value=option.value;syncEditCategoryChips(id)};$('#'+id+'-chips').append(chip)}}
-function syncCategoryChips(){for(const chip of $('#category-chips').children)chip.setAttribute('aria-pressed',String(chip.dataset.category===$('#c').value));}
-for(const option of $('#c').options){const chip=document.createElement('button');chip.type='button';chip.className='category-chip';chip.dataset.category=option.value;chip.textContent=option.textContent.trim();chip.onclick=()=>{$('#c').value=option.value;syncCategoryChips()};$('#category-chips').append(chip)}
-syncCategoryChips();
+// Os três formulários partilham a criação e seleção dos chips.
+function syncChips(selectId,containerId){
+ const value=$(selectId).value;
+ for(const chip of $(containerId).children)chip.setAttribute('aria-pressed',String(chip.dataset.category===value));
+}
+function buildCategoryChips(selectId,containerId){
+ const select=$(selectId),container=$(containerId);
+ for(const option of select.options){
+  const chip=document.createElement('button');chip.type='button';chip.className='category-chip';chip.dataset.category=option.value;chip.textContent=option.textContent.trim();
+  chip.onclick=()=>{select.value=option.value;syncChips(selectId,containerId)};container.append(chip);
+ }
+}
+function syncEditCategoryChips(id){syncChips('#'+id,'#'+id+'-chips')}
+function syncCategoryChips(){syncChips('#c','#category-chips')}
+for(const id of ['ec','erc'])buildCategoryChips('#'+id,'#'+id+'-chips');
+buildCategoryChips('#c','#category-chips');syncCategoryChips();
 $('#openexpense').onclick=()=>{if(!$('#newexpensepanel').classList.contains('hidden')){closeNewExpense();return}if(activeTab!=='expenses')selectTab('expenses');const d=new Date();$('#expense-date').value=periodNow()+'-'+String(d.getDate()).padStart(2,'0');syncCategoryChips();toggleBalanceAction('#newexpensepanel');document.body.classList.add('expense-sheet-open');};
 $('#closeexpense').onclick=closeNewExpense;
 $('#newexpensepanel').addEventListener('click',e=>{if(e.target===$('#newexpensepanel'))closeNewExpense()});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#newexpensepanel').classList.contains('hidden'))closeNewExpense()});
 $('#opensettlement').onclick=()=>{closeNewExpense();toggleBalanceAction('#settlementpanel')};
 $('#closesettlement').onclick=closeSettlement;
 $('#settlementpanel').onclick=e=>{if(e.target.id==='settlementpanel')closeSettlement()};
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#settlementpanel').classList.contains('hidden'))closeSettlement()});
 
 function renderCharts(){
  const isAnnual=chartPeriod==='year',year=month.slice(0,4);
@@ -2323,7 +2330,7 @@ async function commitPendingDelete(pending){
  }catch(error){status('Não foi possível concluir a eliminação: '+error.message,true);}
  finally{if(pendingDelete===pending)pendingDelete=null;}
 }
-// Bloqueio local contra duplo toque; não repetir automaticamente uma escrita.
+// Bloqueio local contra duplo toque; manualOperation repete apenas com o mesmo UUID.
 const expenseWrites=new Set();
 async function guardExpenseWrite(selector,operation){
  if(offlineMode||!me||expenseWrites.has(selector))return;
@@ -2344,6 +2351,10 @@ async function saveEditExpense(){
 }
 async function deleteEditedExpense(){if(expenseWrites.has('#saveedit')||!editingExpenseId)return;const id=editingExpenseId;closeEditExpense();await deleteExpense(id)}
 $('#canceledit').onclick=closeEditExpense;$('#saveedit').onclick=()=>guardExpenseWrite('#saveedit',saveEditExpense);$('#deleteedit').onclick=deleteEditedExpense;$('#editoverlay').onclick=(e)=>{if(e.target.id==='editoverlay')closeEditExpense()};
+function resetNewExpenseFields(){
+ for(const id of ['#d','#a','#c'])$(id).value='';
+ $('#s').checked=true;
+}
 async function addRecurringExpense(){
  const description=$('#d').value.trim(), amount=normalizeAmount($('#a').value), day=Number($('#rday').value), shared=$('#s').checked;
  const start=$('#rstart').value,end=$('#rend').value;
@@ -2355,7 +2366,7 @@ async function addRecurringExpense(){
  try{
   const {error}=await sbClient.from('recurring_expenses').insert(row);
   if(error)throw error;
-  $('#d').value='';$('#a').value='';$('#c').value='';$('#rday').value='1';$('#s').checked=true;$('#rstart').value=periodNow();$('#rend').value='';$('#isrecurring').checked=false;setRecurringMode();
+  resetNewExpenseFields();$('#rday').value='1';$('#rstart').value=periodNow();$('#rend').value='';$('#isrecurring').checked=false;setRecurringMode();
   closeNewExpense();syncCategoryChips();if(await loadExpenses({syncRecurring:true}))status('Despesa fixa guardada para os meses escolhidos.');
  }catch(error){status('Não foi possível guardar a despesa fixa: '+error.message,true)}finally{btn.disabled=false}
 }
@@ -2417,7 +2428,13 @@ async function removeRecurring(id){
 }
 
 $('#editrec-remove').onclick=()=>{if(offlineMode||!editingRecurringId)return;const id=editingRecurringId;closeEditRecurring();removeRecurring(id)};
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!$('#editrecurringoverlay').classList.contains('hidden'))closeEditRecurring();else if(!$('#editoverlay').classList.contains('hidden'))closeEditExpense()}});
+document.addEventListener('keydown',e=>{
+ if(e.key!=='Escape')return;
+ if(!$('#newexpensepanel').classList.contains('hidden'))closeNewExpense();
+ if(!$('#settlementpanel').classList.contains('hidden'))closeSettlement();
+ if(!$('#editrecurringoverlay').classList.contains('hidden'))closeEditRecurring();
+ else if(!$('#editoverlay').classList.contains('hidden'))closeEditExpense();
+});
 $('#closeeditrec').onclick=closeEditRecurring;$('#saveeditrec').onclick=saveEditRecurring;
 $('#editrecurringoverlay').onclick=(e)=>{if(e.target.id==='editrecurringoverlay')closeEditRecurring()};
 
@@ -2630,7 +2647,7 @@ $('#signup').onclick=async()=>{
 };
 $('#createhome').onclick=async()=>{const {data,error}=await sbClient.rpc('create_household');if(error){message('#homemsg','Erro: '+error.message,true);return}householdId=data;await loadHousehold()};
 $('#joinhome').onclick=async()=>{const code=$('#invite').value.trim().toUpperCase();if(!code)return;const {data,error}=await sbClient.rpc('join_household',{p_code:code});if(error){message('#homemsg','Não foi possível entrar: '+error.message,true);return}householdId=data;await loadHousehold()};
-async function submitNewExpense(){if($('#isrecurring').checked){await addRecurringExpense();return}const description=$('#d').value.trim(),amount=normalizeAmount($('#a').value);if(!description||!(amount>0)){status('Indica uma descrição e um valor válido.',true);return}const date=$('#expense-date').value;if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||Number.isNaN(new Date(date+'T12:00:00').getTime())){status('Escolhe uma data válida para a despesa.',true);return}const selectedPeriod=date.slice(0,7);if(selectedPeriod!==periodNow()){if(!confirm('Atenção: a data escolhida ('+date.split('-').reverse().join('/')+') não pertence ao mês atual.\n\nQueres mesmo adicionar esta despesa?'))return;}const row={household_id:householdId,description,amount,category:categorySelected('#c',description),shared:$('#s').checked,payer:me.id,date};const {error}=await manualOperation('expense_created',row);if(error){status('Não foi possível adicionar: '+error.message,true);return}$('#d').value='';$('#a').value='';$('#c').value='';$('#s').checked=true;closeNewExpense();syncCategoryChips();if(month!==date.slice(0,7)){month=date.slice(0,7);selectedBarMonth=null}syncExpenseDate();await loadExpenses();status('Despesa adicionada com sucesso ✓')}
+async function submitNewExpense(){if($('#isrecurring').checked){await addRecurringExpense();return}const description=$('#d').value.trim(),amount=normalizeAmount($('#a').value);if(!description||!(amount>0)){status('Indica uma descrição e um valor válido.',true);return}const date=$('#expense-date').value;if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||Number.isNaN(new Date(date+'T12:00:00').getTime())){status('Escolhe uma data válida para a despesa.',true);return}const selectedPeriod=date.slice(0,7);if(selectedPeriod!==periodNow()){if(!confirm('Atenção: a data escolhida ('+date.split('-').reverse().join('/')+') não pertence ao mês atual.\n\nQueres mesmo adicionar esta despesa?'))return;}const row={household_id:householdId,description,amount,category:categorySelected('#c',description),shared:$('#s').checked,payer:me.id,date};const {error}=await manualOperation('expense_created',row);if(error){status('Não foi possível adicionar: '+error.message,true);return}resetNewExpenseFields();closeNewExpense();syncCategoryChips();if(month!==date.slice(0,7)){month=date.slice(0,7);selectedBarMonth=null}syncExpenseDate();await loadExpenses();status('Despesa adicionada com sucesso ✓')}
 $('#add').onclick=()=>guardExpenseWrite('#add',submitNewExpense);
 
 
