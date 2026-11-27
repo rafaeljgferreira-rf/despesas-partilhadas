@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <link rel="preconnect" href="https://yinwpwywuvpborlfswzt.supabase.co" crossorigin>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-dJzaJwprXSvvTuuFT9tV+an26x+hAT6ML//m7moiQbs=' 'sha256-IOhIx15f2dNl75YS34cUqxuQDKRKC3kJnsTw+DhZbpE=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-dJzaJwprXSvvTuuFT9tV+an26x+hAT6ML//m7moiQbs=' 'sha256-qsVEZXvKuWPbgWzEm4Z3gMAp7lO1OBZ3T4N12Tt4Bjo=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
 <title>A Nossa Casa</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#F4F6F9">
@@ -431,7 +431,7 @@ body{max-width:640px;padding:22px 20px max(120px,env(safe-area-inset-bottom,0px)
 #expenseview .balance-action[aria-expanded="true"]{outline:2px solid var(--ac);outline-offset:2px}
 #expenseview .add-panel{margin:0 0 16px}
 #expenseview .add-panel>.add-card{border:1px solid var(--bd);border-radius:16px;padding-top:20px}
-#expenseview #settlementpanel{margin:0 0 16px}
+#expenseview #settlementpanel{margin:0}
 @media(max-width:360px){
  #expenseview .balance-actions{gap:7px}
  #expenseview .balance-action{gap:5px;padding:10px 5px;font-size:var(--fs-xs)}
@@ -919,6 +919,21 @@ html{scroll-padding-bottom:calc(125px + env(safe-area-inset-bottom,0px))}
 .edit-sheet .edit-danger{color:var(--danger-text)}
 body:has(.edit-sheet:not(.hidden)){overflow:hidden}
 @media(prefers-reduced-motion:reduce){.edit-sheet>.add-card{animation:none}}
+
+/* 4.0.6 — gesto de fechar e totais dos gráficos */
+#chartview .totals-card{background:var(--hero-green)!important;border-color:transparent!important;color:var(--hero-ink)}
+#chartview .totals-card .mut{color:var(--hero-muted)}
+#chartview .totals-card .chart-summary>div{background:transparent}
+:root[data-theme="dark"]{--chart-bar:#79AC8E;--chart-muted:#718B7A}
+.modal-card .sheet-handle{position:relative;touch-action:none;cursor:grab;background:var(--control-border)}
+.modal-card .sheet-handle::before{content:"";position:absolute;inset:-12px -55px}
+.modal-card>.row.sp{touch-action:none}
+.modal-card.sheet-dragging{animation:none!important;transition:none!important;user-select:none}
+.modal-card.sheet-interacted{animation:none!important}
+.modal-card.sheet-returning{animation:none!important;transition:transform .18s ease-out}
+#expenseview #settlementpanel>.settlement-card{padding:12px 20px max(22px,env(safe-area-inset-bottom));margin:0}
+#settlementpanel .settle-controls{flex-direction:column}
+@media(prefers-reduced-motion:reduce){.modal-card.sheet-returning{transition:none}}
 </style>
 </head>
 <body>
@@ -942,7 +957,7 @@ body:has(.edit-sheet:not(.hidden)){overflow:hidden}
 </section>
 <section id="auth" class="card hidden">
   <strong>Aceder à aplicação</strong>
-  <p class="mut">Cada pessoa deve usar a sua própria conta. Assim, a aplicação identifica quem registou cada despesa.</p>
+  <p class="mut">Usa a tua própria conta.</p>
   <div class="f">
     <input id="email" aria-label="Email" class="w" type="email" placeholder="Email" autocomplete="email">
     <input id="password" aria-label="Palavra-passe" class="w" type="password" placeholder="Palavra-passe" autocomplete="current-password">
@@ -963,7 +978,7 @@ body:has(.edit-sheet:not(.hidden)){overflow:hidden}
 </section>
 <section id="passwordreset" class="card hidden">
   <strong>Definir nova palavra-passe</strong>
-  <p class="mut">Escolhe uma nova palavra-passe para a tua conta.</p>
+  
   <input id="newpassword" aria-label="Nova palavra-passe" type="password" placeholder="Nova palavra-passe (mínimo 8 caracteres)" autocomplete="new-password" minlength="8">
   <input id="confirmnewpassword" aria-label="Confirmar nova palavra-passe" type="password" placeholder="Confirmar nova palavra-passe" autocomplete="new-password" minlength="8" style="margin-top:8px">
   <button id="savepassword" type="button" style="width:100%;margin-top:10px">Guardar nova palavra-passe</button>
@@ -972,7 +987,7 @@ body:has(.edit-sheet:not(.hidden)){overflow:hidden}
 
 <section id="household" class="card hidden">
   <strong>Partilhar com a outra pessoa</strong>
-  <p class="mut">Uma pessoa cria o espaço partilhado e envia o código à outra. A segunda pessoa escolhe “Entrar com código”.</p>
+  <p class="mut">Cria uma casa ou entra com um código.</p>
   <button id="createhome" style="width:100%">Criar espaço partilhado</button>
   <div style="height:1px;background:var(--bd);margin:14px 0"></div>
   <input id="invite" aria-label="Código de convite" placeholder="Código de convite">
@@ -1041,7 +1056,7 @@ body:has(.edit-sheet:not(.hidden)){overflow:hidden}
                           <option value="Outros">Outros</option>
           </select><div id="category-chips" role="group" aria-labelledby="category-label"></div>
         <label class="share-check" for="s"><input type="checkbox" id="s" checked><span>Despesa partilhada</span></label>
-        <label for="expense-date">Data da despesa</label><input id="expense-date" type="date" required><details id="expense-more"><summary>Mais opções · despesa fixa</summary><label class="share-check" for="isrecurring"><input type="checkbox" id="isrecurring" aria-controls="recurringoptions" aria-expanded="false"><span>Repetir mensalmente (despesa fixa)</span></label>
+        <label for="expense-date">Data da despesa</label><input id="expense-date" type="date" required><details id="expense-more"><summary>Despesa fixa</summary><label class="share-check" for="isrecurring"><input type="checkbox" id="isrecurring" aria-controls="recurringoptions" aria-expanded="false"><span>Repetir mensalmente</span></label>
         <div id="recurringoptions" class="recurring-options hidden">
           <div class="recurring-grid">
             <div><label for="rday">Dia do mês</label><input id="rday" type="number" inputmode="numeric" min="1" max="28" step="1" value="1"></div>
@@ -1050,21 +1065,22 @@ body:has(.edit-sheet:not(.hidden)){overflow:hidden}
             <div><label for="rstart">Mês de início</label><input id="rstart" type="month"></div>
             <div><label for="rend">Mês de fim (opcional)</label><input id="rend" type="month"></div>
           </div>
-          <p class="mut helper">Sem mês de fim, repete-se todos os meses. Podes editar ou excluir meses mais tarde.</p>
+          <p class="mut helper">Sem fim, repete todos os meses.</p>
         </div>
         </details>
         <button id="add" type="button"><span aria-hidden="true">＋</span> <span id="addlabel">Adicionar despesa</span></button>
       </div>
-      <p class="mut helper">Com o visto «Despesa partilhada» ativo, o valor é dividido igualmente.</p>
+      <p class="mut helper">Partilhada: 50/50.</p>
 
     </div>
     </section>
-    <section id="settlementpanel" class="card settlement-card hidden" aria-labelledby="settletitle">
-      <h2 id="settletitle">Acertar contas</h2>
+    <section id="settlementpanel" class="modal-backdrop edit-sheet hidden" role="dialog" aria-modal="true" aria-labelledby="settletitle">
+      <div class="card add-card modal-card settlement-card"><div class="sheet-handle" aria-hidden="true"></div><div class="row sp"><h2 id="settletitle">Acertar contas</h2><button id="closesettlement" class="g sheet-close" type="button" aria-label="Fechar">×</button></div>
       <p class="mut" id="settlehint">Saldo global atual.</p>
       <div id="settleaction" class="hidden">
-        <label for="settleamount" class="settle-label">Quanto vais pagar (€)</label>
+        <label for="settleamount" class="settle-label">Valor a pagar (€)</label>
         <div class="settle-controls"><input id="settleamount" aria-label="Valor do pagamento em euros" type="number" inputmode="decimal" min="0.01" step="0.01" placeholder="0,00"><button id="settlepay" type="button">Registar pagamento</button></div>
+      </div>
       </div>
     </section>
     <h2 class="movements-title">Movimentos</h2><div id="list"></div>
@@ -1072,7 +1088,7 @@ body:has(.edit-sheet:not(.hidden)){overflow:hidden}
       <details id="recurringmanage" class="recurring-manage">
         <summary><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06-2.91 2.91-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 1.52V21h-4v-.08A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06-2.91-2.91.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.52-1H3v-4h.08A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06 2.91-2.91.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.52V3h4v.08A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06 2.91 2.91-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.52 1H21v4h-.08A1.65 1.65 0 0 0 19.4 15z"/></svg><span>Gerir despesas fixas</span> <span id="recurringcount"></span></summary>
         <div id="recurringlist" class="recurring-list"></div>
-        <p id="recurringempty" class="mut hidden">Ainda não existem despesas fixas.</p>
+        <p id="recurringempty" class="mut hidden">Sem despesas fixas.</p>
       </details>
     </div>
   </section>
@@ -1087,7 +1103,7 @@ body:has(.edit-sheet:not(.hidden)){overflow:hidden}
       </div>
     </div>
     <div class="card month-compare" id="monthcompare">
-      <h2>Comparação com o mês anterior</h2>
+      <h2>Comparação mensal</h2>
       <div class="compare-grid">
         <div><span class="mut" id="compareprevlabel">Mês anterior</span><strong id="compareprev">0 €</strong></div>
         <div><span class="mut" id="comparecurlabel">Mês atual</span><strong id="comparecur">0 €</strong></div>
@@ -1101,13 +1117,13 @@ body:has(.edit-sheet:not(.hidden)){overflow:hidden}
     </div>
     <div class="card">
       <h2>Despesas por categoria</h2>
-      <p class="mut chart-intro" id="pieintro">Distribuição dos gastos deste mês, incluindo despesas não partilhadas.</p>
+      <p class="mut chart-intro" id="pieintro">Inclui despesas individuais.</p>
       <div id="pie" class="pie" role="img" aria-label="Distribuição das despesas por categoria"><div class="pie-hole"><span class="mut" id="pielabel">Total do mês</span><strong id="pietotal">0 €</strong></div></div>
       <div id="pielegend"></div>
     </div>
     <div class="card hidden" id="yeartrend">
       <h2>Evolução mensal</h2>
-      <p class="mut chart-intro">Compara os gastos dos 12 meses. Seleciona uma barra para consultar o valor.</p>
+      <p class="mut chart-intro">Toca numa barra para ver o valor.</p>
       <div class="yearbars" id="yearbars" role="group" aria-label="Despesas por mês"></div>
       <div class="bar-detail" id="bardetail" aria-live="polite"></div>
     </div>
@@ -1119,7 +1135,7 @@ body:has(.edit-sheet:not(.hidden)){overflow:hidden}
       <h2 id="historytitle">Acertos</h2>
       <p class="mut">Pagamentos do mês.</p>
       <div id="settlehistory"><div id="settlelist"></div></div>
-      <p id="settleempty" class="mut hidden" role="status">Ainda não existem pagamentos registados neste mês.</p>
+      <p id="settleempty" class="mut hidden" role="status">Sem pagamentos neste mês.</p>
     </div>
     <div class="recurring-section history-recurring-section">
       <details id="endedrecurringmanage" class="recurring-manage">
@@ -1148,13 +1164,13 @@ body:has(.edit-sheet:not(.hidden)){overflow:hidden}
             <label><input type="radio" name="appearance-theme" value="dark"><span>Escuro</span></label>
             <label><input type="radio" name="appearance-theme" value="auto"><span>Automático</span></label>
           </div>
-          <p class="mut appearance-help">Automático acompanha o tema claro ou escuro do dispositivo.</p>
+          <p class="mut appearance-help">Automático: tema do dispositivo.</p>
         </fieldset>
         <div class="appearance-name">
           <label for="appearance-brandname">Nome no cabeçalho</label>
           <input id="appearance-brandname" type="text" maxlength="32" autocomplete="off" placeholder="A nossa casa">
           <label class="appearance-check"><input id="appearance-showname" type="checkbox" checked><span>Mostrar nome ao lado do ícone da casa</span></label>
-          <p class="mut appearance-help">Estas preferências ficam guardadas apenas neste dispositivo.</p>
+          <p class="mut appearance-help">Preferências locais.</p>
         </div>
       </div>
     </details>
@@ -1166,11 +1182,11 @@ body:has(.edit-sheet:not(.hidden)){overflow:hidden}
       </summary>
       <div class="account-share-content">
         <strong>Convite para a outra pessoa</strong>
-        <p class="mut">Partilha este código apenas com a pessoa que queres adicionar.</p>
+        <p class="mut">Partilha apenas com quem queres convidar.</p>
         <div class="invite-code-row"><strong id="code"></strong><button type="button" class="g" id="copycode" aria-label="Copiar código de convite" title="Copiar código de convite"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg></button></div>
         <div class="member-names">
           <strong>Nomes dos membros</strong>
-          <p class="mut">Personaliza as iniciais dos movimentos neste dispositivo.</p>
+          <p class="mut">Iniciais dos movimentos (neste dispositivo).</p>
           <label for="member-name-self">O teu nome</label>
           <input id="member-name-self" type="text" maxlength="48" autocomplete="off" placeholder="O teu nome">
           <label for="member-name-other">Nome da outra pessoa</label>
@@ -1187,10 +1203,10 @@ body:has(.edit-sheet:not(.hidden)){overflow:hidden}
         <svg class="account-share-chevron" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 18 6-6-6-6"/></svg>
       </summary>
       <div class="account-share-content">
-        <p class="mut helper">Recebe avisos das ações da outra pessoa, mesmo com a aplicação fechada. Os avisos não mostram valores nem descrições das despesas.</p>
+        <p class="mut helper">Avisos da outra pessoa, mesmo com a app fechada. Sem valores ou descrições.</p>
         <p id="push-status" class="mut" role="status" aria-live="polite">A verificar disponibilidade…</p>
         <div class="bio-actions"><button id="push-enable" type="button" disabled>Ativar neste dispositivo</button><button id="push-disable" type="button" class="g hidden" disabled>Desativar</button></div>
-        <p class="mut helper">A configuração é individual por dispositivo. Ao terminares sessão, as notificações deste dispositivo são desativadas.</p>
+        <p class="mut helper">Por dispositivo. Terminar sessão desativa os avisos.</p>
       </div>
     </details>
     <details class="account-share account-biometric" id="biometricmanage">
@@ -1200,7 +1216,7 @@ body:has(.edit-sheet:not(.hidden)){overflow:hidden}
         <svg class="account-share-chevron" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 18 6-6-6-6"/></svg>
       </summary>
       <div class="account-share-content">
-        <p class="mut helper">Desbloqueia esta aplicação com a verificação do teu dispositivo enquanto a sessão Supabase estiver válida. É uma proteção local do ecrã, não substitui a palavra-passe nem a autenticação em dois passos.</p>
+        <p class="mut helper">Proteção local enquanto a sessão estiver válida. Não substitui a palavra-passe nem o segundo fator.</p>
         <p id="bio-status" class="mut" role="status" aria-live="polite">A verificar disponibilidade…</p>
         <div class="bio-actions"><button id="bio-enable" type="button">Ativar neste dispositivo</button><button id="bio-test" type="button" class="g hidden">Testar bloqueio</button><button id="bio-disable" type="button" class="g hidden">Desativar</button></div>
         <label for="bio-timeout">Pedir desbloqueio depois de sair da aplicação</label>
@@ -1212,7 +1228,7 @@ body:has(.edit-sheet:not(.hidden)){overflow:hidden}
           <option value="86400000">Após 24 horas</option>
           <option value="604800000">Após 7 dias</option>
         </select>
-        <p class="mut helper">O prazo conta desde que a aplicação passa para segundo plano ou é fechada. O navegador pode não detetar o encerramento exato; a proteção é aplicada ao regressar. A configuração é individual e fica apenas neste navegador.</p>
+        <p class="mut helper">Prazo desde a saída da app. A proteção aplica-se ao regressar; o navegador pode não detetar o fecho exato. Configuração local.</p>
       </div>
     </details>
     <details class="account-share account-mfa" id="mfamanage">
@@ -1222,13 +1238,13 @@ body:has(.edit-sheet:not(.hidden)){overflow:hidden}
         <svg class="account-share-chevron" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 18 6-6-6-6"/></svg>
       </summary>
       <div class="account-share-content">
-      <p class="mut helper">Podes ativar a autenticação em dois passos para proteger o acesso à tua conta. Se a ativares, precisarás de um código da aplicação autenticadora ao iniciar sessão.</p>
+      <p class="mut helper">Pede um código da app autenticadora ao iniciar sessão.</p>
       <p id="mfaaccountstatus" class="mut">A verificar a proteção da conta…</p>
       <div id="mfafactors"></div>
       <button id="mfaenroll" type="button" class="g">Adicionar aplicação autenticadora</button>
-      <p class="mut helper">Antes de ativar, prepara uma forma segura de recuperar o acesso. O Supabase não fornece códigos de recuperação TOTP; podes adicionar outro autenticador como reserva.</p>
+      <p class="mut helper">Sem códigos de recuperação TOTP. Configura um autenticador de reserva antes de ativar.</p>
       <div id="mfasetup" class="hidden" style="margin-top:12px">
-        <p class="mut">Lê este código QR com uma aplicação autenticadora. Se não conseguires, introduz a chave manualmente.</p>
+        <p class="mut">Lê o QR ou introduz a chave na app autenticadora.</p>
         <img id="mfaqr" alt="Código QR para configurar a autenticação em dois passos" style="display:block;width:min(230px,100%);margin:12px auto">
         <p class="mut">Chave de configuração: <strong id="mfasecret" style="overflow-wrap:anywhere"></strong></p>
         <label for="mfasetupcode">Código de 6 dígitos</label>
@@ -1251,19 +1267,19 @@ body:has(.edit-sheet:not(.hidden)){overflow:hidden}
           <select id="import-format"><option value="csv">Movimentos (CSV)</option><option value="json">Cópia de segurança (JSON)</option></select>
         </div>
         <div id="import-csv-panel" class="import-format-panel">
-          <p class="mut">Importa despesas e pagamentos de um ficheiro CSV compatível com o formato de grupo do Splitwise. Os dados atuais são mantidos e nada é guardado sem confirmação.</p>
+          <p class="mut">CSV de grupo compatível. Mantém os dados atuais; requer confirmação.</p>
           <div class="import-field"><label for="splitwise-file">Selecionar ficheiro CSV</label><input id="splitwise-file" type="file" accept=".csv,text/csv"></div>
           <div id="splitwise-mapping" class="import-field hidden"><label for="splitwise-self">Qual destas pessoas és tu no ficheiro?</label><select id="splitwise-self"></select></div>
-          <label class="import-checkbox"><input id="splitwise-skip-existing" type="checkbox" checked><span>Ignorar movimentos já existentes com a mesma data, descrição, valor e pagador (ou pagamento equivalente).</span></label>
+          <label class="import-checkbox"><input id="splitwise-skip-existing" type="checkbox" checked><span>Ignorar duplicados (data, descrição, valor e pagador ou pagamento equivalente).</span></label>
           <div id="splitwise-preview" class="import-preview hidden" aria-live="polite"></div>
           <button id="splitwise-confirm" class="import-confirm" type="button" disabled>Confirmar e importar</button>
           <p id="splitwise-msg" class="mut import-msg" role="status" aria-live="polite">Nenhum ficheiro selecionado. Só quem criou a casa pode importar dados das duas pessoas.</p>
         </div>
         <div id="import-json-panel" class="import-format-panel hidden">
-          <p class="mut">Importa uma cópia JSON exportada por A Nossa Casa, com despesas, pagamentos e despesas fixas. Os registos existentes nunca são apagados nem alterados.</p>
+          <p class="mut">Cópia JSON da app. Não apaga nem altera registos existentes.</p>
           <div class="import-field"><label for="backup-json-file">Selecionar cópia de segurança (JSON)</label><input id="backup-json-file" type="file" accept=".json,application/json"></div>
           <div id="backup-json-mapping" class="import-field hidden"><label for="backup-json-self">Qual das pessoas do ficheiro corresponde à tua conta?</label><select id="backup-json-self"></select><p class="mut import-msg">O ficheiro não contém nomes. Confirma a associação pelo identificador da conta original.</p></div>
-          <label class="import-checkbox"><input id="backup-json-skip-existing" type="checkbox" checked><span>Ignorar possíveis registos duplicados. Os registos já importados anteriormente são sempre ignorados.</span></label>
+          <label class="import-checkbox"><input id="backup-json-skip-existing" type="checkbox" checked><span>Ignorar possíveis duplicados. Reimportações são sempre ignoradas.</span></label>
           <div id="backup-json-preview" class="import-preview hidden" aria-live="polite"></div>
           <button id="backup-json-confirm" class="import-confirm" type="button" disabled>Confirmar e importar JSON</button>
           <p id="backup-json-msg" class="mut import-msg" role="status" aria-live="polite">Nenhum ficheiro selecionado. Só quem criou a casa pode importar a cópia completa.</p>
@@ -1277,10 +1293,10 @@ body:has(.edit-sheet:not(.hidden)){overflow:hidden}
         <svg class="account-share-chevron" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 18 6-6-6-6"/></svg>
       </summary>
       <div class="account-share-content">
-        <p class="mut">Descarrega os dados da casa: despesas, pagamentos e despesas fixas. Os ficheiros são criados no teu dispositivo, sem alterar os registos.</p>
+        <p class="mut">Exportação local de despesas, pagamentos e despesas fixas.</p>
         <button id="export-json" type="button" class="export-option"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M4 17v4h16v-4"/></svg><span>Cópia de segurança (JSON)</span></button>
         <button id="export-csv" type="button" class="export-option export-secondary"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M4 17v4h16v-4"/></svg><span>Exportar para Excel (CSV)</span></button>
-        <p class="mut export-note">Podes importar esta cópia através de Conta → Importar dados → Cópia de segurança (JSON). Guarda o ficheiro num local seguro.</p>
+        <p class="mut export-note">Guarda em local seguro. Para restaurar: Conta → Importar dados → JSON.</p>
         <p id="export-msg" class="mut import-msg" role="status" aria-live="polite"></p>
       </div>
     </details>
@@ -1309,7 +1325,7 @@ body:has(.edit-sheet:not(.hidden)){overflow:hidden}
         </div>
         <label class="share-check" for="ers"><input id="ers" type="checkbox"><span>Despesa partilhada</span></label>
         <button id="saveeditrec" type="button">Guardar alterações</button>
-        <p class="mut helper">Atualiza os lançamentos já gerados; os meses fora do intervalo são removidos. Os meses excluídos mantêm-se excluídos.</p>
+        <p class="mut helper">Atualiza lançamentos anteriores. Remove meses fora do intervalo; mantém exclusões.</p>
         <button id="editrec-skip" class="g hidden" type="button"></button>
         <button id="editrec-remove" class="g edit-danger" type="button">Remover despesa fixa</button>
       </div>
@@ -1332,7 +1348,7 @@ body:has(.edit-sheet:not(.hidden)){overflow:hidden}
           </select><div id="ec-chips" class="edit-category-chips" role="group" aria-labelledby="ec-label"></div>
         <label class="share-check" for="es"><input type="checkbox" id="es" checked><span>Despesa partilhada</span></label>
         <div class="dual-actions"><button id="saveedit" type="button">Guardar alterações</button><button id="deleteedit" class="g" type="button">Apagar despesa</button></div>
-        <p class="mut helper">Editar uma despesa corrige apenas esse registo. Se a despesa veio de uma despesa fixa, os próximos meses continuam a ser gerados normalmente.</p>
+        <p class="mut helper">Altera só este movimento, não os próximos meses.</p>
       </div>
     </div>
   </div>
@@ -1349,7 +1365,7 @@ let activeTab='expenses', chartPeriod='month', selectedBarMonth=null, editingExp
 let passwordRecoveryMode=false;
 let mfaPendingFactorId=null, mfaEnrollment=null, authFlowPromise=null, authGrantedKey=null;
 
-function show(id,on=true){$(id).classList.toggle('hidden',!on);if(on&&['#auth','#household','#app','#mfachallenge','#passwordreset'].includes(id))$('#startup').classList.add('hidden');if(id==='#app')$('#periodpicker').classList.toggle('hidden',!on||activeTab==='account');if(id==='#auth'&&on)setTimeout(initTurnstile,0)}
+function show(id,on=true){const el=$(id),wasHidden=el.classList.contains('hidden');el.classList.toggle('hidden',!on);if(on&&wasHidden&&el.matches('.modal-backdrop')){el.querySelector('.modal-card')?.classList.remove('sheet-interacted','sheet-returning');el.dataset.sheetInitial=sheetValues(el);}if(on&&['#auth','#household','#app','#mfachallenge','#passwordreset'].includes(id))$('#startup').classList.add('hidden');if(id==='#app')$('#periodpicker').classList.toggle('hidden',!on||activeTab==='account');if(id==='#auth'&&on)setTimeout(initTurnstile,0)}
 // CAPTCHA: chave publica do Cloudflare Turnstile; a chave secreta fica apenas no Supabase.
 const TURNSTILE_SITE_KEY='0x4AAAAAAGDlpZVVj5D2ihiO';
 let turnstileWidgetId=null,turnstileRetryTimer=null,turnstileRetryAttempts=0;
@@ -1694,6 +1710,7 @@ async function connect(){
  else if(!passwordRecoveryMode){show('#auth');show('#household',false);show('#app',false)}
 }
 function resetApp(){
+ closeSettlement();
  cancelPendingDelete(false);
  closeNewExpense();
  bioUnlockVisual();
@@ -2000,10 +2017,10 @@ function renderSettlements(net,curPayments,otherCount){
  show('#settleaction',!offlineMode&&settlementsReady&&otherCount>0&&net<-.005);
  show('#settlehistory',settlementsReady&&curPayments.length>0);
  show('#settleempty',settlementsReady&&curPayments.length===0);
- if(!settlementsReady){hint.textContent='Os pagamentos ainda não estão configurados no Supabase.';return}
+ if(!settlementsReady){hint.textContent='Pagamentos indisponíveis.';return}
  if(!otherCount)hint.textContent='À espera da outra pessoa.';
- else if(net<-.005)hint.textContent='Deves '+fmt(-net)+' no total.';
- else if(net>.005)hint.textContent='Tens '+fmt(net)+' a receber no total.';
+ else if(net<-.005)hint.textContent='Por pagar: '+fmt(-net);
+ else if(net>.005)hint.textContent='A receber: '+fmt(net);
  else hint.textContent='Contas acertadas.';
  if(net<-.005&&document.activeElement!==input)input.value=(Math.round(-net*100)/100).toFixed(2);
  list.replaceChildren();
@@ -2038,7 +2055,7 @@ async function registerSettlement(){
   const {error}=await sbClient.rpc('anc_manual_operation',{p_action:'settlement_created',p_data:{household_id:householdId,period:paymentPeriod+'-01',recipient,amount:amount/100}});
   if(error)throw error;
   if(month!==paymentPeriod){month=paymentPeriod;selectedBarMonth=null;syncExpenseDate()}
-  await loadExpenses();status('Pagamento registado.');
+  closeSettlement();await loadExpenses();status('Pagamento registado.');
  }catch(error){status('Não foi possível registar o pagamento: '+error.message,true)}finally{btn.disabled=false}
 }
 async function undoSettlement(id){
@@ -2058,6 +2075,7 @@ function toggleBalanceAction(panelId){
   $(button).setAttribute('aria-expanded',String(isOpen));
  }
 }
+function closeSettlement(){show('#settlementpanel',false);$('#opensettlement').setAttribute('aria-expanded','false');}
 function closeNewExpense(){show('#newexpensepanel',false);$('#openexpense').setAttribute('aria-expanded','false');document.body.classList.remove('expense-sheet-open');}
 function syncEditCategoryChips(id){for(const chip of $('#'+id+'-chips').children)chip.setAttribute('aria-pressed',String(chip.dataset.category===$('#'+id).value))}
 for(const id of ['ec','erc']){for(const option of $('#'+id).options){const chip=document.createElement('button');chip.type='button';chip.className='category-chip';chip.dataset.category=option.value;chip.textContent=option.textContent.trim();chip.onclick=()=>{$('#'+id).value=option.value;syncEditCategoryChips(id)};$('#'+id+'-chips').append(chip)}}
@@ -2069,6 +2087,9 @@ $('#closeexpense').onclick=closeNewExpense;
 $('#newexpensepanel').addEventListener('click',e=>{if(e.target===$('#newexpensepanel'))closeNewExpense()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#newexpensepanel').classList.contains('hidden'))closeNewExpense()});
 $('#opensettlement').onclick=()=>{closeNewExpense();toggleBalanceAction('#settlementpanel')};
+$('#closesettlement').onclick=closeSettlement;
+$('#settlementpanel').onclick=e=>{if(e.target.id==='settlementpanel')closeSettlement()};
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#settlementpanel').classList.contains('hidden'))closeSettlement()});
 
 function renderCharts(){
  const isAnnual=chartPeriod==='year',year=month.slice(0,4);
@@ -2078,7 +2099,7 @@ function renderCharts(){
  $('#chartannual').setAttribute('aria-pressed',String(isAnnual));
  $('#charttotlabel').textContent=isAnnual?'Total do ano':'Total do mês';
  $('#pielabel').textContent=isAnnual?'Total do ano':'Total do mês';
- $('#pieintro').textContent=isAnnual?'Distribuição dos gastos de '+year+', incluindo despesas não partilhadas.':'Distribuição dos gastos deste mês, incluindo despesas não partilhadas.';
+ $('#pieintro').textContent=isAnnual?'Inclui despesas individuais.':'Inclui despesas individuais.';
  $('#charttotal').textContent=fmt(total);
  show('#monthcompare',!isAnnual);
  if(!isAnnual)renderMonthComparison();
@@ -2112,12 +2133,12 @@ function renderMonthComparison(){
  result.append(symbol,amount);
  const description=$('#comparedesc');
  if(before===0){
-  description.textContent=current===0?'Sem despesas registadas em nenhum dos dois meses.':'Não é possível calcular a percentagem: o mês anterior tem 0 € em despesas.';
+  description.textContent=current===0?'Sem despesas nos dois meses.':'Sem percentagem: mês anterior a 0 €.';
  }else{
   const pct=difference/before*100;
   const pctText=(pct>0?'+':'')+pct.toLocaleString('pt-PT',{maximumFractionDigits:1})+'%';
   const percentage=document.createElement('span');percentage.textContent='('+pctText+')';result.append(percentage);
-  description.textContent=difference>0?'Gastaram mais do que no mês anterior.':difference<0?'Gastaram menos do que no mês anterior.':'Gastaram o mesmo que no mês anterior.';
+  description.textContent=difference>0?'Mais despesas.':difference<0?'Menos despesas.':'Sem diferença.';
  }
 }
 function renderYearBars(yearItems,year){
@@ -2153,7 +2174,7 @@ function categoryColor(name){
 function renderPie(by,total){
  const pie=$('#pie'), legend=$('#pielegend');legend.replaceChildren();$('#pietotal').textContent=fmt(total);
  const entries=Object.entries(by).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
- if(!entries.length){pie.style.background='var(--pie-empty)';pie.setAttribute('aria-label','Sem despesas neste mês');const t=document.createElement('p');t.className='mut';t.textContent='Ainda não existem despesas neste período.';legend.append(t);return}
+ if(!entries.length){pie.style.background='var(--pie-empty)';pie.setAttribute('aria-label','Sem despesas neste mês');const t=document.createElement('p');t.className='mut';t.textContent='Sem despesas neste período.';legend.append(t);return}
  let offset=0;const stops=[];
  entries.forEach(([name,value],i)=>{
   const color=categoryColor(name), start=offset;offset+=value/total*100;stops.push(`${color} ${start.toFixed(4)}% ${offset.toFixed(4)}%`);
@@ -2185,6 +2206,7 @@ function fillCategorySelect(selectId,stored){
 }
 function selectTab(which){
  if(offlineMode&&which==='account')return;
+ closeSettlement();
  closeNewExpense();
  activeTab=which;
  show('#periodpicker',which!=='account');
@@ -2199,7 +2221,7 @@ function selectTab(which){
 for(const name of ['expenses','charts','history','account'])$('#tab'+name).onclick=()=>selectTab(name);
 $('#chartmonthly').onclick=()=>{chartPeriod='month';render()};
 $('#chartannual').onclick=()=>{chartPeriod='year';selectedBarMonth=null;render()};
-// A eliminação só é enviada ao servidor depois dos 10 segundos.
+// A eliminação só é enviada ao servidor depois dos 5 segundos.
 let pendingDelete=null;
 function cancelPendingDelete(notify=true){
  if(!pendingDelete||pendingDelete.committing)return;
@@ -2212,14 +2234,14 @@ window.addEventListener('pagehide',()=>cancelPendingDelete(false));
 async function deleteExpense(id){
  const item=items.find(x=>x.id===id);if(!item||item.payer!==me?.id)return;
  if(pendingDelete){status('Aguarda ou anula a eliminação pendente.',true);return;}
- if(item.recurring_expense_id&&!confirm('Excluir apenas este mês da despesa fixa? Terás 10 segundos para anular.'))return;
- const pending={id,user:me.id,house:householdId,deadline:Date.now()+10000,committing:false};
+ if(item.recurring_expense_id&&!confirm('Excluir apenas este mês da despesa fixa? Terás 5 segundos para anular.'))return;
+ const pending={id,user:me.id,house:householdId,deadline:Date.now()+5000,committing:false};
  pendingDelete=pending;
  $('#undo-message').textContent='A despesa será eliminada';
  const tick=()=>{$('#undo-count').textContent=Math.max(0,Math.ceil((pending.deadline-Date.now())/1000))+' s para anular';};
  tick();show('#undo-delete');
  pending.ticker=setInterval(tick,200);
- pending.timer=setTimeout(()=>commitPendingDelete(pending),10000);
+ pending.timer=setTimeout(()=>commitPendingDelete(pending),5000);
 }
 async function commitPendingDelete(pending){
  if(pendingDelete!==pending)return;
@@ -2341,6 +2363,34 @@ $('#editrec-remove').onclick=()=>{if(offlineMode||!editingRecurringId)return;con
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!$('#editrecurringoverlay').classList.contains('hidden'))closeEditRecurring();else if(!$('#editoverlay').classList.contains('hidden'))closeEditExpense()}});
 $('#closeeditrec').onclick=closeEditRecurring;$('#saveeditrec').onclick=saveEditRecurring;
 $('#editrecurringoverlay').onclick=(e)=>{if(e.target.id==='editrecurringoverlay')closeEditRecurring()};
+
+// Drag only the handle or heading, never the scrollable form.
+function sheetValues(el){return JSON.stringify([...el.querySelectorAll('input,select,textarea')].map(x=>[x.id,x.type==='checkbox'||x.type==='radio'?x.checked:x.value]));}
+function installSheetDrag(id,close){
+ const overlay=$(id),card=overlay.querySelector('.modal-card');let drag=null,timer;
+ const reset=()=>{clearTimeout(timer);card.classList.remove('sheet-dragging');card.classList.add('sheet-returning');card.style.transform='';timer=setTimeout(()=>card.classList.remove('sheet-returning'),220);};
+ card.addEventListener('pointerdown',e=>{
+  if(!e.isPrimary||e.button!==0||e.target.closest('button,input,select,textarea,a')||!e.target.closest('.sheet-handle,.modal-card>.row.sp')||card.scrollTop>1)return;
+  if(card.querySelector('button:disabled'))return;
+  clearTimeout(timer);card.classList.remove('sheet-returning');card.classList.add('sheet-dragging','sheet-interacted');drag={id:e.pointerId,x:e.clientX,y:e.clientY,t:performance.now(),dy:0};card.setPointerCapture(e.pointerId);
+ });
+ card.addEventListener('pointermove',e=>{if(!drag||drag.id!==e.pointerId)return;drag.dy=Math.max(0,e.clientY-drag.y);card.style.transform=`translateY(${drag.dy}px)`;});
+ const end=(e,cancel=false)=>{
+  if(!drag||drag.id!==e.pointerId)return;const d=drag;drag=null;
+  const dy=Math.max(0,e.clientY-d.y),dx=Math.abs(e.clientX-d.x),elapsed=Math.max(1,performance.now()-d.t);
+  reset();if(cancel||overlay.classList.contains('hidden')||dx>dy||!(dy>=Math.min(120,card.clientHeight*.25)||(dy>45&&dy/elapsed>.65)))return;
+  const changed=overlay.dataset.sheetInitial!==sheetValues(overlay);
+  const draft=id==='#newexpensepanel'&&($('#d').value.trim()||$('#a').value);
+  if((changed||draft)&&!confirm('Fechar sem guardar?'))return;
+  close();
+ };
+ card.addEventListener('pointerup',e=>end(e));card.addEventListener('pointercancel',e=>end(e,true));card.addEventListener('lostpointercapture',e=>end(e,true));
+}
+installSheetDrag('#newexpensepanel',closeNewExpense);
+installSheetDrag('#editoverlay',closeEditExpense);
+installSheetDrag('#editrecurringoverlay',closeEditRecurring);
+installSheetDrag('#settlementpanel',closeSettlement);
+
 // Os meses são agrupados por ano no seletor do cabeçalho.
 // Em Gráficos > Anual, o mesmo seletor mostra anos, sem alterar a lógica dos gráficos.
 function renderPeriodSelect(){
