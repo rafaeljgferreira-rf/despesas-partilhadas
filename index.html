@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <link rel="preconnect" href="https://yinwpwywuvpborlfswzt.supabase.co" crossorigin>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-dJzaJwprXSvvTuuFT9tV+an26x+hAT6ML//m7moiQbs=' 'sha256-qsVEZXvKuWPbgWzEm4Z3gMAp7lO1OBZ3T4N12Tt4Bjo=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com 'sha256-dJzaJwprXSvvTuuFT9tV+an26x+hAT6ML//m7moiQbs=' 'sha256-qy4vWblk8MioP/Rx/5KibGv/oUvhV8O7hF2X+U/4e7k=' 'sha256-NSSPgZaI54dgGNIM8eUcarcyQMaokZxf2VhIaK9Sa/s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com https://yinwpwywuvpborlfswzt.supabase.co wss://yinwpwywuvpborlfswzt.supabase.co; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src https://challenges.cloudflare.com">
 <title>A Nossa Casa</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#F4F6F9">
@@ -1408,7 +1408,7 @@ function resetCaptcha(){
  if(turnstileWidgetId!==null&&typeof window.turnstile?.reset==='function')window.turnstile.reset(turnstileWidgetId);
 }
 function message(id,msg,isError=false){$(id).textContent=msg;$(id).classList.toggle('error',isError)}
-let statusTimer;function status(msg,error=false){clearTimeout(statusTimer);message('#status',msg,error);const quiet=!error&&/^(Ligado ·|Atualizado agora ·)/.test(msg);show('#status',!quiet);if(!quiet&&!error)statusTimer=setTimeout(()=>show('#status',false),4500);}
+let statusTimer;function status(msg,error=false){if(!error&&me&&householdId&&!offlineMode&&!settlementsReady&&!$('#app').classList.contains('hidden')){msg+=' · Saldos indisponíveis.';error=true;}clearTimeout(statusTimer);message('#status',msg,error);const quiet=!error&&/^(Ligado ·|Atualizado agora ·)/.test(msg);show('#status',!quiet);if(!quiet&&!error)statusTimer=setTimeout(()=>show('#status',false),4500);}
 // Dados publicos do projeto. Nunca incluir service_role ou sb_secret_ aqui.
 const SUPABASE_URL='https://yinwpwywuvpborlfswzt.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY='sb_publishable_RnM64gagKaYaIHX5Zoj0ug_OtMl9DGN';
@@ -1710,6 +1710,7 @@ async function connect(){
  else if(!passwordRecoveryMode){show('#auth');show('#household',false);show('#app',false)}
 }
 function resetApp(){
+ resetSync();
  closeSettlement();
  cancelPendingDelete(false);
  closeNewExpense();
@@ -1755,6 +1756,7 @@ function startHouseholdFetch(homeId){
  return {homeId,payments,expenses,meta};
 }
 async function loadHousehold(prefetch=null){
+ resetSync();
  const started=performance.now(),userId=me.id,homeId=householdId;
  const current=()=>session?.user?.id===userId&&me?.id===userId&&householdId===homeId&&!passwordRecoveryMode;
  show('#household',false);show('#app',false);startupMessage('A consultar os movimentos e pagamentos.');
@@ -1787,20 +1789,16 @@ async function loadHousehold(prefetch=null){
   startupTiming({desdeScript:performance.now()-startupStarted,casaEMembrosEDespesasFixas:metadataMs,verificarFixas:recurringMs,despesasEPagamentos:renderStart-expenseStart,pagamentos:paid.ms,render:performance.now()-renderStart,totalCasa:performance.now()-started,prefetchDaCasa:prefetch?1:0});
  }catch(error){if(current()){show('#app',false);startupError(error.message||'Tenta novamente.');}}
 }
-async function loadRecurring(){
- recurringError='';
- const {data,error}=await sbClient.from('recurring_expenses').select('*').eq('household_id',householdId).order('created_at',{ascending:false});
- if(error){recurringReady=false;recurring=[];recurringError=error.message;renderRecurring();return}
- recurringReady=true;recurring=data||[];renderRecurring();
-}
+// A configuração das despesas fixas é atualizada juntamente com os movimentos.
+async function loadRecurring(){return loadExpenses()}
 async function ensureRecurringForMonth(period){
  if(!recurringReady||!householdId||!recurring.length||period<periodNow())return;
  const eligible=recurring.filter(rec=>rec.active!==false&&inRecurringRange(rec,period));
  if(!eligible.length)return;
- const homeId=householdId;
+ const homeId=householdId,userId=me?.id,state=syncState;
  const periodKey=firstDayOfMonth(period);
  const {data:existing,error:getError}=await sbClient.from('expenses').select('recurring_expense_id').eq('household_id',homeId).eq('recurring_period',periodKey).not('recurring_expense_id','is',null);
- if(getError||householdId!==homeId)return;
+ if(getError||!syncCurrent(state,userId,homeId))return;
  const have=new Set((existing||[]).map(r=>r.recurring_expense_id));
  const rows=[];
  for(const rec of eligible){
@@ -1823,33 +1821,61 @@ async function loadHouseholdTable(table,sortField,homeId=householdId){
  }
  throw new Error('O número de movimentos excede o limite de carregamento.');
 }
-async function loadExpenses({syncRecurring=false}={}){
- if(syncRecurring)await ensureRecurringForMonth(month);
- const payments=loadHouseholdTable('settlements','created_at').then(data=>({data}),error=>({error}));
- let data,paidRows;
- try{data=await loadHouseholdTable('expenses','date')}
- catch(error){status('Erro ao carregar despesas: '+error.message,true);return}
- items=data;
- try{const result=await payments;if(result.error)throw result.error;paidRows=result.data;settlementsReady=true}
- catch(error){paidRows=[];settlementsReady=false}
- settlements=paidRows;
- render();if(settlementsReady&&recurringReady)offlineCapture();
- if(!settlementsReady)status('Despesas carregadas, mas não foi possível consultar os pagamentos.',true);
- else if(!recurringReady)status('Despesas carregadas. Para ativar as despesas fixas e a edição completa, executa o novo ficheiro SQL no Supabase.',true);
- else status('Ligado · as alterações são sincronizadas automaticamente.');
+// Uma fila por sessão: nunca aplicar respostas de uma casa ou sessão anterior.
+let syncState={tail:Promise.resolve(),timer:null,generate:false,eventRunning:false,eventPending:false};
+function resetSync(){clearTimeout(syncState.timer);syncState={tail:Promise.resolve(),timer:null,generate:false,eventRunning:false,eventPending:false}}
+function syncCurrent(state,user,home){return state===syncState&&!offlineMode&&!!user&&!!home&&me?.id===user&&session?.user?.id===user&&householdId===home&&!passwordRecoveryMode}
+function loadExpenses({syncRecurring=false}={}){
+ const state=syncState,user=me?.id,home=householdId,period=month;
+ if(!syncCurrent(state,user,home))return Promise.resolve(false);
+ const run=async()=>{
+  if(!syncCurrent(state,user,home))return false;
+  try{
+   const fixed=await sbClient.from('recurring_expenses').select('*').eq('household_id',home).order('created_at',{ascending:false});
+   if(!syncCurrent(state,user,home))return false;
+   recurringReady=!fixed.error;recurringError=fixed.error?.message||'';
+   if(recurringReady)recurring=fixed.data||[];
+   if(syncRecurring&&recurringReady)await ensureRecurringForMonth(period);
+   if(!syncCurrent(state,user,home))return false;
+   const [expenseResult,paymentResult]=await Promise.allSettled([loadHouseholdTable('expenses','date',home),loadHouseholdTable('settlements','created_at',home)]);
+   if(expenseResult.status==='rejected')throw expenseResult.reason;
+   if(paymentResult.status==='rejected')throw paymentResult.reason;
+   const expenses=expenseResult.value,payments=paymentResult.value;
+   if(!syncCurrent(state,user,home))return false;
+   // Só publicar o par de listas quando ambas as consultas tiverem sucesso.
+   items=expenses;settlements=payments;settlementsReady=true;
+   render();
+   if(recurringReady){offlineCapture();status('Ligado · as alterações são sincronizadas automaticamente.');}
+   else status('Despesas fixas indisponíveis. Tenta novamente.',true);
+   return recurringReady;
+  }catch(error){
+   if(!syncCurrent(state,user,home))return false;
+   settlementsReady=false;render();status('Sincronização incompleta. Saldos indisponíveis. Tenta novamente.',true);
+   return false;
+  }
+ };
+ const next=state.tail.then(run,run);state.tail=next.catch(()=>{});return next;
+}
+function scheduleSync(generate=false){
+ const state=syncState,user=me?.id,home=householdId;
+ if(!syncCurrent(state,user,home)||$('#app').classList.contains('hidden'))return;
+ state.generate=state.generate||generate;state.eventPending=true;
+ if(state.eventRunning)return;
+ // Janela curta de agrupamento, sem adiar indefinidamente durante muitos eventos.
+ if(state.timer!==null)return;
+ state.timer=setTimeout(()=>{state.timer=null;if(!syncCurrent(state,user,home))return;const generate=state.generate;state.generate=false;state.eventPending=false;state.eventRunning=true;loadExpenses({syncRecurring:generate}).finally(()=>{state.eventRunning=false;if(state.eventPending&&syncCurrent(state,user,home))scheduleSync(state.generate)});},350);
 }
 function subscribe(){
  if(channel)sbClient.removeChannel(channel);
- channel=sbClient.channel('home-'+householdId)
-  .on('postgres_changes',{event:'*',schema:'public',table:'expenses',filter:'household_id=eq.'+householdId},payload=>{
-    if(payload.eventType==='INSERT'&&!items.some(x=>x.id===payload.new.id))items.push(payload.new);
-    if(payload.eventType==='UPDATE')items=items.map(x=>x.id===payload.new.id?payload.new:x);
-    if(payload.eventType==='DELETE')items=items.filter(x=>x.id!==payload.old.id);
-    items.sort((a,b)=>(b.date||'').localeCompare(a.date||''));render();status('Atualizado agora · sincronização ativa.');
-  })
-  .on('postgres_changes',{event:'*',schema:'public',table:'settlements',filter:'household_id=eq.'+householdId},()=>{loadExpenses()})
-  .on('postgres_changes',{event:'*',schema:'public',table:'recurring_expenses',filter:'household_id=eq.'+householdId},async()=>{await loadRecurring();await loadExpenses({syncRecurring:true})})
-  .subscribe(s=>{if(s==='CHANNEL_ERROR'||s==='TIMED_OUT')status('A ligação em tempo real foi interrompida. A tentar restabelecer…',true)});
+ const state=syncState,user=me?.id,home=householdId;
+ const valid=()=>syncCurrent(state,user,home);
+ const next=sbClient.channel('home-'+home);
+ channel=next;
+ const changed=(generate=false)=>{if(valid()&&channel===next)scheduleSync(generate)};
+ next.on('postgres_changes',{event:'*',schema:'public',table:'expenses',filter:'household_id=eq.'+home},()=>changed())
+  .on('postgres_changes',{event:'*',schema:'public',table:'settlements',filter:'household_id=eq.'+home},()=>changed())
+  .on('postgres_changes',{event:'*',schema:'public',table:'recurring_expenses',filter:'household_id=eq.'+home},()=>changed(true))
+  .subscribe(s=>{if(!valid()||channel!==next)return;if(s==='SUBSCRIBED')scheduleSync(true);else if(s==='CHANNEL_ERROR'||s==='TIMED_OUT'||s==='CLOSED')status('Sincronização em tempo real interrompida.',true)});
 }
 function memberNamesKey(){return 'a_nossa_casa_member_names:'+me.id+':'+householdId}
 function readMemberNames(){
@@ -1940,6 +1966,11 @@ function render(){
   const amount=document.createElement('strong');amount.textContent=value;
   row.append(name,amount);details.append(row);
  }
+ if(!settlementsReady){
+  b.textContent='—';b.classList.remove('neg','positive','settled');badge.textContent='Indisponível';badge.className='dashboard-state';
+  hint.textContent='Sincronização incompleta.';hint.classList.remove('hidden');note.classList.add('hidden');global.classList.add('hidden');
+  for(const row of [...details.children].slice(-2))row.lastElementChild.textContent='—';
+ }
  const currentDebt=(asOfPeriod===periodNow()?globalCents:balanceThroughMonth(items,settlements,people,me.id,periodNow()))/100;
  renderSettlements(currentDebt,curPayments,otherCount);
  const L=$('#list');L.textContent='';
@@ -1990,7 +2021,7 @@ function createExpenseIconButton(kind,label,onClick){
 }
 function renderRecurringList(listSelector,emptySelector,records,isEnded){
  const list=$(listSelector),empty=$(emptySelector);list.replaceChildren();
- if(!recurringReady){empty.classList.remove('hidden');empty.textContent='As despesas fixas ainda não estão configuradas no Supabase.';return}
+ if(!recurringReady){empty.classList.remove('hidden');empty.textContent='Despesas fixas indisponíveis.';return}
  empty.classList.toggle('hidden',records.length>0);
  if(!records.length){empty.textContent=isEnded?'Não existem despesas fixas terminadas até este mês.':'Ainda não existem despesas fixas para este mês.';return}
  const names=readMemberNames();
@@ -2017,7 +2048,7 @@ function renderSettlements(net,curPayments,otherCount){
  show('#settleaction',!offlineMode&&settlementsReady&&otherCount>0&&net<-.005);
  show('#settlehistory',settlementsReady&&curPayments.length>0);
  show('#settleempty',settlementsReady&&curPayments.length===0);
- if(!settlementsReady){hint.textContent='Pagamentos indisponíveis.';return}
+ if(!settlementsReady){hint.textContent='Saldos indisponíveis.';list.replaceChildren();return}
  if(!otherCount)hint.textContent='À espera da outra pessoa.';
  else if(net<-.005)hint.textContent='Por pagar: '+fmt(-net);
  else if(net>.005)hint.textContent='A receber: '+fmt(net);
@@ -2038,7 +2069,7 @@ function renderSettlements(net,curPayments,otherCount){
  }
 }
 async function registerSettlement(){
- if(!settlementsReady||!me||members.length!==2)return;
+ if(!settlementsReady||!me||members.length!==2||$('#settlepay').disabled)return;
  const btn=$('#settlepay');btn.disabled=true;
  try{
   // Revalidar no servidor todos os meses e os cêntimos importados do Splitwise.
@@ -2259,9 +2290,17 @@ async function commitPendingDelete(pending){
  }
  const {error}=await sbClient.rpc('anc_manual_operation',{p_action:'expense_deleted',p_data:{household_id:pending.house,id}});
  if(error){status('Não foi possível apagar: '+error.message,true);return}
- if(editingExpenseId===id)closeEditExpense();await loadRecurring();await loadExpenses();status('Despesa apagada.');
+ if(editingExpenseId===id)closeEditExpense();await loadExpenses();status('Despesa apagada.');
  }catch(error){status('Não foi possível concluir a eliminação: '+error.message,true);}
  finally{if(pendingDelete===pending)pendingDelete=null;}
+}
+// Bloqueio local contra duplo toque; não repetir automaticamente uma escrita.
+const expenseWrites=new Set();
+async function guardExpenseWrite(selector,operation){
+ if(offlineMode||!me||expenseWrites.has(selector))return;
+ const button=$(selector);expenseWrites.add(selector);button.disabled=true;
+ try{await operation()}catch(error){status('Não foi possível confirmar a gravação. Sincroniza antes de repetir.',true);scheduleSync();}
+ finally{expenseWrites.delete(selector);button.disabled=false;}
 }
 let editExpenseTrigger=null;
 function openEditExpense(id){if(offlineMode||!me)return;const expense=items.find(x=>x.id===id&&x.payer===me.id);if(!expense)return;editExpenseTrigger=document.activeElement;editingExpenseId=id;$('#ed').value=expense.description||'';$('#ea').value=(Math.round(Number(expense.amount)*100)/100).toFixed(2);fillCategorySelect('#ec',expense.category);syncEditCategoryChips('ec');$('#es').checked=!!expense.shared;show('#editoverlay');$('#canceledit').focus({preventScroll:true})}
@@ -2274,8 +2313,8 @@ async function saveEditExpense(){
  if(error){status('Não foi possível editar a despesa: '+error.message,true);return}
  closeEditExpense();await loadExpenses();status('Despesa atualizada com sucesso.');
 }
-async function deleteEditedExpense(){if(!editingExpenseId)return;const id=editingExpenseId;closeEditExpense();await deleteExpense(id)}
-$('#canceledit').onclick=closeEditExpense;$('#saveedit').onclick=saveEditExpense;$('#deleteedit').onclick=deleteEditedExpense;$('#editoverlay').onclick=(e)=>{if(e.target.id==='editoverlay')closeEditExpense()};
+async function deleteEditedExpense(){if(expenseWrites.has('#saveedit')||!editingExpenseId)return;const id=editingExpenseId;closeEditExpense();await deleteExpense(id)}
+$('#canceledit').onclick=closeEditExpense;$('#saveedit').onclick=()=>guardExpenseWrite('#saveedit',saveEditExpense);$('#deleteedit').onclick=deleteEditedExpense;$('#editoverlay').onclick=(e)=>{if(e.target.id==='editoverlay')closeEditExpense()};
 async function addRecurringExpense(){
  const description=$('#d').value.trim(), amount=normalizeAmount($('#a').value), day=Number($('#rday').value), shared=$('#s').checked;
  const start=$('#rstart').value,end=$('#rend').value;
@@ -2288,7 +2327,7 @@ async function addRecurringExpense(){
   const {error}=await sbClient.from('recurring_expenses').insert(row);
   if(error)throw error;
   $('#d').value='';$('#a').value='';$('#c').value='';$('#rday').value='1';$('#s').checked=true;$('#rstart').value=periodNow();$('#rend').value='';$('#isrecurring').checked=false;setRecurringMode();
-  closeNewExpense();syncCategoryChips();await loadRecurring();await loadExpenses({syncRecurring:true});status('Despesa fixa guardada para os meses escolhidos.');
+  closeNewExpense();syncCategoryChips();await loadExpenses({syncRecurring:true});status('Despesa fixa guardada para os meses escolhidos.');
  }catch(error){status('Não foi possível guardar a despesa fixa: '+error.message,true)}finally{btn.disabled=false}
 }
 let editRecurringTrigger=null;
@@ -2330,7 +2369,7 @@ async function saveEditRecurring(){
       if(updError)throw updError;
     }
   }
-  closeEditRecurring();await loadRecurring();await loadExpenses({syncRecurring:true});status('Despesa fixa e meses já gerados atualizados.');
+  closeEditRecurring();await loadExpenses({syncRecurring:true});status('Despesa fixa e meses já gerados atualizados.');
  }catch(error){status('Não foi possível concluir a edição: '+error.message+'. Verifica os lançamentos antes de repetir.',true)}finally{btn.disabled=false;actions.forEach(b=>b.disabled=false)}
 }
 async function toggleRecurringMonth(id,period,exclude){
@@ -2340,7 +2379,7 @@ async function toggleRecurringMonth(id,period,exclude){
  const {error}=await sbClient.from('recurring_expenses').update({excluded_months:[...excluded].map(firstDayOfMonth)}).eq('id',id).eq('payer',me.id);
  if(error){status('Não foi possível alterar os meses: '+error.message,true);return}
  if(exclude){const {error:delError}=await sbClient.from('expenses').delete().eq('recurring_expense_id',id).eq('recurring_period',firstDayOfMonth(period)).eq('payer',me.id);if(delError){status('Mês excluído, mas não foi possível apagar o lançamento: '+delError.message,true);return}}
- await loadRecurring();await loadExpenses({syncRecurring:!exclude});status(exclude?'Mês excluído e lançamento removido.':'Mês incluído. Será lançado quando chegar esse mês.');
+ await loadExpenses({syncRecurring:!exclude});status(exclude?'Mês excluído e lançamento removido.':'Mês incluído. Será lançado quando chegar esse mês.');
 }
 async function removeRecurring(id){
  const r=recurring.find(x=>x.id===id&&x.payer===me.id);if(!r)return;
@@ -2356,7 +2395,7 @@ async function removeRecurring(id){
  if(delError){status('Não foi possível apagar os lançamentos: '+delError.message,true);return}
  const {error}=await sbClient.from('recurring_expenses').delete().eq('id',id).eq('payer',me.id);
  if(error){status('Os lançamentos foram removidos, mas não foi possível remover a despesa fixa: '+error.message,true);return}
- await loadRecurring();await loadExpenses();status('Despesa fixa removida de todos os meses, incluindo os lançamentos gerados.');
+ await loadExpenses();status('Despesa fixa removida de todos os meses, incluindo os lançamentos gerados.');
 }
 
 $('#editrec-remove').onclick=()=>{if(offlineMode||!editingRecurringId)return;const id=editingRecurringId;closeEditRecurring();removeRecurring(id)};
@@ -2570,7 +2609,8 @@ $('#signup').onclick=async()=>{
 };
 $('#createhome').onclick=async()=>{const {data,error}=await sbClient.rpc('create_household');if(error){message('#homemsg','Erro: '+error.message,true);return}householdId=data;await loadHousehold()};
 $('#joinhome').onclick=async()=>{const code=$('#invite').value.trim().toUpperCase();if(!code)return;const {data,error}=await sbClient.rpc('join_household',{p_code:code});if(error){message('#homemsg','Não foi possível entrar: '+error.message,true);return}householdId=data;await loadHousehold()};
-$('#add').onclick=async()=>{if($('#isrecurring').checked){await addRecurringExpense();return}const description=$('#d').value.trim(),amount=normalizeAmount($('#a').value);if(!description||!(amount>0)){status('Indica uma descrição e um valor válido.',true);return}const date=$('#expense-date').value;if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||Number.isNaN(new Date(date+'T12:00:00').getTime())){status('Escolhe uma data válida para a despesa.',true);return}const selectedPeriod=date.slice(0,7);if(selectedPeriod!==periodNow()){if(!confirm('Atenção: a data escolhida ('+date.split('-').reverse().join('/')+') não pertence ao mês atual.\n\nQueres mesmo adicionar esta despesa?'))return;}const row={household_id:householdId,description,amount,category:categorySelected('#c',description),shared:$('#s').checked,payer:me.id,date};const {error}=await sbClient.rpc('anc_manual_operation',{p_action:'expense_created',p_data:row});if(error){status('Não foi possível adicionar: '+error.message,true);return}$('#d').value='';$('#a').value='';$('#c').value='';$('#s').checked=true;closeNewExpense();syncCategoryChips();if(month!==date.slice(0,7)){month=date.slice(0,7);selectedBarMonth=null}syncExpenseDate();await loadExpenses();status('Despesa adicionada com sucesso ✓')};
+async function submitNewExpense(){if($('#isrecurring').checked){await addRecurringExpense();return}const description=$('#d').value.trim(),amount=normalizeAmount($('#a').value);if(!description||!(amount>0)){status('Indica uma descrição e um valor válido.',true);return}const date=$('#expense-date').value;if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||Number.isNaN(new Date(date+'T12:00:00').getTime())){status('Escolhe uma data válida para a despesa.',true);return}const selectedPeriod=date.slice(0,7);if(selectedPeriod!==periodNow()){if(!confirm('Atenção: a data escolhida ('+date.split('-').reverse().join('/')+') não pertence ao mês atual.\n\nQueres mesmo adicionar esta despesa?'))return;}const row={household_id:householdId,description,amount,category:categorySelected('#c',description),shared:$('#s').checked,payer:me.id,date};const {error}=await sbClient.rpc('anc_manual_operation',{p_action:'expense_created',p_data:row});if(error){status('Não foi possível adicionar: '+error.message,true);return}$('#d').value='';$('#a').value='';$('#c').value='';$('#s').checked=true;closeNewExpense();syncCategoryChips();if(month!==date.slice(0,7)){month=date.slice(0,7);selectedBarMonth=null}syncExpenseDate();await loadExpenses();status('Despesa adicionada com sucesso ✓')}
+$('#add').onclick=()=>guardExpenseWrite('#add',submitNewExpense);
 
 
 // Splitwise CSV: pré-visualização, validação, associação de pessoas e confirmação.
@@ -2886,7 +2926,7 @@ $('#backup-json-confirm').onclick=async()=>{
   });
   if(error)throw error;
   if(householdId!==currentHousehold||me?.id!==currentUser)throw new Error('A sessão mudou durante a importação.');
-  await loadRecurring();await loadExpenses();
+  await loadExpenses();
   backupJsonMessage('Importação concluída: '+result.expenses+' despesas, '+result.payments+' pagamentos e '
    +result.recurring+' despesas fixas adicionados. Ignorados: '+result.skipped_expenses+' despesas, '
    +result.skipped_payments+' pagamentos e '+result.skipped_recurring+' despesas fixas.');
@@ -3100,7 +3140,8 @@ $('#offline-unlock').onclick=async()=>{if(offlineBusy)return;offlineBusy=true;co
 // Read-only allowlist, in addition to no Supabase client being initialized offline.
 for(const type of ['click','change','submit'])document.addEventListener(type,e=>{if(!offlineMode||!e.target.closest('#app'))return;const target=e.target.closest('button,input,select,textarea,a,summary,form');if(!target)return;if(type!=='submit'&&target.matches('#tabexpenses,#tabcharts,#tabhistory,#chartmonthly,#chartannual,.yearbarbtn,summary'))return;e.preventDefault();e.stopImmediatePropagation();},true);
 $('#offline-reconnect').onclick=()=>{if(navigator.onLine)location.reload();else $('#offline-error').textContent='Ainda estás sem ligação à Internet.'};
-window.addEventListener('online',()=>{if(offlineMode)location.reload()});
+window.addEventListener('online',()=>{if(offlineMode)location.reload();else scheduleSync(true)});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!offlineMode)scheduleSync(true)});
 window.addEventListener('offline',()=>{if(!offlineMode){cancelPendingDelete(false);location.reload()}});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&offlineMode&&me){offlineEpoch++;location.reload()}});
 applyTheme();applyBrand();
